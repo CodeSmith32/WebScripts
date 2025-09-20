@@ -43,6 +43,3 @@ export const hostFromURL = (url: string) => {
   const host = url.match(/^https?:\/\/([^:\\\/]*)/);
   return host?.[1] ?? null;
 };
-
-export const rgxHeader = /^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)+)/;
-export const rgxParam = /^\/+([\w\s]+):\s*(.*)$/;

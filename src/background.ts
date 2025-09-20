@@ -1,5 +1,5 @@
-import { Chrome, HttpHeader } from "./js/utils";
-import { webScripts } from "./js/webscripts";
+import { Chrome, type HttpHeader } from "./includes/utils";
+import { webScripts } from "./includes/webscripts";
 
 const match = async (url: string) => {
   const scripts = await webScripts.loadScripts();

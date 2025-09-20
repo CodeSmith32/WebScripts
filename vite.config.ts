@@ -1,7 +1,10 @@
 import { defineConfig } from "vite";
+import preact from "@preact/preset-vite";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   root: "./src",
+  plugins: [preact(), tailwindcss()],
   build: {
     outDir: "./dist",
     rollupOptions: {
@@ -12,5 +15,8 @@ export default defineConfig({
         content: "./src/content.ts",
       },
     },
+  },
+  server: {
+    port: 3000,
   },
 });

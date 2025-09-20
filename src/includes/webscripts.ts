@@ -13,14 +13,17 @@ export type MessageTypes = {
 };
 
 class WebScripts {
+  /** Save all user scripts. */
   async saveScripts(scripts: StoredScript[]): Promise<void> {
     await Chrome?.storage.local.set({ scripts });
   }
 
+  /** Load all user scripts. */
   async loadScripts(): Promise<StoredScript[]> {
     return (await Chrome?.storage.local.get("scripts"))?.scripts ?? [];
   }
 
+  /** Check if url matches the pattern-list for a user script. */
   match(url: string, patterns: string[]): boolean {
     let m: RegExpMatchArray | null; // pattern match
     let found = false;
@@ -54,6 +57,34 @@ class WebScripts {
     return found;
   }
 
+  /** Parse the header of a user script. */
+  parseHeader(code: string) {
+    const match = code.match(/^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/);
+    let name = "";
+    let patterns = [];
+
+    if (match) {
+      const params = new Map();
+      const lines = match[1].split(/\r?\n/);
+
+      for (let line of lines) {
+        let [, key, value] = line.match(/^\/+([\w\s]+):\s*(.*)$/) ?? [];
+        if (key == null || value == null) continue;
+
+        key = key.trim().toLowerCase();
+
+        let arr = params.get(key);
+        if (!arr) params.set(key, (arr = []));
+        arr.push(value);
+      }
+
+      if (params.has("name")) name = params.get("name")[0];
+      if (params.has("match")) patterns = params.get("match");
+    }
+    return [name, patterns];
+  }
+
+  /** Process content-security-policy header: allow executing user scripts. */
   processCSPHeader(header: string): string {
     // parse csp header string
     const csp = CSPHeader.fromString(header);
@@ -90,6 +121,7 @@ class WebScripts {
     return csp.toString();
   }
 
+  /** Open scripts management page. */
   async openEditor(refer: string) {
     await Chrome?.storage.local.set({ refer });
     await Chrome?.runtime.openOptionsPage();

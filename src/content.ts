@@ -1,5 +1,5 @@
-import { Chrome, injectScript, sendMessage } from "./js/utils";
-import { MessageTypes, webScripts } from "./js/webscripts";
+import { Chrome, injectScript, sendMessage } from "./includes/utils";
+import { type MessageTypes, webScripts } from "./includes/webscripts";
 
 // list of running scripts
 const running: string[] = [];

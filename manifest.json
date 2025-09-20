@@ -15,7 +15,7 @@
   "permissions": [
     "tabs",
     "storage",
-    "userscripts",
+    "userScripts",
     "unlimitedStorage",
     "webRequest",
     "webRequestBlocking",
