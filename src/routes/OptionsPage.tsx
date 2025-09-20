@@ -1,3 +1,3 @@
 export const OptionsPage = () => {
-  return <div className="font-bold">Hello world</div>;
+  return <div className="text-white">Hello world</div>;
 };
