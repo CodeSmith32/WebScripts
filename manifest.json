@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "version": "1.0.0",
+  "name": "WebScripts",
+  "description": "Manipulate webpages with custom Javascript injection.",
+  "content_security_policy": "script-src 'self' blob:; object-src 'self';",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "webscript@mindno.de",
+      "strict_min_version": "57.0"
+    }
+  },
+
+  "permissions": [
+    "tabs",
+    "storage",
+    "userscripts",
+    "unlimitedStorage",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
+  ],
+
+  "icons": {
+    "48": "img/icon-48.png",
+    "128": "img/icon-128.png"
+  }
+}
