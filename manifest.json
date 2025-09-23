@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "name": "WebScripts",
   "description": "Manipulate webpages with custom Javascript injection.",
-  "content_security_policy": "script-src 'self' blob:; object-src 'self';",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
 
   "browser_specific_settings": {
     "gecko": {
@@ -15,12 +17,44 @@
   "permissions": [
     "tabs",
     "storage",
-    "userScripts",
     "unlimitedStorage",
+    "scripting",
+    "userScripts",
     "webRequest",
     "webRequestBlocking",
-    "<all_urls>"
+    "declarativeNetRequestWithHostAccess"
   ],
+  "host_permissions": ["<all_urls>"],
+
+  "content_scripts": [
+    {
+      "js": ["content.js"],
+      "matches": ["*://*/*", "file:///*"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "action": {
+    "default_icon": {
+      "48": "img/icon-48.png",
+      "128": "img/icon-128.png"
+    },
+    "default_title": "WebScripts",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+
+  "incognito": "split",
 
   "icons": {
     "48": "img/icon-48.png",

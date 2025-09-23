@@ -4,6 +4,35 @@ import { fileURLToPath } from "node:url";
 import { existsSync, promises as fs } from "node:fs";
 import { promises as readline } from "node:readline";
 
+let cached: Map<string, string> | null = null;
+
+/** Rudimentary parser for converting commandline options into a Map:
+ *
+ * ```
+ * `--option` becomes ["option" -> true]
+ * `--key=value` becomes ["key" -> "value"]
+ * `option` becomes ["option" -> true]
+ * `-option` becomes ["option" -> true]
+ * ```
+ */
+export const getCommandLineArgs = (argv?: string[]) => {
+  const useCache = !argv;
+  if (useCache && cached) return cached;
+
+  argv = (argv ?? process.argv).slice(2); // default to process.argv / cut off `program ./script`
+
+  const options = new Map<string, string>();
+
+  for (const arg of argv) {
+    const [, option, value] = arg.trim().match(/^([^=]*)(?:=(.*))?$/) ?? [];
+    if (option) options.set(option.replace(/^-+/, ""), value ?? true);
+  }
+
+  if (useCache) cached = options;
+
+  return options;
+};
+
 /** Convert import.meta.url to __dirname. */
 export const importMetaDir = (dir: string) => path.dirname(fileURLToPath(dir));
 
