@@ -9,12 +9,12 @@ export default defineConfig({
   plugins: [preact(), tailwindcss()],
   build: {
     outDir: "../dist",
+    emptyOutDir: false,
     rollupOptions: {
       input: {
         popup: "./src/popup.html",
         options: "./src/options.html",
         background: "./src/background.ts",
-        content: "./src/content.ts",
       },
       output: {
         entryFileNames: (chunkInfo) => {

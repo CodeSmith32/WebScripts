@@ -5,7 +5,7 @@ import { type MessageTypes, webScripts } from "./includes/webscripts";
 const running: string[] = [];
 
 /** Listen for messages asking for what scripts are currently running. */
-Chrome?.runtime.onMessage.addListener(
+Chrome.runtime.onMessage.addListener(
   (data: MessageTypes | null | undefined, _sender, reply) => {
     switch (data?.cmd) {
       case "listRunning":

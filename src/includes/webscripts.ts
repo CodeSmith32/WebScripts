@@ -15,12 +15,12 @@ export type MessageTypes = {
 class WebScripts {
   /** Save all user scripts. */
   async saveScripts(scripts: StoredScript[]): Promise<void> {
-    await Chrome?.storage.local.set({ scripts });
+    await Chrome.storage.local.set({ scripts });
   }
 
   /** Load all user scripts. */
   async loadScripts(): Promise<StoredScript[]> {
-    return (await Chrome?.storage.local.get("scripts"))?.scripts ?? [];
+    return (await Chrome.storage.local.get("scripts"))?.scripts ?? [];
   }
 
   /** Check if url matches the pattern-list for a user script. */
@@ -123,8 +123,8 @@ class WebScripts {
 
   /** Open scripts management page. */
   async openEditor(refer: string) {
-    await Chrome?.storage.local.set({ refer });
-    await Chrome?.runtime.openOptionsPage();
+    await Chrome.storage.local.set({ refer });
+    await Chrome.runtime.openOptionsPage();
   }
 }
 export const webScripts = new WebScripts();

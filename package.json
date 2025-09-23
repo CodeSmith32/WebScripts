@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && tsx scripts/build --pre && vite build && tsx ./scripts/build.ts --post",
+    "build": "tsc && tsx scripts/build --pre && vite build && vite build --config vite.content.config.ts && tsx ./scripts/build.ts --post",
     "type-check": "tsc --project tsconfig.app.json --noEmit && tsc --project tsconfig.node.json --noEmit",
     "lint": "eslint",
     "check": "npm run type-check && npm run lint"

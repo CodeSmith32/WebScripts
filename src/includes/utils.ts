@@ -2,19 +2,20 @@ export type HttpHeader =
   | browser.webRequest._HttpHeaders
   | chrome.webRequest.HttpHeader;
 
-export type SendMessageOptions =
-  | browser.runtime._SendMessageOptions
-  | chrome.runtime.MessageOptions;
+export type SendMessageOptions = browser.runtime._SendMessageOptions &
+  chrome.runtime.MessageOptions;
+
+export type SendTabMessageOptions = browser.tabs._SendMessageOptions &
+  chrome.tabs.MessageSendOptions;
 
 export type Tab = browser.tabs.Tab | chrome.tabs.Tab;
 
 /** The extension environment (whether for Chrome or Firefox). */
-export const Chrome =
-  typeof chrome !== "undefined" && chrome.tabs
-    ? chrome
-    : typeof browser !== "undefined" && browser.tabs
-    ? browser
-    : null;
+export const Chrome = typeof browser !== "undefined" ? browser : chrome;
+
+/** The browser being used, for switching on browser-specific logic ("chrome" or "firefox"). */
+export const browserName =
+  typeof browser !== "undefined" ? "firefox" : "chrome";
 
 /** Inject code into the current webpage. */
 export const injectScript = (code: string) => {
@@ -32,11 +33,12 @@ export const sendMessage = async <T>(
   message: unknown,
   options: SendMessageOptions = {}
 ): Promise<T | undefined> => {
-  const method = Chrome?.runtime.sendMessage as
-    | ((message: unknown, options?: SendMessageOptions) => Promise<T>)
-    | undefined;
-
-  return await method?.(message, options);
+  return await (
+    Chrome.runtime.sendMessage as (
+      message: unknown,
+      options?: SendMessageOptions
+    ) => Promise<T>
+  )(message, options);
 };
 
 /** Get the domain:port part from a url. */
@@ -47,7 +49,7 @@ export const hostFromURL = (url: string) => {
 
 /** Get the currently active browser tab. */
 export const getActiveTab = async (): Promise<Tab | null> => {
-  const active = await Chrome?.tabs?.query({
+  const active = await Chrome.tabs?.query({
     active: true,
     currentWindow: true,
   });
@@ -58,18 +60,17 @@ export const getActiveTab = async (): Promise<Tab | null> => {
 export const tabSendMessage = async <T>(
   tab: Tab | null | undefined,
   message: unknown,
-  options: SendMessageOptions = {}
+  options: SendTabMessageOptions = {}
 ): Promise<T | undefined> => {
   if (!tab?.id) return undefined;
-  const method = Chrome?.tabs.sendMessage as
-    | ((
-        tabId: number,
-        message: unknown,
-        options: SendMessageOptions
-      ) => Promise<T>)
-    | undefined;
 
-  return await method?.(tab.id, message, options);
+  return await (
+    Chrome.tabs.sendMessage as (
+      tabId: number,
+      message: unknown,
+      options: SendTabMessageOptions
+    ) => Promise<T>
+  )(tab.id, message, options);
 };
 
 export const wait = (ms: number) =>
