@@ -1,3 +1,4 @@
+import "./includes/monacoSetup";
 import { render } from "preact";
 import { OptionsPage } from "./routes/OptionsPage";
 

@@ -20,7 +20,7 @@ export const PopupScriptRow = ({
   return (
     <div className="flex flex-row gap-2 p-1 rounded-md hover:bg-white/5">
       <Switch disabled={disabled} onClick={onSwitch} switched={switched} />
-      <p className="text-gray-400">{name}</p>
+      <p className="text-neutral-400">{name}</p>
       <div className="grow" />
       <IconButton onClick={onEdit}>
         <PencilIcon className="text-white" />

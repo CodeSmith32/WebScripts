@@ -4,7 +4,7 @@
   "name": "WebScripts",
   "description": "Manipulate webpages with custom Javascript injection.",
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
+    "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'"
   },
 
   "browser_specific_settings": {
@@ -54,6 +54,10 @@
     "page": "options.html",
     "open_in_tab": true
   },
+
+  "web_accessible_resources": [
+    { "resources": ["monaco-editor-workers/*.js"], "matches": ["<all_urls>"] }
+  ],
 
   "incognito": "split",
 
