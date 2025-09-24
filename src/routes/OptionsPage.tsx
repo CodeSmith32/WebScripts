@@ -2,7 +2,7 @@ import { Monaco } from "../components/Monaco";
 
 export const OptionsPage = () => {
   return (
-    <div className="text-white fixed inset-0 bg-neutral-600 flex flex-col">
+    <div className="text-white fixed inset-0 bg-neutral-900 flex flex-col">
       <div className="h-20 flex flex-row justify-center items-center gap-4">
         <img className="w-16 h-16" src="img/icon.svg" />
         <p className="text-4xl font-bold">WebScripts</p>

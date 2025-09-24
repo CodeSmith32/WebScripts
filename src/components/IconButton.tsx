@@ -16,7 +16,7 @@ export const IconButton = ({
     <button
       className={cn(
         "w-10 h-10 p-1.5 rounded-full cursor-pointer opacity-90",
-        "hover:bg-white/10 hover:opacity-100",
+        "hover:bg-white/10 hover:opacity-100 active:bg-black/90",
         className
       )}
       onClick={onClick}

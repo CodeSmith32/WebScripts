@@ -37,7 +37,7 @@ const postBuild = async () => {
   // copy icons
   const images = await arrayFromAsync(
     recurseDir({
-      dir: join(rootDir, "img"),
+      dir: join(rootDir, "src/img"),
     })
   );
   for (const entry of images) {

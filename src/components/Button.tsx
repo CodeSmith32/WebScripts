@@ -18,8 +18,7 @@ export const Button = ({
     <button
       className={cn(
         "rounded-md bg-transparent cursor-pointer px-5 py-2 text-center",
-        "hover:bg-white/10",
-        "active:bg-black/10",
+        "hover:bg-white/10 active:bg-black/90",
         disabled && "opacity-70",
         className
       )}
