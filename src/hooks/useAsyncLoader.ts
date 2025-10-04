@@ -1,12 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 
-export type RawAsyncLoaderState<T> = {
-  /** The current loaded state. */
-  data: T;
+export type RawAsyncLoaderState = {
   /** If the data is being reloaded. Always true, even if data is available, and just being re-loaded. */
   loading: boolean;
-  /** If the data has loaded and is currently ready to be used. Useful if the loader ever returns `undefined` which would make the value of `data` ambiguous. */
-  available: boolean;
   /** A callback to trigger a reload of the data. */
   refresh: () => void;
 };
@@ -15,15 +11,15 @@ export type AsyncLoaderState<T> =
   | ({
       /** The current loaded state. */
       data: T;
-      /** If the data is being reloaded. Always true, even if data is available, and just being re-loaded. */
+      /** If the data has loaded and is currently ready to be used. Useful if the loader ever returns `undefined` which would make the value of `data` ambiguous. */
       available: true;
-    } & RawAsyncLoaderState<T>)
+    } & RawAsyncLoaderState)
   | ({
       /** The current loaded state. */
       data: undefined;
-      /** If the data is being reloaded. Always true, even if data is available, and just being re-loaded. */
+      /** If the data has loaded and is currently ready to be used. Useful if the loader ever returns `undefined` which would make the value of `data` ambiguous. */
       available: false;
-    } & RawAsyncLoaderState<T>);
+    } & RawAsyncLoaderState);
 
 export const useAsyncLoader = <T>(
   callback: () => Promise<T>

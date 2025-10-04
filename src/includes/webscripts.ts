@@ -1,10 +1,13 @@
 import { CSPHeader, CSPValue } from "./csp";
 import { Chrome, hostFromURL } from "./utils";
 
+export type ScriptLanguage = "typescript" | "javascript";
+
 export interface StoredScript {
   id: string;
   name: string;
   patterns: string[];
+  language: ScriptLanguage;
   code: string;
 }
 

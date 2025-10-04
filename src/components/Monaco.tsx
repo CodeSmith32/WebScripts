@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { MonacoEditor, MonacoLanguages } from "../includes/monacoSetup";
+import type { ScriptLanguage } from "../includes/webscripts";
 
 export interface MonacoProps {
   initialValue: string;
-  language: "typescript" | "javascript";
+  onChange?: (value: string) => void;
+  language: ScriptLanguage;
 }
 
-export const Monaco = ({ initialValue, language }: MonacoProps) => {
+export const Monaco = ({ initialValue, onChange, language }: MonacoProps) => {
   const [editor, setEditor] =
     useState<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -24,7 +26,6 @@ export const Monaco = ({ initialValue, language }: MonacoProps) => {
           language,
           theme: "theme",
           automaticLayout: true,
-          "semanticHighlighting.enabled": true,
           model,
         });
 

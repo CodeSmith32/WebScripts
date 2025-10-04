@@ -6,6 +6,7 @@ export interface ButtonProps {
   children?: ComponentChildren;
   onClick?: () => void;
   className?: string;
+  title?: string;
 }
 
 export const Button = ({
@@ -13,6 +14,7 @@ export const Button = ({
   children,
   onClick,
   className,
+  title,
 }: ButtonProps) => {
   return (
     <button
@@ -24,6 +26,7 @@ export const Button = ({
       )}
       disabled={disabled}
       onClick={onClick}
+      title={title}
     >
       {children}
     </button>
