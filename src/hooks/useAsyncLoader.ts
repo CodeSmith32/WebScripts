@@ -22,7 +22,7 @@ export type AsyncLoaderState<T> =
     } & RawAsyncLoaderState);
 
 export const useAsyncLoader = <T>(
-  callback: () => Promise<T>
+  callback: (status: { cancelled: boolean }) => Promise<T>
 ): AsyncLoaderState<T> => {
   const [data, setData] = useState<T | undefined>(undefined);
   const [loading, setLoading] = useState(true);
@@ -36,11 +36,11 @@ export const useAsyncLoader = <T>(
   };
 
   useEffect(() => {
-    let cancel = false;
+    const status = { cancelled: false };
 
     // run callback and set data on response
-    callback().then((data) => {
-      if (cancel) return;
+    callback(status).then((data) => {
+      if (status.cancelled) return;
       setLoading(false);
       setAvailable(true);
       setData(data);
@@ -48,7 +48,7 @@ export const useAsyncLoader = <T>(
 
     // cancel callback
     return () => {
-      cancel = true;
+      status.cancelled = true;
     };
   }, [key]);
 

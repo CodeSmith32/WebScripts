@@ -1,4 +1,10 @@
-import { FilePlus2Icon, ScrollTextIcon, TrashIcon } from "lucide-preact";
+import {
+  FileCode,
+  FilePlus2Icon,
+  FileType,
+  ScrollTextIcon,
+  TrashIcon,
+} from "lucide-preact";
 import { cn } from "../includes/classes";
 import type { StoredScript } from "../includes/webscripts";
 import { IconButton } from "./IconButton";
@@ -25,18 +31,26 @@ export const ScriptList = ({
         scripts.map((script) => (
           <div
             className={cn(
-              "pl-2 pr-1 py-1 gap-2 mb-2 rounded-md cursor-pointer flex flex-row items-center group hover:bg-white/5",
+              "pl-2 pr-1 py-1 gap-2 mb-2 rounded-md cursor-pointer flex flex-row items-center group " +
+                "hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-white",
               active === script && "bg-white/10"
             )}
+            tabIndex={0}
             onClick={() => onSelect?.(script)}
           >
-            <ScrollTextIcon size={20} />
+            {script.language === "javascript" ? (
+              <FileCode size={20} />
+            ) : script.language === "typescript" ? (
+              <FileType size={20} />
+            ) : (
+              <ScrollTextIcon size={20} />
+            )}
             <span className="w-0 grow text-nowrap overflow-hidden text-ellipsis">
               {script.name}
             </span>
             <IconButton
               onClick={() => onDelete?.(script)}
-              className="w-9 h-9 p-2 opacity-0 group-hover:opacity-100"
+              className="w-9 h-9 p-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
               title="Delete"
             >
               <TrashIcon size={16} />

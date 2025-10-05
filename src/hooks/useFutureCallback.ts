@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import type { MutableRefObject } from "preact/compat";
+import { useRef } from "preact/hooks";
 
 interface FutureCallbackState<Args extends unknown[], Ret> {
   callback: (...args: Args) => Ret;
@@ -9,13 +10,12 @@ interface FutureCallbackState<Args extends unknown[], Ret> {
 export function useFutureCallback<Args extends unknown[], Ret>(
   callback: (...args: Args) => Ret
 ): (...args: Args) => Ret {
-  const callbackRef: React.MutableRefObject<FutureCallbackState<Args, Ret>> =
-    useRef({
-      callback,
-      stableCallback(this: unknown, ...args: Args): Ret {
-        return callbackRef.current.callback.apply(this, args);
-      },
-    });
+  const callbackRef: MutableRefObject<FutureCallbackState<Args, Ret>> = useRef({
+    callback,
+    stableCallback(this: unknown, ...args: Args): Ret {
+      return callbackRef.current.callback.apply(this, args);
+    },
+  });
   callbackRef.current.callback = callback;
 
   return callbackRef.current.stableCallback;

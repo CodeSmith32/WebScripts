@@ -1,42 +1,36 @@
-import { useState } from "preact/hooks";
-import type { ScriptLanguage, StoredScript } from "../../includes/webscripts";
+import type { ScriptLanguage } from "../../includes/webscripts";
 import { Monaco } from "../Monaco";
 import { TextBox } from "../TextBox";
 import { IconButton } from "../IconButton";
 import { XIcon } from "lucide-preact";
 import { Dropdown, Option } from "../Dropdown";
+import type { EditorModelData } from "../../hooks/useEditorModel";
 
 export interface EditorPanelProps {
-  script: StoredScript;
+  model: EditorModelData;
   onClose?: () => void;
 }
 
-export const EditorPanel = ({ script, onClose }: EditorPanelProps) => {
-  const [language, setLanguage] = useState(script.language);
-  const [code, setCode] = useState(script.code);
-  const [name, setName] = useState(script.name);
-
-  const [saved, setSaved] = useState(true);
+export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
+  const { script } = model;
 
   return (
     <div className="absolute inset-0 flex flex-col bg-black/40">
       <div className="h-12 flex flex-row justify-between items-center gap-2">
         <TextBox
           className="ml-2"
-          value={name}
+          value={script.name}
           onChange={(evt) => {
-            setName((evt.target as HTMLInputElement).value);
-            setSaved(false);
+            model.setName((evt.target as HTMLInputElement).value);
           }}
         />
 
         <Dropdown
-          value={language}
+          value={script.language}
           onChange={(evt) => {
-            setLanguage(
+            model.setLanguage(
               (evt.target as HTMLSelectElement).value as ScriptLanguage
             );
-            setSaved(false);
           }}
         >
           <Option value="javascript">JavaScript</Option>
@@ -50,7 +44,7 @@ export const EditorPanel = ({ script, onClose }: EditorPanelProps) => {
         </IconButton>
       </div>
       <div className="h-0 grow flex flex-col">
-        <Monaco language={language} initialValue={code} />
+        <Monaco language={script.language} model={model.model} />
       </div>
     </div>
   );

@@ -3,12 +3,11 @@ import { MonacoEditor, MonacoLanguages } from "../includes/monacoSetup";
 import type { ScriptLanguage } from "../includes/webscripts";
 
 export interface MonacoProps {
-  initialValue: string;
-  onChange?: (value: string) => void;
+  model: MonacoEditor.ITextModel;
   language: ScriptLanguage;
 }
 
-export const Monaco = ({ initialValue, onChange, language }: MonacoProps) => {
+export const Monaco = ({ model, language }: MonacoProps) => {
   const [editor, setEditor] =
     useState<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -19,10 +18,7 @@ export const Monaco = ({ initialValue, onChange, language }: MonacoProps) => {
       setEditor((editor) => {
         if (editor) return editor;
 
-        const model = MonacoEditor.createModel(initialValue, language);
-
         editor = MonacoEditor.create(editorRef.current!, {
-          value: initialValue,
           language,
           theme: "theme",
           automaticLayout: true,

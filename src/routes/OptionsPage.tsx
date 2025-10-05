@@ -8,6 +8,7 @@ import { cn } from "../includes/classes";
 import { BlankPanel } from "../components/panels/BlankPanel";
 import { SettingsPanel } from "../components/panels/SettingsPanel";
 import { EditorPanel } from "../components/panels/EditorPanel";
+import { useEditorModel } from "../hooks/useEditorModel";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -15,6 +16,11 @@ export const OptionsPage = () => {
   const { data } = useOptionsData();
 
   const [active, setActive] = useState<StoredScript | symbol | null>(null);
+
+  const currentModel = useEditorModel(
+    typeof active === "symbol" ? null : active,
+    data?.saveAllScripts
+  );
 
   const onSettings = () => {
     setActive(settingsIdentifier);
@@ -54,7 +60,13 @@ export const OptionsPage = () => {
           {active === settingsIdentifier ? (
             <SettingsPanel />
           ) : active && typeof active === "object" ? (
-            <EditorPanel script={active} onClose={() => setActive(null)} />
+            currentModel ? (
+              <EditorPanel
+                key={active.id}
+                model={currentModel}
+                onClose={() => setActive(null)}
+              />
+            ) : null
           ) : (
             <BlankPanel />
           )}

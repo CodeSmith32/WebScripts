@@ -73,5 +73,10 @@ export const tabSendMessage = async <T>(
   )(tab.id, message, options);
 };
 
+/** Return a promise that resolves after the given number of milliseconds. */
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Return -1, 1, or 0 based on the lexicographical ordering of the two arguments. */
+export const lexSort = <T extends string | number>(a: T, b: T) =>
+  a < b ? -1 : a > b ? 1 : 0;

@@ -1,5 +1,6 @@
 import { CSPHeader, CSPValue } from "./csp";
 import { Chrome, hostFromURL } from "./utils";
+import { wrapAsyncLast, wrapAsyncMerge } from "./wrapAsync";
 
 export type ScriptLanguage = "typescript" | "javascript";
 
@@ -16,15 +17,17 @@ export type MessageTypes = {
 };
 
 class WebScripts {
-  /** Save all user scripts. */
-  async saveScripts(scripts: StoredScript[]): Promise<void> {
-    await Chrome.storage.local.set({ scripts });
-  }
+  /** Save all user scripts. Async-wrapped to prevent simultaneous calls. */
+  saveScripts = wrapAsyncLast(
+    async (scripts: StoredScript[]): Promise<void> => {
+      await Chrome.storage.local.set({ scripts });
+    }
+  );
 
-  /** Load all user scripts. */
-  async loadScripts(): Promise<StoredScript[]> {
+  /** Load all user scripts. Async-wrapped to prevent simultaneous calls. */
+  loadScripts = wrapAsyncMerge(async (): Promise<StoredScript[]> => {
     return (await Chrome.storage.local.get("scripts"))?.scripts ?? [];
-  }
+  });
 
   /** Check if url matches the pattern-list for a user script. */
   match(url: string, patterns: string[]): boolean {
@@ -124,10 +127,10 @@ class WebScripts {
     return csp.toString();
   }
 
-  /** Open scripts management page. */
-  async openEditor(refer: string) {
+  /** Open scripts management page. Async-wrapped to prevent simultaneous calls. */
+  openEditor = wrapAsyncMerge(async (refer: string) => {
     await Chrome.storage.local.set({ refer });
     await Chrome.runtime.openOptionsPage();
-  }
+  });
 }
 export const webScripts = new WebScripts();
