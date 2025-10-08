@@ -56,7 +56,7 @@ export const OptionsPage = () => {
           />
         </div>
 
-        <div className="w-0 grow-[4] flex relative">
+        <div className="w-0 grow-[4] flex relative mr-2 mb-2 rounded-lg overflow-hidden">
           {active === settingsIdentifier ? (
             <SettingsPanel />
           ) : active && typeof active === "object" ? (

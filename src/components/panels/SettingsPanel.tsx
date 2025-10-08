@@ -1,3 +1,3 @@
 export const SettingsPanel = () => {
-  return <div className="flex absolute inset-0"></div>;
+  return <div className="absolute inset-0 flex bg-black/40"></div>;
 };

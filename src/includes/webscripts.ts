@@ -1,5 +1,5 @@
 import { CSPHeader, CSPValue } from "./csp";
-import { Chrome, hostFromURL } from "./utils";
+import { Chrome, hostFromURL, type SendMessageOptions } from "./utils";
 import { wrapAsyncLast, wrapAsyncMerge } from "./wrapAsync";
 
 export type ScriptLanguage = "typescript" | "javascript";
@@ -10,13 +10,34 @@ export interface StoredScript {
   patterns: string[];
   language: ScriptLanguage;
   code: string;
+  compiled: string;
 }
 
-export type MessageTypes = {
-  cmd: "listRunning";
-};
+export interface HeaderData {
+  name: string;
+  patterns: string[];
+  language: ScriptLanguage;
+}
+
+export type MessageTypes =
+  | { cmd: "listRunning" }
+  | { cmd: "updateBackgroundScripts" }
+  | { cmd: "reloaded" };
 
 class WebScripts {
+  /** Send a message to the extension runtime. */
+  async sendMessage<T>(
+    message: MessageTypes,
+    options: SendMessageOptions = {}
+  ): Promise<T | undefined> {
+    return await (
+      Chrome.runtime.sendMessage as (
+        message: unknown,
+        options?: SendMessageOptions
+      ) => Promise<T>
+    )(message, options);
+  }
+
   /** Save all user scripts. Async-wrapped to prevent simultaneous calls. */
   saveScripts = wrapAsyncLast(
     async (scripts: StoredScript[]): Promise<void> => {
@@ -64,14 +85,19 @@ class WebScripts {
   }
 
   /** Parse the header of a user script. */
-  parseHeader(code: string) {
-    const match = code.match(/^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/);
-    let name = "";
-    let patterns = [];
+  parseHeader(code: string): HeaderData {
+    const headerMatch = code.match(
+      /^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/
+    );
+    let name: string = "";
+    let patterns: string[] = [];
+    let language: ScriptLanguage = "javascript";
 
-    if (match) {
+    const allowedLanguages = ["typescript", "javascript"];
+
+    if (headerMatch) {
       const params = new Map();
-      const lines = match[1].split(/\r?\n/);
+      const lines = headerMatch[1].split(/\r?\n/);
 
       for (let line of lines) {
         let [, key, value] = line.match(/^\/+([\w\s]+):\s*(.*)$/) ?? [];
@@ -86,8 +112,45 @@ class WebScripts {
 
       if (params.has("name")) name = params.get("name")[0];
       if (params.has("match")) patterns = params.get("match");
+      if (params.has("language")) {
+        const lang = params.get("language")[0].toLowerCase();
+        language = allowedLanguages.includes(lang) ? lang : "javascript";
+      }
     }
-    return [name, patterns];
+    return { name, patterns, language };
+  }
+
+  updateHeader(code: string, { name, patterns, language }: HeaderData) {
+    const headerMatch = code.match(
+      /^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/
+    );
+
+    // generate header lines
+    const newHeaderLines: [string, string][] = [
+      ["name", name],
+      ["language", language],
+      ...patterns.map((pattern) => ["match", pattern] as [string, string]),
+    ];
+
+    // get longest line key (for padding alignment)
+    const longestLineName = newHeaderLines.reduce(
+      (max, [key]) => Math.max(max, key.length),
+      0
+    );
+
+    // generate new header
+    const newHeader = newHeaderLines
+      .map(
+        ([key, value]) =>
+          `/// ${key}${" ".repeat(longestLineName - key.length)}  ${value}`
+      )
+      .join("\n");
+
+    // replace old header with new header
+    code = code.slice(headerMatch?.[0].length ?? 0); // cut off old header
+    code = newHeader + "\n\n" + code.replace(/^\s+/, ""); // add new header and separating line
+
+    return code;
   }
 
   /** Process content-security-policy header: allow executing user scripts. */

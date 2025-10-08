@@ -1,9 +1,29 @@
 import { browserName, Chrome, type HttpHeader } from "./includes/utils";
-import { webScripts } from "./includes/webscripts";
+import {
+  webScripts,
+  type MessageTypes,
+  type StoredScript,
+} from "./includes/webscripts";
 
-const match = async (url: string) => {
-  const scripts = await webScripts.loadScripts();
+let scripts: StoredScript[] = [];
 
+// reload scripts
+const reloadScripts = async () => {
+  scripts = await webScripts.loadScripts();
+};
+reloadScripts();
+
+// listen for script updates and reload when changes occur
+Chrome.runtime.onMessage.addListener((message: MessageTypes) => {
+  switch (message.cmd) {
+    case "updateBackgroundScripts":
+      reloadScripts();
+      break;
+  }
+});
+
+// test if url matches against any script patterns
+const match = (url: string) => {
   for (const { patterns } of scripts) {
     if (webScripts.match(url, patterns)) return true;
   }
@@ -13,8 +33,8 @@ const match = async (url: string) => {
 if (browserName === "firefox") {
   // safely tweak CSP on Firefox
   Chrome.webRequest.onHeadersReceived.addListener(
-    async (evt) => {
-      if (!(await match(evt.url))) return {};
+    (evt) => {
+      if (!match(evt.url)) return {};
 
       // process response headers
       const headers: HttpHeader[] = evt.responseHeaders ?? [];
@@ -48,6 +68,8 @@ if (browserName === "firefox") {
 } else if (browserName === "chrome") {
   // Remove CSP headers on Chrome
   Chrome.webNavigation.onBeforeNavigate.addListener((evt) => {
+    if (!match(evt.url)) return;
+
     Chrome.declarativeNetRequest.updateSessionRules({
       removeRuleIds: [1],
       addRules: [

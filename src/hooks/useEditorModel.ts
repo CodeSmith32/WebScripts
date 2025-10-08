@@ -1,8 +1,13 @@
 import { useMemo, useRef, useState } from "preact/hooks";
 import { MonacoEditor } from "../includes/monacoSetup";
-import { type ScriptLanguage, type StoredScript } from "../includes/webscripts";
+import {
+  webScripts,
+  type ScriptLanguage,
+  type StoredScript,
+} from "../includes/webscripts";
 import { useCarried } from "./useCarried";
 import { useFutureCallback } from "./useFutureCallback";
+import { CodePack } from "../includes/codepack";
 
 export interface EditorModelData {
   script: StoredScript;
@@ -14,6 +19,7 @@ export interface EditorModelData {
   setCode: (code: string) => void;
   updateCode: () => void;
   setLanguage: (language: ScriptLanguage) => void;
+  rebuildHeader: () => void;
 }
 
 export const useEditorModel = (
@@ -37,7 +43,21 @@ export const useEditorModel = (
         return monacoModels.current[script.id];
       }
 
-      const model = MonacoEditor.createModel(script.code);
+      const model = MonacoEditor.createModel(CodePack.unpack(script.code));
+
+      // rebuild header in code
+      const rebuildHeader = () => {
+        const prevCode = model.getValue();
+        const code = webScripts.updateHeader(prevCode, {
+          name: script.name,
+          language: script.language,
+          patterns: script.patterns,
+        });
+        if (prevCode === code) return;
+
+        model.setValue(code);
+        setCode(code);
+      };
 
       // update whether or not the script is saved
       const setSaved = (saved: boolean) => {
@@ -53,15 +73,14 @@ export const useEditorModel = (
 
       // update the script code
       const setCode = (code: string) => {
-        script.code = code;
+        script.code = CodePack.pack(code);
         setSaved(false);
       };
 
       // update the script code from the Monaco model
       const updateCode = () => {
-        script.code = model.getValue(
-          MonacoEditor.EndOfLinePreference.LF,
-          false
+        script.code = CodePack.pack(
+          model.getValue(MonacoEditor.EndOfLinePreference.LF, false)
         );
         setSaved(false);
       };
@@ -75,6 +94,7 @@ export const useEditorModel = (
       // save script
       const save = async () => {
         await saveScripts();
+        await webScripts.sendMessage({ cmd: "updateBackgroundScripts" });
         setSaved(true);
       };
 
@@ -93,6 +113,7 @@ export const useEditorModel = (
         setCode,
         updateCode,
         setLanguage,
+        rebuildHeader,
       };
       monacoModels.current[script.id] = modelData;
 

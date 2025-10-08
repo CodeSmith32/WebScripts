@@ -2,6 +2,7 @@ import { useState } from "preact/hooks";
 import { webScripts, type StoredScript } from "../includes/webscripts";
 import { useAsyncLoader } from "./useAsyncLoader";
 import { lexSort } from "../includes/utils";
+import { CodePack } from "../includes/codepack";
 
 export const useOptionsData = () => {
   const [, refresh] = useState({});
@@ -19,16 +20,20 @@ export const useOptionsData = () => {
         {
           id: "example",
           name: "Example Script",
-          code: 'const x: string = "hello world";\nconsole.log(x);',
           language: "typescript",
           patterns: ["/.*/"],
+          code: CodePack.pack(
+            'const x: string = "hello world";\nconsole.log(x);'
+          ),
+          compiled: "",
         },
         {
           id: "example2",
           name: "Test",
-          code: 'console.log("Test!");',
           language: "javascript",
           patterns: [],
+          code: CodePack.pack('console.log("Test!");'),
+          compiled: "",
         }
       );
     }

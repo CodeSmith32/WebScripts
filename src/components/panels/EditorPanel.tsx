@@ -22,6 +22,7 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
           value={script.name}
           onChange={(evt) => {
             model.setName((evt.target as HTMLInputElement).value);
+            model.rebuildHeader();
           }}
         />
 
@@ -31,6 +32,7 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
             model.setLanguage(
               (evt.target as HTMLSelectElement).value as ScriptLanguage
             );
+            model.rebuildHeader();
           }}
         >
           <Option value="javascript">JavaScript</Option>

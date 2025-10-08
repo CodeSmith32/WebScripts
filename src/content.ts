@@ -1,4 +1,5 @@
-import { Chrome, injectScript, sendMessage } from "./includes/utils";
+import { CodePack } from "./includes/codepack";
+import { Chrome, injectScript } from "./includes/utils";
 import { type MessageTypes, webScripts } from "./includes/webscripts";
 
 // list of running scripts
@@ -20,15 +21,17 @@ const injectMatching = async () => {
   const scripts = await webScripts.loadScripts();
   const url = location.href;
 
-  for (const { id, patterns, code } of scripts) {
+  for (const { id, patterns, language, code, compiled } of scripts) {
     if (webScripts.match(url, patterns)) {
       running.push(id);
-      injectScript(code);
+
+      const js = CodePack.unpack(language === "typescript" ? compiled : code);
+      injectScript(js);
     }
   }
 
   try {
-    await sendMessage({ cmd: "reloaded" });
+    await webScripts.sendMessage({ cmd: "reloaded" } satisfies MessageTypes);
   } catch (_err) {}
 };
 

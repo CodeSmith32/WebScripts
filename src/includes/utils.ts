@@ -1,6 +1,7 @@
-export type HttpHeader =
-  | browser.webRequest._HttpHeaders
-  | chrome.webRequest.HttpHeader;
+export type HttpHeader = Omit<
+  browser.webRequest._HttpHeaders & chrome.webRequest.HttpHeader,
+  "binaryValue"
+>;
 
 export type SendMessageOptions = browser.runtime._SendMessageOptions &
   chrome.runtime.MessageOptions;
@@ -26,19 +27,6 @@ export const injectScript = (code: string) => {
 
   el.appendChild(script);
   el.removeChild(script);
-};
-
-/** Send a message to the extension runtime. */
-export const sendMessage = async <T>(
-  message: unknown,
-  options: SendMessageOptions = {}
-): Promise<T | undefined> => {
-  return await (
-    Chrome.runtime.sendMessage as (
-      message: unknown,
-      options?: SendMessageOptions
-    ) => Promise<T>
-  )(message, options);
 };
 
 /** Get the domain:port part from a url. */
@@ -80,3 +68,18 @@ export const wait = (ms: number) =>
 /** Return -1, 1, or 0 based on the lexicographical ordering of the two arguments. */
 export const lexSort = <T extends string | number>(a: T, b: T) =>
   a < b ? -1 : a > b ? 1 : 0;
+
+export const randStrFactory = (alphabet: string) => {
+  const alphaLen = alphabet.length;
+
+  return (length: number) => {
+    let out = "";
+    for (let i = 0; i < length; i++)
+      out += alphabet[(Math.random() * alphaLen) | 0];
+    return out;
+  };
+};
+
+export const randAlphaNum = randStrFactory(
+  "abcdefghijklmnopqrstuvwxyz0123456789"
+);
