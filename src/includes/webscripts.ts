@@ -120,6 +120,7 @@ class WebScripts {
     return { name, patterns, language };
   }
 
+  /** Safely update the header in the code to use the newly provided field values. */
   updateHeader(code: string, { name, patterns, language }: HeaderData) {
     const headerMatch = code.match(
       /^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/
