@@ -48,6 +48,6 @@ export const CodePack = {
     const [dictStr, code] = packed.split(/:([\s\S]+)$/);
     const dict = dictStr.split(",");
 
-    return code.replace(rgxWord, (m) => dict[strToNum(m)]);
+    return (code || "").replace(rgxWord, (m) => dict[strToNum(m)] || "");
   },
 };

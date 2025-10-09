@@ -20,18 +20,16 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
         <TextBox
           className="ml-2"
           value={script.name}
-          onChange={(evt) => {
-            model.setName((evt.target as HTMLInputElement).value);
+          onValueChange={(value) => {
+            script.name = value;
             model.rebuildHeader();
           }}
         />
 
         <Dropdown
           value={script.language}
-          onChange={(evt) => {
-            model.setLanguage(
-              (evt.target as HTMLSelectElement).value as ScriptLanguage
-            );
+          onValueChange={(value) => {
+            script.language = value as ScriptLanguage;
             model.rebuildHeader();
           }}
         >

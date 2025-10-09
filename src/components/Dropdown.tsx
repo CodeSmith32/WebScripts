@@ -2,9 +2,16 @@ import type { OptionHTMLAttributes, SelectHTMLAttributes } from "preact";
 import { cn } from "../includes/classes";
 import { useId } from "preact/hooks";
 
-export interface DropdownProps extends SelectHTMLAttributes {}
+export interface DropdownProps extends SelectHTMLAttributes {
+  onValueChange?: (value: string) => void;
+}
 
-export const Dropdown = ({ className, name, ...props }: DropdownProps) => {
+export const Dropdown = ({
+  className,
+  name,
+  onValueChange,
+  ...props
+}: DropdownProps) => {
   const fallbackName = useId();
 
   return (
@@ -14,6 +21,9 @@ export const Dropdown = ({ className, name, ...props }: DropdownProps) => {
         className
       )}
       name={name ?? fallbackName}
+      onChange={(evt) => {
+        onValueChange?.((evt.target as HTMLSelectElement).value);
+      }}
       {...props}
     />
   );

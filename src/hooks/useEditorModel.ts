@@ -1,24 +1,16 @@
 import { useMemo, useRef, useState } from "preact/hooks";
 import { MonacoEditor } from "../includes/monacoSetup";
-import {
-  webScripts,
-  type ScriptLanguage,
-  type StoredScript,
-} from "../includes/webscripts";
+import { webScripts, type StoredScript } from "../includes/webscripts";
 import { useCarried } from "./useCarried";
 import { useFutureCallback } from "./useFutureCallback";
-import { CodePack } from "../includes/codepack";
+import { EditableScript } from "../includes/editableScript";
+import { debounce } from "../includes/debounce";
 
 export interface EditorModelData {
-  script: StoredScript;
+  script: EditableScript;
   model: MonacoEditor.ITextModel;
-  saved: boolean;
   save: () => void;
-  setSaved: (saved: boolean) => void;
-  setName: (name: string) => void;
-  setCode: (code: string) => void;
   updateCode: () => void;
-  setLanguage: (language: ScriptLanguage) => void;
   rebuildHeader: () => void;
 }
 
@@ -43,76 +35,49 @@ export const useEditorModel = (
         return monacoModels.current[script.id];
       }
 
-      const model = MonacoEditor.createModel(CodePack.unpack(script.code));
+      const editorScript = new EditableScript(script);
+      const model = MonacoEditor.createModel(editorScript.code);
 
       // rebuild header in code
       const rebuildHeader = () => {
-        const prevCode = model.getValue();
-        const code = webScripts.updateHeader(prevCode, {
-          name: script.name,
-          language: script.language,
-          patterns: script.patterns,
-        });
-        if (prevCode === code) return;
-
-        model.setValue(code);
-        setCode(code);
-      };
-
-      // update whether or not the script is saved
-      const setSaved = (saved: boolean) => {
-        modelData.saved = saved;
-        if (carried.script?.id === script.id) refresh({});
-      };
-
-      // update the script name
-      const setName = (name: string) => {
-        script.name = name;
-        setSaved(false);
-      };
-
-      // update the script code
-      const setCode = (code: string) => {
-        script.code = CodePack.pack(code);
-        setSaved(false);
+        if (editorScript.regenerateHeader()) {
+          model.setValue(editorScript.code);
+        }
       };
 
       // update the script code from the Monaco model
-      const updateCode = () => {
-        script.code = CodePack.pack(
-          model.getValue(MonacoEditor.EndOfLinePreference.LF, false)
+      const updateCode = debounce(() => {
+        editorScript.code = model.getValue(
+          MonacoEditor.EndOfLinePreference.LF,
+          false
         );
-        setSaved(false);
-      };
-
-      // update script language
-      const setLanguage = (language: ScriptLanguage) => {
-        script.language = language;
-        setSaved(false);
-      };
+        editorScript.reloadHeader();
+        refresh({});
+      }, 500);
 
       // save script
       const save = async () => {
+        // update stored script
+        editorScript.storedScript();
+
+        // save
         await saveScripts();
+        editorScript.markSaved();
+
+        // trigger update in background script
         await webScripts.sendMessage({ cmd: "updateBackgroundScripts" });
-        setSaved(true);
       };
 
       // script changed
       model.onDidChangeContent(() => {
-        setSaved(false);
+        updateCode();
       });
 
       const modelData: EditorModelData = {
-        script,
+        script: editorScript,
         model,
-        saved: true,
         save,
-        setSaved,
-        setName,
-        setCode,
         updateCode,
-        setLanguage,
         rebuildHeader,
       };
       monacoModels.current[script.id] = modelData;

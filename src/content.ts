@@ -25,7 +25,9 @@ const injectMatching = async () => {
     if (webScripts.match(url, patterns)) {
       running.push(id);
 
-      const js = CodePack.unpack(language === "typescript" ? compiled : code);
+      const js = CodePack.unpack(
+        language === "typescript" ? compiled ?? "" : code
+      );
       injectScript(js);
     }
   }

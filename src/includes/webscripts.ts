@@ -10,7 +10,7 @@ export interface StoredScript {
   patterns: string[];
   language: ScriptLanguage;
   code: string;
-  compiled: string;
+  compiled: string | null;
 }
 
 export interface HeaderData {
@@ -125,24 +125,46 @@ class WebScripts {
       /^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/
     );
 
+    // parse old lines
+    let lines: [string, string][] = (headerMatch?.[1].split(/\r?\n/) ?? []).map(
+      (line) => {
+        let [, key, value] = line.match(/^\/+([\w\s]+):\s*(.*)$/) ?? [];
+        return [key.trim().toLowerCase(), value];
+      }
+    );
+
+    // line mutation utilities
+    const removeKey = (key: string) => {
+      lines = lines.filter((line) => line[0] !== key);
+    };
+    const updateKey = (key: string, value: string) => {
+      let found = false;
+      lines = lines.map((line) => {
+        if (line[0] !== key) return line;
+        found = true;
+        return [line[0], value];
+      });
+      if (!found) lines.unshift([key, value]);
+    };
+
     // generate header lines
-    const newHeaderLines: [string, string][] = [
-      ["name", name],
-      ["language", language],
+
+    removeKey("match");
+    updateKey("language", language);
+    updateKey("name", name);
+    lines = [
+      ...lines,
       ...patterns.map((pattern) => ["match", pattern] as [string, string]),
     ];
 
     // get longest line key (for padding alignment)
-    const longestLineName = newHeaderLines.reduce(
-      (max, [key]) => Math.max(max, key.length),
-      0
-    );
+    const nameLen = lines.reduce((max, [key]) => Math.max(max, key.length), 0);
 
     // generate new header
-    const newHeader = newHeaderLines
+    const newHeader = lines
       .map(
         ([key, value]) =>
-          `/// ${key}${" ".repeat(longestLineName - key.length)}  ${value}`
+          `/// ${key}:${" ".repeat(nameLen - key.length)} ${value}`
       )
       .join("\n");
 
