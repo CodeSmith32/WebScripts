@@ -65,7 +65,11 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
         </IconButton>
       </div>
       <div className="h-0 grow flex flex-col">
-        <Monaco language={script.language} model={model.model} />
+        <Monaco
+          language={script.language}
+          model={model.model}
+          editorContainer={model}
+        />
       </div>
     </div>
   );

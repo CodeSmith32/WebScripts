@@ -7,12 +7,12 @@ import { EditableScript } from "../includes/editableScript";
 import { debounce } from "../includes/debounce";
 import prettier from "prettier/standalone";
 import prettierBabel from "prettier/plugins/babel";
-
-const prettierEstree = (await import("prettier/plugins/estree")).default;
+import prettierEstree from "prettier/plugins/estree";
 
 export interface EditorModelData {
   script: EditableScript;
   model: MonacoEditor.ITextModel;
+  editor: MonacoEditor.IStandaloneCodeEditor | null;
   save: () => Promise<void>;
   updateCode: () => void;
   getEditorCode: () => string;
@@ -51,7 +51,14 @@ export const useEditorModel = (
       };
       // update monaco editor code from string
       const setEditorCode = (code: string) => {
-        model.setValue(code);
+        // get current selection
+        const selection = [...(modelData.editor?.getSelections() ?? [])];
+        // update value and restore selection
+        model.pushEditOperations(
+          [],
+          [{ range: model.getFullModelRange(), text: code }],
+          () => selection
+        );
       };
 
       // rebuild header in code
@@ -61,13 +68,46 @@ export const useEditorModel = (
         }
       };
 
+      // format code with prettier, and update editor
       const prettifyCode = async () => {
         const code = getEditorCode();
-        const updatedCode = await prettier.format(code, {
-          parser: "babel",
-          plugins: [prettierBabel, prettierEstree],
-        });
-        setEditorCode(updatedCode);
+        const prettierOptions = {
+          parser: "babel-ts",
+          plugins: [prettierEstree, prettierBabel],
+          cursorOffset: -1,
+        };
+
+        if (modelData.editor) {
+          // editor is available: maintain cursor position
+          let pos = modelData.editor.getPosition();
+          let offset = pos ? model.getOffsetAt(pos) : 0;
+
+          prettierOptions.cursorOffset = offset;
+
+          const { formatted, cursorOffset: newOffset } =
+            await prettier.formatWithCursor(code, prettierOptions);
+          if (formatted === code) return;
+
+          if (newOffset !== -1) offset = newOffset;
+
+          model.pushEditOperations(
+            [],
+            [{ range: model.getFullModelRange(), text: formatted }],
+            () => null
+          );
+
+          pos = model.getPositionAt(offset);
+          modelData.editor.setPosition(pos);
+        } else {
+          // editor not available: just format the code
+          const formatted = await prettier.format(code, prettierOptions);
+
+          model.pushEditOperations(
+            [],
+            [{ range: model.getFullModelRange(), text: formatted }],
+            () => null
+          );
+        }
       };
 
       // update the script code from the Monaco model
@@ -99,6 +139,7 @@ export const useEditorModel = (
       const modelData: EditorModelData = {
         script: editorScript,
         model,
+        editor: null,
         save,
         updateCode,
         getEditorCode,
