@@ -5,6 +5,7 @@ import { IconButton } from "../IconButton";
 import { XIcon } from "lucide-preact";
 import { Dropdown, Option } from "../Dropdown";
 import type { EditorModelData } from "../../hooks/useEditorModel";
+import { Checkbox } from "../Checkbox";
 
 export interface EditorPanelProps {
   model: EditorModelData;
@@ -15,7 +16,18 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
   const { script } = model;
 
   return (
-    <div className="absolute inset-0 flex flex-col bg-black/40">
+    <div
+      className="absolute inset-0 flex flex-col bg-black/40"
+      onKeyDown={async (evt) => {
+        if (evt.key === "s" && evt.ctrlKey) {
+          evt.preventDefault();
+          if (script.prettify) {
+            await model.prettifyCode();
+          }
+          await model.save();
+        }
+      }}
+    >
       <div className="h-12 flex flex-row justify-between items-center gap-2">
         <TextBox
           className="ml-2"
@@ -36,6 +48,15 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
           <Option value="javascript">JavaScript</Option>
           <Option value="typescript">TypeScript</Option>
         </Dropdown>
+
+        <Checkbox
+          label="Prettify"
+          checked={script.prettify}
+          onValueChange={(checked) => {
+            script.prettify = checked;
+            model.rebuildHeader();
+          }}
+        />
 
         <div className="grow" />
 

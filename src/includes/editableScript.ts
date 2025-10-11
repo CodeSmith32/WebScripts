@@ -18,7 +18,7 @@ const tsCompileOptions: ts.CompilerOptions = {
   experimentalDecorators: true,
 };
 
-const compile = (code: string, language: ScriptLanguage) =>
+const compile = (code: string, language: ScriptLanguage = "javascript") =>
   language === "typescript"
     ? CodePack.pack(ts.transpile(code, tsCompileOptions))
     : null;
@@ -57,12 +57,13 @@ export class EditableScript {
 
   /** Create an EditableScript from code, by parsing the header. */
   static fromCode(code: string) {
-    const { name, language, patterns } = webScripts.parseHeader(code);
+    const { name, language, patterns, prettify } = webScripts.parseHeader(code);
     const script: StoredScript = {
       id: randAlphaNum(16),
       name,
       patterns,
       language,
+      prettify,
       code: CodePack.pack(code),
       compiled: null,
     };
@@ -72,7 +73,7 @@ export class EditableScript {
   }
 
   /** If the script has unsaved changes. */
-  get saved() {
+  get saved(): boolean {
     return this.#saved;
   }
 
@@ -97,12 +98,12 @@ export class EditableScript {
   }
 
   /** The script id. */
-  get id() {
+  get id(): string {
     return this.#script.id;
   }
 
   /** The script name. */
-  get name() {
+  get name(): string {
     return this.#script.name;
   }
   set name(name: string) {
@@ -111,18 +112,28 @@ export class EditableScript {
   }
 
   /** The language the script was written in. */
-  get language() {
-    return this.#script.language;
+  get language(): ScriptLanguage {
+    return this.#script.language ?? "javascript";
   }
-  set language(language: ScriptLanguage) {
-    if (!scriptLanguages[language]) language = "javascript";
+  set language(language: ScriptLanguage | undefined) {
+    if (typeof language === "string" && !scriptLanguages[language]) {
+      language = "javascript";
+    }
     this.#script.language = language;
     this.#codeChanged = true; // compilation may be necessary
     this.markUnsaved();
   }
 
+  /** Whether or not code is prettified when saved. */
+  get prettify(): boolean {
+    return this.#script.prettify ?? false;
+  }
+  set prettify(prettify: boolean | undefined) {
+    this.#script.prettify = prettify;
+  }
+
   /** The url match patterns. */
-  get patterns() {
+  get patterns(): string[] {
     return this.#script.patterns ?? [];
   }
   set patterns(patterns: string[]) {
@@ -131,7 +142,7 @@ export class EditableScript {
   }
 
   /** The script code. */
-  get code() {
+  get code(): string {
     this.#code ??= CodePack.unpack(this.#script.code);
     return this.#code;
   }
@@ -143,11 +154,14 @@ export class EditableScript {
 
   /** Parses the header and updates the script's details accordingly. */
   reloadHeader(): boolean {
-    const { name, patterns, language } = webScripts.parseHeader(this.code);
+    const { name, patterns, language, prettify } = webScripts.parseHeader(
+      this.code
+    );
     if (
       this.#script.name === name &&
       this.#script.language === language &&
-      arraysEqual(this.#script.patterns, patterns)
+      arraysEqual(this.#script.patterns, patterns) &&
+      this.#script.prettify === prettify
     ) {
       return false;
     }
@@ -155,6 +169,7 @@ export class EditableScript {
     this.#script.name = name;
     this.#script.patterns = patterns;
     this.#script.language = language;
+    this.#script.prettify = prettify;
     this.markUnsaved();
     return true;
   }

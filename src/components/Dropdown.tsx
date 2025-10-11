@@ -10,6 +10,7 @@ export const Dropdown = ({
   className,
   name,
   onValueChange,
+  onChange,
   ...props
 }: DropdownProps) => {
   const fallbackName = useId();
@@ -22,6 +23,7 @@ export const Dropdown = ({
       )}
       name={name ?? fallbackName}
       onChange={(evt) => {
+        onChange?.(evt);
         onValueChange?.((evt.target as HTMLSelectElement).value);
       }}
       {...props}

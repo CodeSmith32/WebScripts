@@ -8,15 +8,17 @@ export interface StoredScript {
   id: string;
   name: string;
   patterns: string[];
-  language: ScriptLanguage;
+  language?: ScriptLanguage;
+  prettify?: boolean;
   code: string;
-  compiled: string | null;
+  compiled?: string | null;
 }
 
 export interface HeaderData {
   name: string;
   patterns: string[];
-  language: ScriptLanguage;
+  language?: ScriptLanguage;
+  prettify?: boolean;
 }
 
 export type MessageTypes =
@@ -91,12 +93,17 @@ class WebScripts {
     );
     let name: string = "";
     let patterns: string[] = [];
-    let language: ScriptLanguage = "javascript";
+    let language: ScriptLanguage | undefined = undefined;
+    let prettify: boolean | undefined = undefined;
 
     const allowedLanguages = ["typescript", "javascript"];
 
+    const parseBool = (value: string) => {
+      return ["true", "yes", "on"].includes(value.toLowerCase());
+    };
+
     if (headerMatch) {
-      const params = new Map();
+      const params = new Map<string, string[]>();
       const lines = headerMatch[1].split(/\r?\n/);
 
       for (let line of lines) {
@@ -110,18 +117,25 @@ class WebScripts {
         arr.push(value);
       }
 
-      if (params.has("name")) name = params.get("name")[0];
-      if (params.has("match")) patterns = params.get("match");
+      if (params.has("name")) name = params.get("name")![0];
+      if (params.has("match")) patterns = params.get("match")!;
+      if (params.has("prettify"))
+        prettify = parseBool(params.get("prettify")![0]);
       if (params.has("language")) {
-        const lang = params.get("language")[0].toLowerCase();
-        language = allowedLanguages.includes(lang) ? lang : "javascript";
+        const lang = params.get("language")![0].toLowerCase();
+        language = allowedLanguages.includes(lang)
+          ? (lang as ScriptLanguage)
+          : "javascript";
       }
     }
-    return { name, patterns, language };
+    return { name, patterns, language, prettify };
   }
 
   /** Safely update the header in the code to use the newly provided field values. */
-  updateHeader(code: string, { name, patterns, language }: HeaderData) {
+  updateHeader(
+    code: string,
+    { name, patterns, language, prettify }: HeaderData
+  ) {
     const headerMatch = code.match(
       /^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/
     );
@@ -138,7 +152,17 @@ class WebScripts {
     const removeKey = (key: string) => {
       lines = lines.filter((line) => line[0] !== key);
     };
-    const updateKey = (key: string, value: string) => {
+    const updateKey = (
+      key: string,
+      value: string | number | boolean | undefined
+    ) => {
+      if (value == null) {
+        removeKey(key);
+        return;
+      }
+
+      if (typeof value !== "string") value = "" + value;
+
       let found = false;
       lines = lines.map((line) => {
         if (line[0] !== key) return line;
@@ -151,6 +175,7 @@ class WebScripts {
     // generate header lines
 
     removeKey("match");
+    updateKey("prettify", prettify);
     updateKey("language", language);
     updateKey("name", name);
     lines = [

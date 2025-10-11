@@ -5,12 +5,19 @@ import { useCarried } from "./useCarried";
 import { useFutureCallback } from "./useFutureCallback";
 import { EditableScript } from "../includes/editableScript";
 import { debounce } from "../includes/debounce";
+import prettier from "prettier/standalone";
+import prettierBabel from "prettier/plugins/babel";
+
+const prettierEstree = (await import("prettier/plugins/estree")).default;
 
 export interface EditorModelData {
   script: EditableScript;
   model: MonacoEditor.ITextModel;
-  save: () => void;
+  save: () => Promise<void>;
   updateCode: () => void;
+  getEditorCode: () => string;
+  setEditorCode: (code: string) => void;
+  prettifyCode: () => Promise<void>;
   rebuildHeader: () => void;
 }
 
@@ -38,19 +45,34 @@ export const useEditorModel = (
       const editorScript = new EditableScript(script);
       const model = MonacoEditor.createModel(editorScript.code);
 
+      // get code from monaco editor as string
+      const getEditorCode = () => {
+        return model.getValue(MonacoEditor.EndOfLinePreference.LF, false);
+      };
+      // update monaco editor code from string
+      const setEditorCode = (code: string) => {
+        model.setValue(code);
+      };
+
       // rebuild header in code
       const rebuildHeader = () => {
         if (editorScript.regenerateHeader()) {
-          model.setValue(editorScript.code);
+          setEditorCode(editorScript.code);
         }
+      };
+
+      const prettifyCode = async () => {
+        const code = getEditorCode();
+        const updatedCode = await prettier.format(code, {
+          parser: "babel",
+          plugins: [prettierBabel, prettierEstree],
+        });
+        setEditorCode(updatedCode);
       };
 
       // update the script code from the Monaco model
       const updateCode = debounce(() => {
-        editorScript.code = model.getValue(
-          MonacoEditor.EndOfLinePreference.LF,
-          false
-        );
+        editorScript.code = getEditorCode();
         editorScript.reloadHeader();
         refresh({});
       }, 500);
@@ -58,6 +80,7 @@ export const useEditorModel = (
       // save script
       const save = async () => {
         // update stored script
+        updateCode.immediate();
         editorScript.storedScript();
 
         // save
@@ -78,6 +101,9 @@ export const useEditorModel = (
         model,
         save,
         updateCode,
+        getEditorCode,
+        setEditorCode,
+        prettifyCode,
         rebuildHeader,
       };
       monacoModels.current[script.id] = modelData;

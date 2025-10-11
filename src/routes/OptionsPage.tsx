@@ -26,6 +26,10 @@ export const OptionsPage = () => {
     setActive(settingsIdentifier);
   };
 
+  const onClose = () => {
+    setActive(null);
+  };
+
   return (
     <div className="text-white fixed inset-0 bg-neutral-900 flex flex-col">
       <div className="h-20 flex flex-row justify-center items-center gap-4">
@@ -58,13 +62,13 @@ export const OptionsPage = () => {
 
         <div className="w-0 grow-[4] flex relative mr-2 mb-2 rounded-lg overflow-hidden">
           {active === settingsIdentifier ? (
-            <SettingsPanel />
+            <SettingsPanel onClose={onClose} />
           ) : active && typeof active === "object" ? (
             currentModel ? (
               <EditorPanel
                 key={active.id}
                 model={currentModel}
-                onClose={() => setActive(null)}
+                onClose={onClose}
               />
             ) : null
           ) : (
