@@ -17,7 +17,7 @@ export const PopupFrame = () => {
   });
 
   return (
-    <div className="bg-neutral-900 p-2 text-white min-w-xs">
+    <div className="bg-background p-2 text-white min-w-xs">
       {!available ? (
         <div className="flex flex-col items-center gap-1.5 my-3">
           <Spinner />

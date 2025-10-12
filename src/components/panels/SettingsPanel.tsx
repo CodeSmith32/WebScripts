@@ -7,7 +7,7 @@ export interface SettingsPanelProps {
 
 export const SettingsPanel = ({ onClose }: SettingsPanelProps) => {
   return (
-    <div className="absolute inset-0 flex flex-col bg-black/40">
+    <div className="absolute inset-0 flex flex-col bg-background-dark">
       <div className="h-12 flex flex-row justify-between items-center gap-2 mb-2">
         <div className="w-12 ml-2" />
 

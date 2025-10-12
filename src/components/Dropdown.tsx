@@ -18,7 +18,7 @@ export const Dropdown = ({
   return (
     <select
       className={cn(
-        "px-4 py-1 rounded-md border-none bg-neutral-900 min-w-40",
+        "px-4 py-1 rounded-md border-none bg-background min-w-40",
         className
       )}
       name={name ?? fallbackName}
@@ -36,7 +36,7 @@ export interface OptionProps extends OptionHTMLAttributes {}
 export const Option = ({ className, ...props }: OptionProps) => {
   return (
     <option
-      className={cn("bg-neutral-950 text-white p-4", className)}
+      className={cn("bg-background text-white p-4", className)}
       {...props}
     />
   );

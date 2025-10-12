@@ -4,3 +4,11 @@ html,
 body {
   font-size: 16px;
 }
+
+@theme {
+  --color-primary: #3760a4;
+  --color-secondary: #e8ca37;
+  --color-background: #171717;
+  --color-background-dark: #0e0e0e;
+  --color-text: white;
+}

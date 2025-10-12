@@ -18,7 +18,7 @@ export const TextBox = ({
   return (
     <input
       className={cn(
-        "px-4 py-1 rounded-md border-none bg-neutral-900 w-60",
+        "px-4 py-1 rounded-md border-none bg-background w-60",
         className
       )}
       name={name ?? fallbackName}

@@ -17,7 +17,7 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
 
   return (
     <div
-      className="absolute inset-0 flex flex-col bg-black/40"
+      className="absolute inset-0 flex flex-col bg-background-dark"
       onKeyDown={async (evt) => {
         if (evt.key === "s" && evt.ctrlKey) {
           evt.preventDefault();

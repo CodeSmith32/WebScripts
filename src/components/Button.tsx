@@ -1,8 +1,17 @@
 import type { ComponentChildren } from "preact";
 import { cn } from "../includes/classes";
 
+const variants = {
+  primary: "bg-primary",
+  secondary: "bg-neutral-700",
+};
+Object.setPrototypeOf(variants, null);
+
+export type ButtonVariantType = keyof typeof variants;
+
 export interface ButtonProps {
   disabled?: boolean;
+  variant?: ButtonVariantType;
   children?: ComponentChildren;
   onClick?: () => void;
   className?: string;
@@ -11,6 +20,7 @@ export interface ButtonProps {
 
 export const Button = ({
   disabled,
+  variant,
   children,
   onClick,
   className,
@@ -19,8 +29,9 @@ export const Button = ({
   return (
     <button
       className={cn(
-        "rounded-md bg-transparent cursor-pointer px-5 py-2 text-center",
-        "hover:bg-white/10 active:bg-black/90",
+        "rounded-md bg-transparent cursor-pointer px-5 py-2 text-center relative z-0 overflow-hidden " +
+          "after:absolute after:-z-10 after:inset-0 after:pointer-events-none hover:after:bg-white/10 active:after:bg-black/50",
+        variant && variants[variant],
         disabled && "opacity-70",
         className
       )}
