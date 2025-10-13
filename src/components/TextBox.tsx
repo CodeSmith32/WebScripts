@@ -10,7 +10,7 @@ export const TextBox = ({
   className,
   name,
   onValueChange,
-  onChange,
+  onInput,
   ...props
 }: TextBoxProps) => {
   const fallbackName = useId();
@@ -22,8 +22,8 @@ export const TextBox = ({
         className
       )}
       name={name ?? fallbackName}
-      onChange={(evt) => {
-        onChange?.(evt);
+      onInput={(evt) => {
+        onInput?.(evt);
         onValueChange?.((evt.target as HTMLInputElement).value);
       }}
       {...props}

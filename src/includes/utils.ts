@@ -12,7 +12,10 @@ export type SendTabMessageOptions = browser.tabs._SendMessageOptions &
 export type Tab = browser.tabs.Tab | chrome.tabs.Tab;
 
 /** The extension environment (whether for Chrome or Firefox). */
-export const Chrome = typeof browser !== "undefined" ? browser : chrome;
+export const Chrome =
+  typeof browser !== "undefined"
+    ? (browser as Partial<typeof browser>)
+    : (chrome as Partial<typeof chrome>);
 
 /** The browser being used, for switching on browser-specific logic ("chrome" or "firefox"). */
 export const browserName =
@@ -53,7 +56,7 @@ export const tabSendMessage = async <T>(
   if (!tab?.id) return undefined;
 
   return await (
-    Chrome.tabs.sendMessage as (
+    Chrome.tabs?.sendMessage as (
       tabId: number,
       message: unknown,
       options: SendTabMessageOptions

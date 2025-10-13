@@ -14,7 +14,7 @@ const reloadScripts = async () => {
 reloadScripts();
 
 // listen for script updates and reload when changes occur
-Chrome.runtime.onMessage.addListener((message: MessageTypes) => {
+Chrome.runtime?.onMessage.addListener((message: MessageTypes) => {
   switch (message.cmd) {
     case "updateBackgroundScripts":
       reloadScripts();
@@ -32,7 +32,7 @@ const match = (url: string) => {
 
 if (browserName === "firefox") {
   // safely tweak CSP on Firefox
-  Chrome.webRequest.onHeadersReceived.addListener(
+  Chrome.webRequest?.onHeadersReceived.addListener(
     (evt) => {
       if (!match(evt.url)) return {};
 
@@ -67,10 +67,10 @@ if (browserName === "firefox") {
   );
 } else if (browserName === "chrome") {
   // Remove CSP headers on Chrome
-  Chrome.webNavigation.onBeforeNavigate.addListener((evt) => {
+  Chrome.webNavigation?.onBeforeNavigate.addListener((evt) => {
     if (!match(evt.url)) return;
 
-    Chrome.declarativeNetRequest.updateSessionRules({
+    Chrome.declarativeNetRequest?.updateSessionRules({
       removeRuleIds: [1],
       addRules: [
         {

@@ -1,14 +1,9 @@
-import {
-  FileCode,
-  FilePlus2Icon,
-  FileType,
-  ScrollTextIcon,
-  TrashIcon,
-} from "lucide-preact";
+import { FilePlus2Icon, TrashIcon } from "lucide-preact";
 import { cn } from "../includes/classes";
 import type { StoredScript } from "../includes/webscripts";
 import { IconButton } from "./IconButton";
 import { Button } from "./Button";
+import { ScriptIcon } from "./ScriptIcon";
 
 export interface ScriptListProps {
   scripts?: StoredScript[];
@@ -36,20 +31,23 @@ export const ScriptList = ({
               active === script && "bg-white/10"
             )}
             tabIndex={0}
-            onClick={() => onSelect?.(script)}
+            onClick={(evt) => {
+              if (!(evt as MouseEvent & { __handled?: boolean }).__handled) {
+                onSelect?.(script);
+              }
+            }}
           >
-            {script.language === "javascript" ? (
-              <FileCode size={20} />
-            ) : script.language === "typescript" ? (
-              <FileType size={20} />
-            ) : (
-              <ScrollTextIcon size={20} />
-            )}
+            <ScriptIcon script={script} />
+
             <span className="w-0 grow text-nowrap overflow-hidden text-ellipsis">
               {script.name}
             </span>
+
             <IconButton
-              onClick={() => onDelete?.(script)}
+              onClick={(evt) => {
+                (evt as MouseEvent & { __handled?: boolean }).__handled = true;
+                onDelete?.(script);
+              }}
               className="w-9 h-9 p-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
               title="Delete"
             >

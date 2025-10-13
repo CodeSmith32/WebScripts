@@ -19,14 +19,15 @@ export const PopupCreateNew = () => {
   const [language, setLanguage] = useState<ScriptLanguage>("javascript");
   const [prettify, setPrettify] = useState<boolean>(false);
 
+  const isValid = !!(name && language);
+
   const onCancel = () => {
     popup.close(null);
   };
   const onCreate = () => {
+    if (!isValid) return;
     popup.close({ name, language, prettify });
   };
-
-  const isValid = !!(name && language);
 
   return (
     <Popup
@@ -64,7 +65,7 @@ export const PopupCreateNew = () => {
       </div>
 
       <div className="pt-1 flex flex-row justify-between">
-        <Button variant="primary" onClick={onCreate} disabled={isValid}>
+        <Button variant="primary" onClick={onCreate} disabled={!isValid}>
           Create
         </Button>
 

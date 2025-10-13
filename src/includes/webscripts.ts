@@ -14,12 +14,10 @@ export interface StoredScript {
   compiled?: string | null;
 }
 
-export interface HeaderData {
-  name: string;
-  patterns: string[];
-  language?: ScriptLanguage;
-  prettify?: boolean;
-}
+export type HeaderData = Pick<
+  StoredScript,
+  "name" | "patterns" | "language" | "prettify"
+>;
 
 export type MessageTypes =
   | { cmd: "listRunning" }
@@ -33,7 +31,7 @@ class WebScripts {
     options: SendMessageOptions = {}
   ): Promise<T | undefined> {
     return await (
-      Chrome.runtime.sendMessage as (
+      Chrome.runtime?.sendMessage as (
         message: unknown,
         options?: SendMessageOptions
       ) => Promise<T>
@@ -43,13 +41,13 @@ class WebScripts {
   /** Save all user scripts. Async-wrapped to prevent simultaneous calls. */
   saveScripts = wrapAsyncLast(
     async (scripts: StoredScript[]): Promise<void> => {
-      await Chrome.storage.local.set({ scripts });
+      await Chrome.storage?.local.set({ scripts });
     }
   );
 
   /** Load all user scripts. Async-wrapped to prevent simultaneous calls. */
   loadScripts = wrapAsyncMerge(async (): Promise<StoredScript[]> => {
-    return (await Chrome.storage.local.get("scripts"))?.scripts ?? [];
+    return (await Chrome.storage?.local.get("scripts"))?.scripts ?? [];
   });
 
   /** Check if url matches the pattern-list for a user script. */
@@ -131,6 +129,21 @@ class WebScripts {
     return { name, patterns, language, prettify };
   }
 
+  /** Take a list of [ string, string ] pairs, and generate new header string.
+   * Use pair[0] as property key, and pair[1] as property value. */
+  private buildHeaderLines(lines: [string, string][]) {
+    // get longest line key (for padding alignment)
+    const nameLen = lines.reduce((max, [key]) => Math.max(max, key.length), 0);
+
+    // generate new header
+    return lines
+      .map(
+        ([key, value]) =>
+          `/// ${key}:${" ".repeat(nameLen - key.length)} ${value}`
+      )
+      .join("\n");
+  }
+
   /** Safely update the header in the code to use the newly provided field values. */
   updateHeader(
     code: string,
@@ -173,7 +186,6 @@ class WebScripts {
     };
 
     // generate header lines
-
     removeKey("match");
     updateKey("prettify", prettify);
     updateKey("language", language);
@@ -183,22 +195,27 @@ class WebScripts {
       ...patterns.map((pattern) => ["match", pattern] as [string, string]),
     ];
 
-    // get longest line key (for padding alignment)
-    const nameLen = lines.reduce((max, [key]) => Math.max(max, key.length), 0);
-
-    // generate new header
-    const newHeader = lines
-      .map(
-        ([key, value]) =>
-          `/// ${key}:${" ".repeat(nameLen - key.length)} ${value}`
-      )
-      .join("\n");
+    // build header
+    const newHeader = this.buildHeaderLines(lines);
 
     // replace old header with new header
     code = code.slice(headerMatch?.[0].length ?? 0); // cut off old header
     code = newHeader + "\n\n" + code.replace(/^\s+/, ""); // add new header and separating line
 
     return code;
+  }
+
+  /** Generate a header from header details. */
+  generateHeader({ name, patterns, language, prettify }: HeaderData) {
+    // generate header lines
+    const lines: [string, string][] = [
+      ["name", name],
+      ["language", language ?? "javascript"],
+      ["prettify", prettify ? "true" : "false"],
+      ...patterns.map((pattern) => ["match", pattern] as [string, string]),
+    ];
+
+    return this.buildHeaderLines(lines);
   }
 
   /** Process content-security-policy header: allow executing user scripts. */
@@ -240,8 +257,8 @@ class WebScripts {
 
   /** Open scripts management page. Async-wrapped to prevent simultaneous calls. */
   openEditor = wrapAsyncMerge(async (refer: string) => {
-    await Chrome.storage.local.set({ refer });
-    await Chrome.runtime.openOptionsPage();
+    await Chrome.storage?.local.set({ refer });
+    await Chrome.runtime?.openOptionsPage();
   });
 }
 export const webScripts = new WebScripts();

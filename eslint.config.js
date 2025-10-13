@@ -29,4 +29,5 @@ export default defineConfig({
     ],
   },
   files: ["./**/*.{ts,tsx}"],
+  ignores: ["./node_modules/**/*.*"],
 });

@@ -1,7 +1,7 @@
 import { useState } from "preact/hooks";
 import { ScriptList } from "../components/ScriptList";
 import { useOptionsData } from "../hooks/useOptionsData";
-import type { StoredScript } from "../includes/webscripts";
+import { webScripts, type StoredScript } from "../includes/webscripts";
 import { IconButton } from "../components/IconButton";
 import { SettingsIcon } from "lucide-preact";
 import { cn } from "../includes/classes";
@@ -14,6 +14,13 @@ import {
   PopupCreateNew,
   type PopupCreateNewCloseData,
 } from "../components/PopupCreateNew";
+import { EditableScript } from "../includes/editableScript";
+import {
+  PopupConfirm,
+  type PopupConfirmCloseData,
+} from "../components/PopupConfirm";
+import type { OnlyRequire } from "../includes/types/utility";
+import { ScriptIcon } from "../components/ScriptIcon";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -34,10 +41,46 @@ export const OptionsPage = () => {
     setActive(null);
   };
   const onAddNew = async () => {
-    const newData = await popupManager.open<PopupCreateNewCloseData>(
+    if (!data) return;
+
+    const newData: OnlyRequire<
+      StoredScript,
+      "name" | "language" | "prettify"
+    > | null = await popupManager.open<PopupCreateNewCloseData>(
       <PopupCreateNew />
     ).waitClose;
     if (!newData) return;
+
+    newData.code = webScripts.generateHeader(
+      Object.assign(newData, { patterns: [] })
+    );
+
+    const newScript = EditableScript.createNew(newData);
+    await data.saveScript(newScript);
+  };
+  const onDelete = async (script: StoredScript) => {
+    if (!data) return;
+
+    const result = await popupManager.open<PopupConfirmCloseData>(
+      <PopupConfirm
+        title="Delete Script"
+        message={
+          <>
+            <p className="mb-3">Are you sure you want to delete this script?</p>
+            <div className="mb-3 flex flex-row gap-2 items-center p-2 rounded-md bg-background">
+              <ScriptIcon script={script} />
+              <span>{script.name}</span>
+            </div>
+          </>
+        }
+        yesLabel="Delete"
+        yesVariant="destructive"
+      />
+    ).waitClose;
+    if (result.decision !== true) return;
+
+    if (active === script) setActive(null);
+    await data.deleteScript(script);
   };
 
   return (
@@ -67,6 +110,7 @@ export const OptionsPage = () => {
             scripts={data?.scripts}
             active={active}
             onAdd={onAddNew}
+            onDelete={onDelete}
             onSelect={(script) => setActive(script)}
           />
         </div>

@@ -30,6 +30,7 @@ export const Popup = ({
   onEscape,
 }: PopupProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const clickOutsideRef = useRef(false);
 
   useEffect(() => {
     // using a modal <dialog> prevents navigating to the background with tab/shift-tab
@@ -40,12 +41,22 @@ export const Popup = ({
     <dialog
       ref={dialogRef}
       className={cn(
-        "popup-background-overlay text-text fixed z-10 inset-0 w-[100vw] h-[100vh] bg-black/20 backdrop-blur-[2px]",
+        "popup-background-overlay text-text fixed z-10 max-w-none max-h-none w-[100vw] h-[100vh] left-0 top-0 bg-black/20 backdrop-blur-[2px]",
         overlayClassName
       )}
-      onClick={(evt) => {
+      onMouseDown={(evt) => {
         const target = evt.target as HTMLDialogElement;
         if (target.classList.contains("popup-background-overlay")) {
+          clickOutsideRef.current = true;
+        }
+      }}
+      onMouseUp={(evt) => {
+        const target = evt.target as HTMLDialogElement;
+        if (
+          clickOutsideRef.current &&
+          target.classList.contains("popup-background-overlay")
+        ) {
+          clickOutsideRef.current = false;
           onClickOut?.(evt);
         }
       }}
