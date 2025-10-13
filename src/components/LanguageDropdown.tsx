@@ -1,5 +1,5 @@
 import type { ScriptLanguage } from "../includes/webscripts";
-import { Dropdown, Option, type DropdownProps } from "./Dropdown";
+import { Dropdown, Option, type DropdownProps } from "./core/Dropdown";
 
 export interface LanguageDropdownProps
   extends Omit<DropdownProps, "onValueChange"> {

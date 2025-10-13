@@ -1,9 +1,9 @@
 import { Monaco } from "../Monaco";
-import { TextBox } from "../TextBox";
-import { IconButton } from "../IconButton";
+import { TextBox } from "../core/TextBox";
+import { IconButton } from "../core/IconButton";
 import { XIcon } from "lucide-preact";
 import type { EditorModelData } from "../../hooks/useEditorModel";
-import { Checkbox } from "../Checkbox";
+import { Checkbox } from "../core/Checkbox";
 import { LanguageDropdown } from "../LanguageDropdown";
 
 export interface EditorPanelProps {

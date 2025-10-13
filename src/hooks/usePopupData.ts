@@ -1,6 +1,6 @@
 import { getActiveTab, tabSendMessage } from "../includes/utils";
 import { webScripts } from "../includes/webscripts";
-import { useAsyncLoader } from "./useAsyncLoader";
+import { useAsyncLoader } from "./core/useAsyncLoader";
 
 export const usePopupData = () => {
   return useAsyncLoader(async () => {

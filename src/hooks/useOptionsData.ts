@@ -5,7 +5,7 @@ import {
   type StoredScript,
   defaultSettings,
 } from "../includes/webscripts";
-import { useAsyncLoader } from "./useAsyncLoader";
+import { useAsyncLoader } from "./core/useAsyncLoader";
 import { lexSort, wait } from "../includes/utils";
 import { CodePack } from "../includes/codepack";
 

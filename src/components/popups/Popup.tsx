@@ -1,6 +1,6 @@
 import type { ComponentChildren, TargetedMouseEvent } from "preact";
 import { cn } from "../../includes/classes";
-import { IconButton } from "../IconButton";
+import { IconButton } from "../core/IconButton";
 import { XIcon } from "lucide-preact";
 import { useEffect, useRef } from "preact/hooks";
 

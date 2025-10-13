@@ -1,6 +1,6 @@
 import { PencilIcon } from "lucide-preact";
-import { IconButton } from "./IconButton";
-import { Switch } from "./Switch";
+import { IconButton } from "./core/IconButton";
+import { Switch } from "./core/Switch";
 
 export interface PopupScriptRowProps {
   disabled?: boolean;

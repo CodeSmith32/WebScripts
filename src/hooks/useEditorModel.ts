@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from "preact/hooks";
 import { MonacoEditor } from "../includes/monacoSetup";
 import { webScripts, type StoredScript } from "../includes/webscripts";
-import { useCarried } from "./useCarried";
-import { useFutureCallback } from "./useFutureCallback";
+import { useCarried } from "./core/useCarried";
+import { useFutureCallback } from "./core/useFutureCallback";
 import { EditableScript } from "../includes/editableScript";
 import { debounce } from "../includes/debounce";
 import prettier from "prettier/standalone";

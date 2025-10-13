@@ -1,5 +1,5 @@
 import { CheckIcon, XIcon, type LucideProps } from "lucide-preact";
-import { Spinner } from "./Spinner";
+import { Spinner } from "./core/Spinner";
 import type { ComponentChildren } from "preact";
 import { cn } from "../includes/classes";
 

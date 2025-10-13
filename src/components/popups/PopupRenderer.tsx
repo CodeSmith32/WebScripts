@@ -1,6 +1,6 @@
 import { useEffect } from "preact/hooks";
-import { useFutureCallback } from "../../hooks/useFutureCallback";
-import { useRefresh } from "../../hooks/useRefresh";
+import { useFutureCallback } from "../../hooks/core/useFutureCallback";
+import { useRefresh } from "../../hooks/core/useRefresh";
 import { usePopupManager } from "./ClassPopupManager";
 import { PopupContext } from "./ClassPopup";
 

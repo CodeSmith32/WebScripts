@@ -1,5 +1,5 @@
 import { LoaderCircleIcon, type LucideProps } from "lucide-preact";
-import { cn } from "../includes/classes";
+import { cn } from "../../includes/classes";
 
 export interface SpinnerProps extends LucideProps {
   wrapperClassName?: string;

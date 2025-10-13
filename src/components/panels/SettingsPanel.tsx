@@ -1,8 +1,8 @@
 import { XIcon } from "lucide-preact";
-import { IconButton } from "../IconButton";
+import { IconButton } from "../core/IconButton";
 import { SettingRow } from "../SettingRow";
 import { LanguageDropdown } from "../LanguageDropdown";
-import { Checkbox } from "../Checkbox";
+import { Checkbox } from "../core/Checkbox";
 import { SavingIndicator } from "../SavingIndicator";
 import type { StoredSettings } from "../../includes/webscripts";
 import { useSavingStatus } from "../../hooks/useSavingStatus";

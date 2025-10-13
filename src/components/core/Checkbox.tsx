@@ -1,5 +1,5 @@
 import type { ComponentChildren, InputHTMLAttributes } from "preact";
-import { cn } from "../includes/classes";
+import { cn } from "../../includes/classes";
 
 export interface CheckboxProps extends InputHTMLAttributes {
   wrapperStyles?: string;

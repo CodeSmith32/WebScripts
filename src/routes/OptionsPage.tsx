@@ -2,7 +2,7 @@ import { useState } from "preact/hooks";
 import { ScriptList } from "../components/ScriptList";
 import { useOptionsData } from "../hooks/useOptionsData";
 import { webScripts, type StoredScript } from "../includes/webscripts";
-import { IconButton } from "../components/IconButton";
+import { IconButton } from "../components/core/IconButton";
 import { SettingsIcon } from "lucide-preact";
 import { cn } from "../includes/classes";
 import { BlankPanel } from "../components/panels/BlankPanel";

@@ -1,7 +1,7 @@
 import { useRef, useState } from "preact/hooks";
-import { useFutureCallback } from "./useFutureCallback";
+import { useFutureCallback } from "./core/useFutureCallback";
 import type { SavingStatus } from "../components/SavingIndicator";
-import { useRefresh } from "./useRefresh";
+import { useRefresh } from "./core/useRefresh";
 
 export type SaveHandler = () => void | Promise<void>;
 

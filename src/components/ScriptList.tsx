@@ -1,8 +1,8 @@
 import { FilePlus2Icon, TrashIcon } from "lucide-preact";
 import { cn } from "../includes/classes";
 import type { StoredScript } from "../includes/webscripts";
-import { IconButton } from "./IconButton";
-import { Button } from "./Button";
+import { IconButton } from "./core/IconButton";
+import { Button } from "./core/Button";
 import { ScriptIcon } from "./ScriptIcon";
 
 export interface ScriptListProps {

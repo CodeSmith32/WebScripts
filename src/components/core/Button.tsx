@@ -1,5 +1,5 @@
 import type { ComponentChildren, MouseEventHandler } from "preact";
-import { cn } from "../includes/classes";
+import { cn } from "../../includes/classes";
 
 export const buttonVariants = {
   primary: "bg-primary",

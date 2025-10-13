@@ -1,4 +1,4 @@
-import { cn } from "../includes/classes";
+import { cn } from "../../includes/classes";
 
 export interface SwitchProps {
   disabled?: boolean;

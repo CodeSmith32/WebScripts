@@ -1,10 +1,10 @@
 import { useState } from "preact/hooks";
 import { usePopup } from "./popups/ClassPopup";
 import { Popup } from "./popups/Popup";
-import { TextBox } from "./TextBox";
+import { TextBox } from "./core/TextBox";
 import type { ScriptLanguage } from "../includes/webscripts";
-import { Checkbox } from "./Checkbox";
-import { Button } from "./Button";
+import { Checkbox } from "./core/Checkbox";
+import { Button } from "./core/Button";
 import { LanguageDropdown } from "./LanguageDropdown";
 
 export type PopupCreateNewCloseData = {

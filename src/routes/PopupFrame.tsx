@@ -1,7 +1,7 @@
-import { Button } from "../components/Button";
+import { Button } from "../components/core/Button";
 import { PopupScriptRow } from "../components/PopupScriptRow";
-import { Spinner } from "../components/Spinner";
-import { useFutureCallback } from "../hooks/useFutureCallback";
+import { Spinner } from "../components/core/Spinner";
+import { useFutureCallback } from "../hooks/core/useFutureCallback";
 import { usePopupData } from "../hooks/usePopupData";
 import { webScripts, type StoredScript } from "../includes/webscripts";
 
