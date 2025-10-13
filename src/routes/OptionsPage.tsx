@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { ScriptList } from "../components/ScriptList";
 import { useOptionsData } from "../hooks/useOptionsData";
 import { webScripts, type StoredScript } from "../includes/webscripts";
@@ -85,6 +85,17 @@ export const OptionsPage = () => {
     if (active === script) setActive(null);
     await optionsData.deleteScript(script);
   };
+
+  // trigger jump to referred script
+  useEffect(() => {
+    if (optionsData?.refer) {
+      const id = optionsData.refer;
+      const script = optionsData.scripts.find((script) => script.id === id);
+      optionsData.refer = null;
+
+      if (script) setActive(script);
+    }
+  }, [optionsData?.refer]);
 
   return (
     <div className="text-text fixed inset-0 bg-background flex flex-col">

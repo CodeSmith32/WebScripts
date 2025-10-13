@@ -6,7 +6,7 @@ import {
   defaultSettings,
 } from "../includes/webscripts";
 import { useAsyncLoader } from "./core/useAsyncLoader";
-import { lexSort, wait } from "../includes/utils";
+import { lexSort } from "../includes/utils";
 import { CodePack } from "../includes/codepack";
 
 export const useOptionsData = () => {
@@ -15,6 +15,7 @@ export const useOptionsData = () => {
   return useAsyncLoader(async () => {
     let scripts: StoredScript[] = [];
     let settings: StoredSettings = { ...defaultSettings };
+    let refer: string | null = null;
 
     try {
       scripts = await webScripts.loadScripts();
@@ -22,6 +23,10 @@ export const useOptionsData = () => {
 
     try {
       settings = await webScripts.loadSettings();
+    } catch (_err) {}
+
+    try {
+      refer = await webScripts.getRefered();
     } catch (_err) {}
 
     // temporary test scripts
@@ -93,14 +98,13 @@ export const useOptionsData = () => {
 
     // save settings
     const saveSettings = async () => {
-      await wait(1000);
-
       await webScripts.saveSettings(settings);
     };
 
     return {
       scripts,
       settings,
+      refer,
       saveAllScripts,
       saveScript,
       deleteScript,

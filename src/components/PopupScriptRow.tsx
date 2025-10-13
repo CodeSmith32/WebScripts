@@ -18,14 +18,14 @@ export const PopupScriptRow = ({
   onEdit,
 }: PopupScriptRowProps) => {
   return (
-    <div className="flex flex-row gap-2 p-1 rounded-md hover:bg-white/5">
+    <div className="flex flex-row items-center gap-2 p-1 rounded-md hover:bg-white/5">
       <Switch disabled={disabled} onClick={onSwitch} switched={switched} />
       <p className="text-text">{name}</p>
 
       <div className="grow" />
 
       <IconButton onClick={onEdit}>
-        <PencilIcon className="text-white" />
+        <PencilIcon className="text-white" size={20} />
       </IconButton>
     </div>
   );

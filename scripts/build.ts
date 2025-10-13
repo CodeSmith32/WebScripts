@@ -58,7 +58,7 @@ const postBuild = async () => {
   );
   const languageWorkerMap = new Map<string, FileEntryDetails>();
   for (const file of await readDir(workerSourceDir)) {
-    const m = file.name.match(/^(\w+)\.worker\.[\da-f]+\.js$/);
+    const m = file.name.match(/^(\w+)\.worker\b.*\.js$/);
     if (!m) continue;
 
     languageWorkerMap.set(m[1], file);

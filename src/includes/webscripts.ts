@@ -75,6 +75,15 @@ class WebScripts {
     return { ...defaultSettings, ...settings };
   });
 
+  /** Get referred script. */
+  getRefered = wrapAsyncMerge(
+    async (preserve: boolean = false): Promise<string | null> => {
+      const refer = (await Chrome.storage?.local.get("refer"))?.refer;
+      if (!preserve) await Chrome.storage?.local.set({ refer: null });
+      return refer ?? null;
+    }
+  );
+
   /** Check if url matches the pattern-list for a user script. */
   match(url: string, patterns: string[]): boolean {
     let m: RegExpMatchArray | null; // pattern match

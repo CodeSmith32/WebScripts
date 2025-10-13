@@ -146,7 +146,6 @@ export class EditableScript {
   /** The script code. */
   get code(): string {
     this.#code ??= CodePack.unpack(this.#script.code);
-    console.log(this.#script, this.#code);
     return this.#code;
   }
   set code(code: string) {
