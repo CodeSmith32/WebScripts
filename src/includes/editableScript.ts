@@ -30,22 +30,24 @@ export class EditableScript {
   #code: string | null = null;
   #codeChanged: boolean = false;
 
-  constructor(script: StoredScript) {
+  private constructor(script: StoredScript) {
     this.#script = script;
   }
 
   /** Create a fresh new EditableScript. */
   static createNew(details: Partial<StoredScript>) {
+    const code = details.code ?? "";
+
     const script: StoredScript = {
       id: randAlphaNum(16),
       name: "",
       patterns: [],
       language: "javascript",
-      code: "",
-      compiled: null,
       ...details,
+      code: CodePack.pack(code),
+      compiled: null,
     };
-    script.compiled = compile(script.code, script.language);
+    script.compiled = compile(code, script.language);
 
     return new EditableScript(script);
   }
@@ -144,6 +146,7 @@ export class EditableScript {
   /** The script code. */
   get code(): string {
     this.#code ??= CodePack.unpack(this.#script.code);
+    console.log(this.#script, this.#code);
     return this.#code;
   }
   set code(code: string) {

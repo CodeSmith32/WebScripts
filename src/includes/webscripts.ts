@@ -12,7 +12,19 @@ export interface StoredScript {
   prettify?: boolean;
   code: string;
   compiled?: string | null;
+
+  saved?: never; // EditableScript must not be assignable to StoredScript
 }
+
+export interface StoredSettings {
+  defaultLanguage: ScriptLanguage;
+  defaultPrettify: boolean;
+}
+
+export const defaultSettings: StoredSettings = {
+  defaultLanguage: "javascript",
+  defaultPrettify: false,
+};
 
 export type HeaderData = Pick<
   StoredScript,
@@ -48,6 +60,19 @@ class WebScripts {
   /** Load all user scripts. Async-wrapped to prevent simultaneous calls. */
   loadScripts = wrapAsyncMerge(async (): Promise<StoredScript[]> => {
     return (await Chrome.storage?.local.get("scripts"))?.scripts ?? [];
+  });
+
+  /** Save all user settings. Async-wrapped to prevent simultaneous calls. */
+  saveSettings = wrapAsyncLast(
+    async (settings: StoredSettings): Promise<void> => {
+      await Chrome.storage?.local.set({ settings });
+    }
+  );
+
+  /** Load all user settings. Async-wrapped to prevent simultaneous calls. */
+  loadSettings = wrapAsyncMerge(async (): Promise<StoredSettings> => {
+    const settings = (await Chrome.storage?.local.get("settings"))?.settings;
+    return { ...defaultSettings, ...settings };
   });
 
   /** Check if url matches the pattern-list for a user script. */

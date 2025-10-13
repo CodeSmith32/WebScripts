@@ -35,7 +35,7 @@ export const PopupFrame = () => {
       ) : (
         <p className="text-center py-4">No Scripts</p>
       )}
-      <Button className="block w-full" onClick={handleOpenScripts}>
+      <Button className="block w-full" onClick={() => handleOpenScripts()}>
         Open Scripts &raquo;
       </Button>
     </div>

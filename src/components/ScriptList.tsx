@@ -6,6 +6,7 @@ import { Button } from "./Button";
 import { ScriptIcon } from "./ScriptIcon";
 
 export interface ScriptListProps {
+  className?: string;
   scripts?: StoredScript[];
   active?: StoredScript | symbol | null;
   onAdd?: () => void;
@@ -14,6 +15,7 @@ export interface ScriptListProps {
 }
 
 export const ScriptList = ({
+  className,
   scripts = [],
   active = null,
   onAdd,
@@ -21,7 +23,7 @@ export const ScriptList = ({
   onSelect,
 }: ScriptListProps) => {
   return (
-    <div className="grow px-2">
+    <div className={cn("px-2 pb-2 overflow-y-auto", className)}>
       {scripts.length ? (
         scripts.map((script) => (
           <div
@@ -67,7 +69,7 @@ export const ScriptList = ({
       <div className="flex flex-row gap-1 mb-5">
         <Button
           onClick={onAdd}
-          className="flex flex-row gap-2 items-center px-2 py-1 w-full text-sm text-white/30 hover:text-white"
+          className="flex flex-row gap-2 items-center px-2 py-1.5 w-full text-sm text-white/30 hover:text-white"
           title="Add New"
         >
           <FilePlus2Icon size={16} className="mx-0.5" />

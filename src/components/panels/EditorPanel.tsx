@@ -1,11 +1,10 @@
-import type { ScriptLanguage } from "../../includes/webscripts";
 import { Monaco } from "../Monaco";
 import { TextBox } from "../TextBox";
 import { IconButton } from "../IconButton";
 import { XIcon } from "lucide-preact";
-import { Dropdown, Option } from "../Dropdown";
 import type { EditorModelData } from "../../hooks/useEditorModel";
 import { Checkbox } from "../Checkbox";
+import { LanguageDropdown } from "../LanguageDropdown";
 
 export interface EditorPanelProps {
   model: EditorModelData;
@@ -38,16 +37,13 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
           }}
         />
 
-        <Dropdown
+        <LanguageDropdown
           value={script.language}
           onValueChange={(value) => {
-            script.language = value as ScriptLanguage;
+            script.language = value;
             model.rebuildHeader();
           }}
-        >
-          <Option value="javascript">JavaScript</Option>
-          <Option value="typescript">TypeScript</Option>
-        </Dropdown>
+        />
 
         <Checkbox
           label="Prettify"

@@ -2,10 +2,10 @@ import { useState } from "preact/hooks";
 import { usePopup } from "./popups/ClassPopup";
 import { Popup } from "./popups/Popup";
 import { TextBox } from "./TextBox";
-import { Dropdown, Option } from "./Dropdown";
 import type { ScriptLanguage } from "../includes/webscripts";
 import { Checkbox } from "./Checkbox";
 import { Button } from "./Button";
+import { LanguageDropdown } from "./LanguageDropdown";
 
 export type PopupCreateNewCloseData = {
   name: string;
@@ -39,20 +39,17 @@ export const PopupCreateNew = () => {
     >
       <label className="flex flex-col gap-2 mb-4">
         <span>Name:</span>
-        <TextBox className="w-full" value={name} onValueChange={setName} />
+        <TextBox
+          className="w-full"
+          value={name}
+          onValueChange={setName}
+          autoFocus
+        />
       </label>
 
       <label className="flex flex-col gap-2 mb-4">
         <span>Language:</span>
-        <Dropdown
-          value={language}
-          onValueChange={(language) => {
-            setLanguage(language as ScriptLanguage);
-          }}
-        >
-          <Option value="javascript">JavaScript</Option>
-          <Option value="typescript">TypeScript</Option>
-        </Dropdown>
+        <LanguageDropdown value={language} onValueChange={setLanguage} />
       </label>
 
       <div className="flex flex-col gap-2 mb-4">

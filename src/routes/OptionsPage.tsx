@@ -25,11 +25,11 @@ import { ScriptIcon } from "../components/ScriptIcon";
 const settingsIdentifier = Symbol("SETTINGS");
 
 export const OptionsPage = () => {
-  const { data } = useOptionsData();
+  const { data: optionsData } = useOptionsData();
   const [active, setActive] = useState<StoredScript | symbol | null>(null);
   const currentModel = useEditorModel(
     typeof active === "symbol" ? null : active,
-    data?.saveAllScripts
+    optionsData?.saveAllScripts
   );
 
   const popupManager = usePopupManager();
@@ -41,7 +41,7 @@ export const OptionsPage = () => {
     setActive(null);
   };
   const onAddNew = async () => {
-    if (!data) return;
+    if (!optionsData) return;
 
     const newData: OnlyRequire<
       StoredScript,
@@ -51,15 +51,18 @@ export const OptionsPage = () => {
     ).waitClose;
     if (!newData) return;
 
-    newData.code = webScripts.generateHeader(
-      Object.assign(newData, { patterns: [] })
-    );
+    newData.code =
+      webScripts.generateHeader(Object.assign(newData, { patterns: [] })) +
+      "\n\n";
 
     const newScript = EditableScript.createNew(newData);
-    await data.saveScript(newScript);
+    const script = newScript.storedScript();
+    await optionsData.saveScript(script);
+
+    setActive(script);
   };
   const onDelete = async (script: StoredScript) => {
-    if (!data) return;
+    if (!optionsData) return;
 
     const result = await popupManager.open<PopupConfirmCloseData>(
       <PopupConfirm
@@ -80,7 +83,7 @@ export const OptionsPage = () => {
     if (result.decision !== true) return;
 
     if (active === script) setActive(null);
-    await data.deleteScript(script);
+    await optionsData.deleteScript(script);
   };
 
   return (
@@ -104,10 +107,11 @@ export const OptionsPage = () => {
         <div className="w-20" />
       </div>
 
-      <div className="grow flex flex-row">
-        <div className="w-0 grow-[1] flex">
+      <div className="h-0 grow flex flex-row">
+        <div className="w-0 grow-[1] relative">
           <ScriptList
-            scripts={data?.scripts}
+            className="absolute inset-0"
+            scripts={optionsData?.scripts}
             active={active}
             onAdd={onAddNew}
             onDelete={onDelete}
@@ -117,7 +121,13 @@ export const OptionsPage = () => {
 
         <div className="w-0 grow-[4] flex relative mr-2 mb-2 rounded-lg overflow-hidden">
           {active === settingsIdentifier ? (
-            <SettingsPanel onClose={onClose} />
+            optionsData?.settings ? (
+              <SettingsPanel
+                onClose={onClose}
+                settings={optionsData.settings}
+                onSave={optionsData.saveSettings}
+              />
+            ) : null
           ) : active && typeof active === "object" ? (
             currentModel ? (
               <EditorPanel

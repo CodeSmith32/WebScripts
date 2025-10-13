@@ -42,7 +42,7 @@ export const useEditorModel = (
         return monacoModels.current[script.id];
       }
 
-      const editorScript = new EditableScript(script);
+      const editorScript = EditableScript.fromStoredScript(script);
       const model = MonacoEditor.createModel(editorScript.code);
 
       // get code from monaco editor as string

@@ -13,3 +13,8 @@ body {
   --color-background-dark: #0e0e0e;
   --color-text: white;
 }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-background) var(--color-background-dark);
+}
