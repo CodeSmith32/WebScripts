@@ -1,13 +1,9 @@
 import { CheckIcon, XIcon, type LucideProps } from "lucide-preact";
 import { Spinner } from "./core/Spinner";
 import type { ComponentChildren } from "preact";
-import { cn } from "../includes/classes";
+import { StatusIndicator } from "./core/StatusIndicator";
 
 export type SavingStatus = "unsaved" | "saving" | "saved";
-
-export interface SavingIndicatorProps {
-  status?: SavingStatus;
-}
 
 const statusText: Record<SavingStatus, string> = {
   unsaved: "Unsaved",
@@ -26,22 +22,23 @@ const statusIcon: Record<SavingStatus, ComponentChildren> = {
 };
 
 const statusClasses: Record<SavingStatus, string> = {
-  unsaved: /* @tw */ "bg-destructive/30",
-  saving: /* @tw */ "bg-secondary/30",
-  saved: /* @tw */ "bg-primary/30",
+  unsaved: /* @tw */ "bg-destructive/40",
+  saving: /* @tw */ "bg-secondary/40",
+  saved: /* @tw */ "bg-success/40",
 };
+
+export interface SavingIndicatorProps {
+  status?: SavingStatus;
+}
 
 export const SavingIndicator = ({
   status = "unsaved",
 }: SavingIndicatorProps) => {
   return (
-    <div
-      className={cn(
-        "flex flex-row gap-1 items-center pl-2 pr-3 py-1 text-sm rounded-[100px]",
-        statusClasses[status]
-      )}
-    >
-      {statusIcon[status]} <span>{statusText[status]}</span>
-    </div>
+    <StatusIndicator
+      className={statusClasses[status]}
+      icon={statusIcon[status]}
+      label={statusText[status]}
+    />
   );
 };

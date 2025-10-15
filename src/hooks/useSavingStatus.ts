@@ -4,6 +4,7 @@ import type { SavingStatus } from "../components/SavingIndicator";
 import { useRefresh } from "./core/useRefresh";
 
 export type SaveHandler = () => void | Promise<void>;
+export type MarkUnsavedHandler = () => void;
 
 /** Receives an async save function, and returns a SavingStatus and a wrapped save function.
  *
@@ -12,7 +13,7 @@ export type SaveHandler = () => void | Promise<void>;
  * last save call resolves. */
 export const useSavingStatus = (
   save?: SaveHandler
-): [SavingStatus, SaveHandler] => {
+): [SavingStatus, SaveHandler, MarkUnsavedHandler] => {
   const latestKey = useRef<object>({});
   const [status, setStatus] = useState<SavingStatus>("saved");
   const refresh = useRefresh();
@@ -34,5 +35,9 @@ export const useSavingStatus = (
     }
   });
 
-  return [status, wrappedSave];
+  const markUnsaved = useFutureCallback(() => {
+    setStatus("unsaved");
+  });
+
+  return [status, wrappedSave, markUnsaved];
 };

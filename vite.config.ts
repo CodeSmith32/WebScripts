@@ -1,12 +1,14 @@
 import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
 import tailwindcss from "@tailwindcss/vite";
+import { monacoEditorVitePlugin } from "./scripts/monacoEditorPlugin";
+import type { PreRenderedChunk } from "rollup";
 
 const preserveNames = ["background", "content"];
 
-export default defineConfig({
+export default defineConfig(async () => ({
   root: "./src",
-  plugins: [preact(), tailwindcss()],
+  plugins: [preact(), tailwindcss(), await monacoEditorVitePlugin()],
   build: {
     outDir: "../dist",
     emptyOutDir: false,
@@ -17,7 +19,7 @@ export default defineConfig({
         background: "./src/background.ts",
       },
       output: {
-        entryFileNames: (chunkInfo) => {
+        entryFileNames: (chunkInfo: PreRenderedChunk) => {
           if (preserveNames.includes(chunkInfo.name)) {
             return chunkInfo.name + ".js";
           } else {
@@ -32,4 +34,4 @@ export default defineConfig({
   server: {
     port: 3000,
   },
-});
+}));

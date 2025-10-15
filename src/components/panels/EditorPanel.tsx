@@ -5,6 +5,11 @@ import { XIcon } from "lucide-preact";
 import type { EditorModelData } from "../../hooks/useEditorModel";
 import { Checkbox } from "../core/Checkbox";
 import { LanguageDropdown } from "../LanguageDropdown";
+import { useSavingStatus } from "../../hooks/useSavingStatus";
+import { SavingIndicator } from "../SavingIndicator";
+import { useEffect, useMemo, useState } from "preact/hooks";
+import { debounce } from "../../includes/debounce";
+import { PrettierStatus } from "../PrettierStatus";
 
 export interface EditorPanelProps {
   model: EditorModelData;
@@ -14,6 +19,24 @@ export interface EditorPanelProps {
 export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
   const { script } = model;
 
+  const [saveStatus, triggerSave, triggerUnsaved] = useSavingStatus(model.save);
+  const saveAfter = useMemo(() => debounce(triggerSave, 2000), []);
+  const [prettierStatus, setPrettierStatus] =
+    useState<PrettierStatus>("waiting");
+
+  useEffect(() => {
+    const subscription = model.model.onDidChangeContent(() => {
+      triggerUnsaved();
+      setPrettierStatus("waiting");
+      saveAfter();
+    });
+
+    return () => {
+      model.save();
+      subscription.dispose();
+    };
+  }, []);
+
   return (
     <div
       className="absolute inset-0 flex flex-col bg-background-dark"
@@ -21,15 +44,15 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
         if (evt.key === "s" && evt.ctrlKey) {
           evt.preventDefault();
           if (script.prettify) {
-            await model.prettifyCode();
+            const success = await model.prettifyCode();
+            setPrettierStatus(success ? "formatted" : "failed");
           }
-          await model.save();
+          triggerSave();
         }
       }}
     >
-      <div className="h-12 flex flex-row justify-between items-center gap-2">
+      <div className="p-2 flex flex-row flex-wrap justify-between items-center gap-2">
         <TextBox
-          className="ml-2"
           value={script.name}
           onValueChange={(value) => {
             script.name = value;
@@ -41,31 +64,34 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
           value={script.language}
           onValueChange={(value) => {
             script.language = value;
+            model.setEditorLanguage(value);
             model.rebuildHeader();
           }}
         />
 
-        <Checkbox
-          label="Prettify"
-          checked={script.prettify}
-          onValueChange={(checked) => {
-            script.prettify = checked;
-            model.rebuildHeader();
-          }}
-        />
+        <div className="flex flex-row items-center gap-1">
+          <Checkbox
+            label="Prettify"
+            checked={script.prettify}
+            onValueChange={(checked) => {
+              script.prettify = checked;
+              model.rebuildHeader();
+            }}
+          />
+
+          {script.prettify && <PrettierStatus status={prettierStatus} />}
+        </div>
 
         <div className="grow" />
 
-        <IconButton className="p-0.5 w-8 h-8 mr-2" onClick={onClose}>
+        <SavingIndicator status={saveStatus} />
+
+        <IconButton className="p-0.5 w-8 h-8" onClick={onClose}>
           <XIcon />
         </IconButton>
       </div>
       <div className="h-0 grow flex flex-col">
-        <Monaco
-          language={script.language}
-          model={model.model}
-          editorContainer={model}
-        />
+        <Monaco model={model.model} editorContainer={model} />
       </div>
     </div>
   );

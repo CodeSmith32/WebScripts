@@ -77,7 +77,7 @@ export const Popup = ({
     >
       <div
         className={cn(
-          "w-md absolute left-1/2 top-1/2 transform-[translate(-50%,-50%)] bg-background rounded-md overflow-hidden shadow-[0_0_5px_#ffffff60]",
+          "w-md absolute left-1/2 top-1/2 transform-[translate(-50%,-50%)] bg-background rounded-md overflow-hidden shadow-[0_0_3px_2px_#ffffff20]",
           popupClassName
         )}
       >

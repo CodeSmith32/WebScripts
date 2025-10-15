@@ -1,6 +1,10 @@
 import { useMemo, useRef, useState } from "preact/hooks";
-import { MonacoEditor } from "../includes/monacoSetup";
-import { webScripts, type StoredScript } from "../includes/webscripts";
+import { MonacoEditor, type TextModel } from "../includes/monacoSetup";
+import {
+  webScripts,
+  type ScriptLanguage,
+  type StoredScript,
+} from "../includes/webscripts";
 import { useCarried } from "./core/useCarried";
 import { useFutureCallback } from "./core/useFutureCallback";
 import { EditableScript } from "../includes/editableScript";
@@ -17,7 +21,8 @@ export interface EditorModelData {
   updateCode: () => void;
   getEditorCode: () => string;
   setEditorCode: (code: string) => void;
-  prettifyCode: () => Promise<void>;
+  setEditorLanguage: (language: ScriptLanguage) => void;
+  prettifyCode: () => Promise<boolean>;
   rebuildHeader: () => void;
 }
 
@@ -43,7 +48,17 @@ export const useEditorModel = (
       }
 
       const editorScript = EditableScript.fromStoredScript(script);
-      const model = MonacoEditor.createModel(editorScript.code);
+      const model = MonacoEditor.createModel(
+        editorScript.code,
+        editorScript.language
+      );
+
+      // update the highlight language for the editor
+      const setEditorLanguage = (language: ScriptLanguage) => {
+        if (model.getLanguageId() !== language) {
+          (model as TextModel).setLanguage(language);
+        }
+      };
 
       // get code from monaco editor as string
       const getEditorCode = () => {
@@ -77,43 +92,50 @@ export const useEditorModel = (
           cursorOffset: -1,
         };
 
-        if (modelData.editor) {
-          // editor is available: maintain cursor position
-          let pos = modelData.editor.getPosition();
-          let offset = pos ? model.getOffsetAt(pos) : 0;
+        try {
+          if (modelData.editor) {
+            // editor is available: maintain cursor position
+            let pos = modelData.editor.getPosition();
+            let offset = pos ? model.getOffsetAt(pos) : 0;
 
-          prettierOptions.cursorOffset = offset;
+            prettierOptions.cursorOffset = offset;
 
-          const { formatted, cursorOffset: newOffset } =
-            await prettier.formatWithCursor(code, prettierOptions);
-          if (formatted === code) return;
+            const { formatted, cursorOffset: newOffset } =
+              await prettier.formatWithCursor(code, prettierOptions);
+            if (formatted === code) return true;
 
-          if (newOffset !== -1) offset = newOffset;
+            if (newOffset !== -1) offset = newOffset;
 
-          model.pushEditOperations(
-            [],
-            [{ range: model.getFullModelRange(), text: formatted }],
-            () => null
-          );
+            model.pushEditOperations(
+              [],
+              [{ range: model.getFullModelRange(), text: formatted }],
+              () => null
+            );
 
-          pos = model.getPositionAt(offset);
-          modelData.editor.setPosition(pos);
-        } else {
-          // editor not available: just format the code
-          const formatted = await prettier.format(code, prettierOptions);
+            pos = model.getPositionAt(offset);
+            modelData.editor.setPosition(pos);
+          } else {
+            // editor not available: just format the code
+            const formatted = await prettier.format(code, prettierOptions);
+            if (formatted === code) return true;
 
-          model.pushEditOperations(
-            [],
-            [{ range: model.getFullModelRange(), text: formatted }],
-            () => null
-          );
+            model.pushEditOperations(
+              [],
+              [{ range: model.getFullModelRange(), text: formatted }],
+              () => null
+            );
+          }
+        } catch (_err) {
+          return false;
         }
+        return true;
       };
 
       // update the script code from the Monaco model
       const updateCode = debounce(() => {
         editorScript.code = getEditorCode();
         editorScript.reloadHeader();
+        setEditorLanguage(editorScript.language);
         refresh({});
       }, 500);
 
@@ -144,6 +166,7 @@ export const useEditorModel = (
         updateCode,
         getEditorCode,
         setEditorCode,
+        setEditorLanguage,
         prettifyCode,
         rebuildHeader,
       };

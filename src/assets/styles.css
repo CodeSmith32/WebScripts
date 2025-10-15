@@ -8,6 +8,7 @@ body {
 @theme {
   --color-primary: #2559b0;
   --color-secondary: #e8ca37;
+  --color-success: #528b38;
   --color-destructive: #853010;
   --color-background: #171717;
   --color-background-dark: #0e0e0e;

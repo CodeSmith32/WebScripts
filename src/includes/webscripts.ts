@@ -43,11 +43,10 @@ class WebScripts {
     options: SendMessageOptions = {}
   ): Promise<T | undefined> {
     return await (
-      Chrome.runtime?.sendMessage as (
-        message: unknown,
-        options?: SendMessageOptions
-      ) => Promise<T>
-    )(message, options);
+      Chrome.runtime?.sendMessage as
+        | ((message: unknown, options?: SendMessageOptions) => Promise<T>)
+        | undefined
+    )?.(message, options);
   }
 
   /** Save all user scripts. Async-wrapped to prevent simultaneous calls. */
@@ -76,7 +75,7 @@ class WebScripts {
   });
 
   /** Get referred script. */
-  getRefered = wrapAsyncMerge(
+  getReferred = wrapAsyncMerge(
     async (preserve: boolean = false): Promise<string | null> => {
       const refer = (await Chrome.storage?.local.get("refer"))?.refer;
       if (!preserve) await Chrome.storage?.local.set({ refer: null });

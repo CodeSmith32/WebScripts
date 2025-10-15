@@ -1,13 +1,12 @@
+import { getWorkerFiles } from "./monacoEditorPlugin";
 import {
   arrayFromAsync,
   copy,
   getCommandLineArgs,
   importMetaDir,
   join,
-  readDir,
   recurseDir,
   remove,
-  type FileEntryDetails,
 } from "./utils";
 
 const args = getCommandLineArgs();
@@ -51,18 +50,7 @@ const postBuild = async () => {
   );
 
   const languages = ["editor", "ts", "json"];
-
-  const workerSourceDir = join(
-    rootDir,
-    "node_modules/monaco-editor/min/vs/assets"
-  );
-  const languageWorkerMap = new Map<string, FileEntryDetails>();
-  for (const file of await readDir(workerSourceDir)) {
-    const m = file.name.match(/^(\w+)\.worker\b.*\.js$/);
-    if (!m) continue;
-
-    languageWorkerMap.set(m[1], file);
-  }
+  const languageWorkerMap = await getWorkerFiles();
 
   for (const lang of languages) {
     const file = languageWorkerMap.get(lang);

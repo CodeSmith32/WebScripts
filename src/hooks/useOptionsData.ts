@@ -26,7 +26,7 @@ export const useOptionsData = () => {
     } catch (_err) {}
 
     try {
-      refer = await webScripts.getRefered();
+      refer = await webScripts.getReferred();
     } catch (_err) {}
 
     // temporary test scripts
