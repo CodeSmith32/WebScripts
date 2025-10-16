@@ -32,7 +32,14 @@ export const Monaco = ({ model, editorContainer }: MonacoProps) => {
   }, []);
 
   return (
-    <div className="relative w-full grow">
+    <div
+      className="relative w-full grow"
+      onKeyDown={(evt) => {
+        if (evt.ctrlKey && evt.shiftKey && evt.key === "P") {
+          evt.preventDefault();
+        }
+      }}
+    >
       <div ref={elementRef} className="absolute inset-0" />
     </div>
   );
