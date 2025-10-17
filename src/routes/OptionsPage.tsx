@@ -21,10 +21,13 @@ import {
 } from "../components/PopupConfirm";
 import type { OnlyRequire } from "../includes/types/utility";
 import { ScriptIcon } from "../components/ScriptIcon";
+import { usePreventDefaultSave } from "../hooks/usePreventDefaultSave";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
 export const OptionsPage = () => {
+  usePreventDefaultSave();
+
   const { data: optionsData } = useOptionsData();
   const [active, setActive] = useState<StoredScript | symbol | null>(null);
   const currentModel = useEditorModel(

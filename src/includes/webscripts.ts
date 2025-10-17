@@ -19,11 +19,19 @@ export interface StoredScript {
 export interface StoredSettings {
   defaultLanguage: ScriptLanguage;
   defaultPrettify: boolean;
+  editorSettingsJson: string;
+  editorKeybindingsJson: string;
+  typescriptConfigJson: string;
+  prettierConfigJson: string;
 }
 
 export const defaultSettings: StoredSettings = {
   defaultLanguage: "javascript",
   defaultPrettify: false,
+  editorSettingsJson: "",
+  editorKeybindingsJson: "",
+  typescriptConfigJson: "",
+  prettierConfigJson: "",
 };
 
 export type HeaderData = Pick<

@@ -6,6 +6,8 @@ import { Checkbox } from "../core/Checkbox";
 import { SavingIndicator } from "../SavingIndicator";
 import type { StoredSettings } from "../../includes/webscripts";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
+import { TextArea } from "../core/TextArea";
+import { textAreaReactHandlers } from "../../includes/textAreaCodeHandler";
 
 export interface SettingsPanelProps {
   onClose?: () => void;
@@ -54,6 +56,50 @@ export const SettingsPanel = ({
                 settings.defaultPrettify = checked;
                 handleChange();
               }}
+            />
+          </SettingRow>
+
+          <SettingRow label="Editor Settings (JSON)">
+            <TextArea
+              value={settings.editorSettingsJson}
+              onValueChange={(value) => {
+                settings.editorSettingsJson = value;
+                handleChange();
+              }}
+              {...textAreaReactHandlers}
+            />
+          </SettingRow>
+
+          <SettingRow label="Editor Keybindings (JSON)">
+            <TextArea
+              value={settings.editorKeybindingsJson}
+              onValueChange={(value) => {
+                settings.editorKeybindingsJson = value;
+                handleChange();
+              }}
+              {...textAreaReactHandlers}
+            />
+          </SettingRow>
+
+          <SettingRow label="TypeScript Compiler Options Config (JSON)">
+            <TextArea
+              value={settings.typescriptConfigJson}
+              onValueChange={(value) => {
+                settings.typescriptConfigJson = value;
+                handleChange();
+              }}
+              {...textAreaReactHandlers}
+            />
+          </SettingRow>
+
+          <SettingRow label="Prettier Config (JSON)">
+            <TextArea
+              value={settings.prettierConfigJson}
+              onValueChange={(value) => {
+                settings.prettierConfigJson = value;
+                handleChange();
+              }}
+              {...textAreaReactHandlers}
             />
           </SettingRow>
         </div>

@@ -233,18 +233,23 @@ export class KeybindingManager {
     return bindings;
   }
 
-  setKeybindings(json: string) {
+  setKeybindings(json: string): boolean {
     this.#bindingsSubscription?.dispose();
 
     const keybindings = this.parseKeybindings(json);
     if (!keybindings) return false;
 
     this.#bindingsSubscription = MonacoEditor.addKeybindingRules(keybindings);
+    return true;
   }
 
   revokeKeybindings() {
     this.#bindingsSubscription?.dispose();
     this.#bindingsSubscription = null;
+  }
+
+  getErrors(): string[] {
+    return this.#lastErrors;
   }
 }
 
