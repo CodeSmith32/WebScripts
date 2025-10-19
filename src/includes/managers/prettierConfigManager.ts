@@ -83,7 +83,7 @@ export class PrettierConfigManager {
   setPrettierConfig(json: string): boolean {
     const prettierConfig = this.parsePrettierConfig(json);
     if (!prettierConfig) {
-      this.updatePrettierConfig({});
+      this.revokePrettierConfig();
       return false;
     }
 
@@ -93,6 +93,14 @@ export class PrettierConfigManager {
 
   getPrettierConfig(): PrettierConfig {
     return this.#config;
+  }
+
+  revokePrettierConfig() {
+    this.updatePrettierConfig({});
+  }
+
+  getErrors(): string[] {
+    return this.#lastErrors;
   }
 }
 

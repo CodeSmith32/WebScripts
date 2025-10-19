@@ -1,4 +1,9 @@
-import { KeyCode, KeyMod, MonacoEditor, type IDisposable } from "./monacoSetup";
+import {
+  KeyCode,
+  KeyMod,
+  MonacoEditor,
+  type IDisposable,
+} from "../monacoSetup";
 import { array, object, optional, string, unknown } from "zod/mini";
 
 export const keyMapping = {

@@ -12,7 +12,7 @@ import { debounce } from "../includes/debounce";
 import prettier from "prettier/standalone";
 import prettierBabel from "prettier/plugins/babel";
 import prettierEstree from "prettier/plugins/estree";
-import { prettierConfigManager } from "../includes/prettierConfigManager";
+import { prettierConfigManager } from "../includes/managers/prettierConfigManager";
 
 export interface EditorModelData {
   script: EditableScript;

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "preact/hooks";
 import { MonacoEditor } from "../includes/monacoSetup";
-import { editorSettingsManager } from "../includes/editorSettingsManager";
+import { editorSettingsManager } from "../includes/managers/editorSettingsManager";
 
 export interface MonacoProps {
   model: MonacoEditor.ITextModel;

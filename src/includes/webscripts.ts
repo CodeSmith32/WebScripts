@@ -28,10 +28,10 @@ export interface StoredSettings {
 export const defaultSettings: StoredSettings = {
   defaultLanguage: "javascript",
   defaultPrettify: false,
-  editorSettingsJson: "",
-  editorKeybindingsJson: "",
-  typescriptConfigJson: "",
-  prettierConfigJson: "",
+  editorSettingsJson: "{}",
+  editorKeybindingsJson: "[]",
+  typescriptConfigJson: "{}",
+  prettierConfigJson: "{}",
 };
 
 export type HeaderData = Pick<

@@ -8,6 +8,15 @@ import type { StoredSettings } from "../../includes/webscripts";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
 import { TextArea } from "../core/TextArea";
 import { textAreaReactHandlers } from "../../includes/textAreaCodeHandler";
+import { useMemo, useRef, useState } from "preact/hooks";
+import { debounce } from "../../includes/debounce";
+import { editorSettingsManager } from "../../includes/managers/editorSettingsManager";
+import { HelpUrl } from "../HelpUrl";
+import type { ComponentChildren } from "preact";
+import { ErrorList } from "../ErrorList";
+import { keybindingManager } from "../../includes/managers/keybindingManager";
+import { typescriptConfigManager } from "../../includes/managers/typescriptConfigManager";
+import { prettierConfigManager } from "../../includes/managers/prettierConfigManager";
 
 export interface SettingsPanelProps {
   onClose?: () => void;
@@ -21,6 +30,71 @@ export const SettingsPanel = ({
   onSave,
 }: SettingsPanelProps) => {
   const [saveStatus, handleChange] = useSavingStatus(onSave);
+
+  const lastEditorSettings = useRef(settings.editorSettingsJson);
+  const lastKeybindings = useRef(settings.editorKeybindingsJson);
+  const lastTSConfig = useRef(settings.typescriptConfigJson);
+  const lastPrettierConfig = useRef(settings.prettierConfigJson);
+
+  const [editorSettingsError, setEditorSettingsError] =
+    useState<ComponentChildren>(null);
+  const [keybindingsError, setKeybindingsError] =
+    useState<ComponentChildren>(null);
+  const [tsConfigError, setTSConfigError] = useState<ComponentChildren>(null);
+  const [prettierConfigError, setPrettierConfigError] =
+    useState<ComponentChildren>(null);
+
+  // handler for updating configs
+  const debounceUpdateConfigs = useMemo(() => {
+    const updateErrors = () => {
+      setEditorSettingsError(
+        <ErrorList errors={editorSettingsManager.getErrors()} />
+      );
+      setKeybindingsError(<ErrorList errors={keybindingManager.getErrors()} />);
+      setTSConfigError(
+        <ErrorList errors={typescriptConfigManager.getErrors()} />
+      );
+      setPrettierConfigError(
+        <ErrorList errors={prettierConfigManager.getErrors()} />
+      );
+    };
+
+    const updateConfigs = debounce(() => {
+      const editorSettings = settings.editorSettingsJson;
+      const keybindings = settings.editorKeybindingsJson;
+      const tsConfig = settings.typescriptConfigJson;
+      const prettierConfig = settings.prettierConfigJson;
+
+      // detect change / validate editor settings
+      if (lastEditorSettings.current !== editorSettings) {
+        lastEditorSettings.current = editorSettings;
+        editorSettingsManager.setEditorSettings(editorSettings);
+      }
+
+      // detect change / validate keybindings
+      if (lastKeybindings.current !== keybindings) {
+        lastKeybindings.current = keybindings;
+        keybindingManager.setKeybindings(keybindings);
+      }
+
+      // detect change / validate typescript config
+      if (lastTSConfig.current !== tsConfig) {
+        lastTSConfig.current = tsConfig;
+        typescriptConfigManager.setTypeScriptConfig(tsConfig);
+      }
+
+      // detect change / validate prettier config
+      if (lastPrettierConfig.current !== prettierConfig) {
+        lastPrettierConfig.current = prettierConfig;
+        prettierConfigManager.setPrettierConfig(prettierConfig);
+      }
+      updateErrors();
+    }, 1000);
+
+    updateErrors();
+
+    return updateConfigs;
+  }, []);
 
   return (
     <div className="absolute inset-0 flex flex-col bg-background-dark">
@@ -59,48 +133,68 @@ export const SettingsPanel = ({
             />
           </SettingRow>
 
-          <SettingRow label="Editor Settings (JSON)">
+          <SettingRow
+            label="Editor Settings (JSON)"
+            subHeading={<HelpUrl url={editorSettingsManager.helpUrl} />}
+          >
             <TextArea
               value={settings.editorSettingsJson}
               onValueChange={(value) => {
                 settings.editorSettingsJson = value;
                 handleChange();
+                debounceUpdateConfigs();
               }}
               {...textAreaReactHandlers}
             />
+            {editorSettingsError}
           </SettingRow>
 
-          <SettingRow label="Editor Keybindings (JSON)">
+          <SettingRow
+            label="Editor Keybindings (JSON)"
+            subHeading={<HelpUrl url={keybindingManager.helpUrl} />}
+          >
             <TextArea
               value={settings.editorKeybindingsJson}
               onValueChange={(value) => {
                 settings.editorKeybindingsJson = value;
                 handleChange();
+                debounceUpdateConfigs();
               }}
               {...textAreaReactHandlers}
             />
+            {keybindingsError}
           </SettingRow>
 
-          <SettingRow label="TypeScript Compiler Options Config (JSON)">
+          <SettingRow
+            label="TypeScript Compiler Options Config (JSON)"
+            subHeading={<HelpUrl url={typescriptConfigManager.helpUrl} />}
+          >
             <TextArea
               value={settings.typescriptConfigJson}
               onValueChange={(value) => {
                 settings.typescriptConfigJson = value;
                 handleChange();
+                debounceUpdateConfigs();
               }}
               {...textAreaReactHandlers}
             />
+            {tsConfigError}
           </SettingRow>
 
-          <SettingRow label="Prettier Config (JSON)">
+          <SettingRow
+            label="Prettier Config (JSON)"
+            subHeading={<HelpUrl url={prettierConfigManager.helpUrl} />}
+          >
             <TextArea
               value={settings.prettierConfigJson}
               onValueChange={(value) => {
                 settings.prettierConfigJson = value;
                 handleChange();
+                debounceUpdateConfigs();
               }}
               {...textAreaReactHandlers}
             />
+            {prettierConfigError}
           </SettingRow>
         </div>
       </div>

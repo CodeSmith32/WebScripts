@@ -12,7 +12,7 @@ import {
   null as znull,
   ZodMiniEnum,
 } from "zod/mini";
-import { MonacoLanguages } from "./monacoSetup";
+import { MonacoLanguages } from "../monacoSetup";
 
 type TSConfig = MonacoLanguages.typescript.CompilerOptions;
 
@@ -251,3 +251,5 @@ export class TypeScriptConfigManager {
     return this.#lastErrors;
   }
 }
+
+export const typescriptConfigManager = new TypeScriptConfigManager();

@@ -8,6 +8,10 @@ import {
 import { useAsyncLoader } from "./core/useAsyncLoader";
 import { lexSort } from "../includes/utils";
 import { CodePack } from "../includes/codepack";
+import { editorSettingsManager } from "../includes/managers/editorSettingsManager";
+import { keybindingManager } from "../includes/managers/keybindingManager";
+import { typescriptConfigManager } from "../includes/managers/typescriptConfigManager";
+import { prettierConfigManager } from "../includes/managers/prettierConfigManager";
 
 export const useOptionsData = () => {
   const [, refresh] = useState({});
@@ -28,6 +32,12 @@ export const useOptionsData = () => {
     try {
       refer = await webScripts.getReferred();
     } catch (_err) {}
+
+    // update managers from settings
+    editorSettingsManager.setEditorSettings(settings.editorSettingsJson);
+    keybindingManager.setKeybindings(settings.editorKeybindingsJson);
+    typescriptConfigManager.setTypeScriptConfig(settings.typescriptConfigJson);
+    prettierConfigManager.setPrettierConfig(settings.prettierConfigJson);
 
     // temporary test scripts
     if (!scripts.length) {

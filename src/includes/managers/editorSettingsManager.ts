@@ -14,7 +14,7 @@ import {
   union,
   enum as zenum,
 } from "zod/mini";
-import type { MonacoEditor } from "./monacoSetup";
+import type { MonacoEditor } from "../monacoSetup";
 
 type EditorSettings = MonacoEditor.IStandaloneEditorConstructionOptions;
 
@@ -1046,7 +1046,7 @@ export class EditorSettingsManager {
   setEditorSettings(json: string): boolean {
     const config = this.parseEditorSettings(json);
     if (!config) {
-      this.updateEditorSettings({});
+      this.revokeEditorSettings();
       return false;
     }
 
@@ -1056,6 +1056,14 @@ export class EditorSettingsManager {
 
   getEditorSettings() {
     return this.#config;
+  }
+
+  revokeEditorSettings() {
+    this.updateEditorSettings({});
+  }
+
+  getErrors(): string[] {
+    return this.#lastErrors;
   }
 }
 
