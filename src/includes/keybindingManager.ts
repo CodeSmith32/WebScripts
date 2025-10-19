@@ -1,5 +1,5 @@
 import { KeyCode, KeyMod, MonacoEditor, type IDisposable } from "./monacoSetup";
-import { array, object, optional, string } from "zod/mini";
+import { array, object, optional, string, unknown } from "zod/mini";
 
 export const keyMapping = {
   backspace: KeyCode.Backspace,
@@ -140,6 +140,7 @@ export const keybindingSchema = array(
   object({
     key: string(),
     command: string(),
+    args: optional(unknown()),
     when: optional(string()),
   })
 );
@@ -147,6 +148,9 @@ export const keybindingSchema = array(
 export class KeybindingManager {
   #bindingsSubscription: IDisposable | null = null;
   #lastErrors: string[] = [];
+
+  readonly helpUrl: string =
+    "https://code.visualstudio.com/docs/configure/keybindings#_keyboard-rules";
 
   private parseKeyCode(key: string): number | null {
     // split chord
@@ -222,15 +226,19 @@ export class KeybindingManager {
     const keybindings = keybindingsParsed.data;
 
     const bindings: MonacoEditor.IKeybindingRule[] = [];
-    for (const { key, command, when } of keybindings) {
+    for (const { key, command, args, when } of keybindings) {
       const keybinding = this.parseKeyCode(key);
 
       if (keybinding !== null) {
-        bindings.push({ keybinding, command, when });
+        bindings.push({ keybinding, command, commandArgs: args, when });
       }
     }
 
     return bindings;
+  }
+
+  validateKeybindings(json: string): boolean {
+    return !!this.parseKeybindings(json);
   }
 
   setKeybindings(json: string): boolean {

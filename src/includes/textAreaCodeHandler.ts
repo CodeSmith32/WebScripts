@@ -6,7 +6,7 @@ const textAreaControllers = new WeakMap<
   TextAreaController
 >();
 
-const tabSize = 4;
+const tabSize = 2;
 
 const navigationKeys: string[] = [
   "arrowleft",

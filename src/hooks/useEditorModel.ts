@@ -12,6 +12,7 @@ import { debounce } from "../includes/debounce";
 import prettier from "prettier/standalone";
 import prettierBabel from "prettier/plugins/babel";
 import prettierEstree from "prettier/plugins/estree";
+import { prettierConfigManager } from "../includes/prettierConfigManager";
 
 export interface EditorModelData {
   script: EditableScript;
@@ -87,6 +88,7 @@ export const useEditorModel = (
       const prettifyCode = async () => {
         const code = getEditorCode();
         const prettierOptions = {
+          ...prettierConfigManager.getPrettierConfig(),
           parser: "babel-ts",
           plugins: [prettierEstree, prettierBabel],
           cursorOffset: -1,

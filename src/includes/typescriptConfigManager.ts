@@ -132,7 +132,6 @@ const typescriptConfigRaw = object({
   esModuleInterop: boolean(),
   useDefineForClassFields: boolean(),
 });
-
 const typescriptConfigSchema = intersection(
   partial(typescriptConfigRaw),
   record(
@@ -155,7 +154,6 @@ const enumKeys: string[] = Object.keys(typescriptConfigRaw.shape).filter(
       key as keyof (typeof typescriptConfigRaw)["shape"]
     ] instanceof ZodMiniEnum
 );
-
 const enumTables = {
   jsx: MonacoLanguages.typescript.JsxEmit,
   module: MonacoLanguages.typescript.ModuleKind,
@@ -175,6 +173,9 @@ type TSConfigEnumKey = keyof typeof enumTables;
 
 export class TypeScriptConfigManager {
   #lastErrors: string[] = [];
+
+  readonly helpUrl: string =
+    "https://www.typescriptlang.org/tsconfig/#compilerOptions";
 
   private updateTypeScriptConfig(config: TSConfig) {
     MonacoLanguages.typescript.typescriptDefaults.setCompilerOptions({
@@ -227,9 +228,16 @@ export class TypeScriptConfigManager {
     return tsConfig;
   }
 
+  validateTypeScriptConfig(json: string): boolean {
+    return !!this.parseTypeScriptConfig(json);
+  }
+
   setTypeScriptConfig(json: string): boolean {
     const config = this.parseTypeScriptConfig(json);
-    if (!config) return false;
+    if (!config) {
+      this.revokeTypeScriptConfig();
+      return false;
+    }
 
     this.updateTypeScriptConfig(config);
     return true;
