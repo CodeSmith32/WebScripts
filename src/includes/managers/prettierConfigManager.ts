@@ -1,5 +1,12 @@
 import { type Options } from "prettier";
-import { boolean, int, object, partial, enum as zenum } from "zod/mini";
+import {
+  boolean,
+  int,
+  object,
+  partial,
+  prettifyError,
+  enum as zenum,
+} from "zod/mini";
 
 type PrettierConfig = Options;
 
@@ -69,7 +76,9 @@ export class PrettierConfigManager {
 
     const prettierConfigParsed = prettierConfigSchema.safeParse(jsonData);
     if (!prettierConfigParsed.success) {
-      this.#lastErrors.push(prettierConfigParsed.error.message);
+      this.#lastErrors.push(
+        ...prettifyError(prettierConfigParsed.error).split("\n")
+      );
       return null;
     }
 

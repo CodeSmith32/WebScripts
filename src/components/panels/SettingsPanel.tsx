@@ -7,7 +7,6 @@ import { SavingIndicator } from "../SavingIndicator";
 import type { StoredSettings } from "../../includes/webscripts";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
 import { TextArea } from "../core/TextArea";
-import { textAreaReactHandlers } from "../../includes/textAreaCodeHandler";
 import { useMemo, useRef, useState } from "preact/hooks";
 import { debounce } from "../../includes/debounce";
 import { editorSettingsManager } from "../../includes/managers/editorSettingsManager";
@@ -144,7 +143,7 @@ export const SettingsPanel = ({
                 handleChange();
                 debounceUpdateConfigs();
               }}
-              {...textAreaReactHandlers}
+              codeEditor
             />
             {editorSettingsError}
           </SettingRow>
@@ -160,7 +159,7 @@ export const SettingsPanel = ({
                 handleChange();
                 debounceUpdateConfigs();
               }}
-              {...textAreaReactHandlers}
+              codeEditor
             />
             {keybindingsError}
           </SettingRow>
@@ -176,7 +175,7 @@ export const SettingsPanel = ({
                 handleChange();
                 debounceUpdateConfigs();
               }}
-              {...textAreaReactHandlers}
+              codeEditor
             />
             {tsConfigError}
           </SettingRow>
@@ -192,7 +191,7 @@ export const SettingsPanel = ({
                 handleChange();
                 debounceUpdateConfigs();
               }}
-              {...textAreaReactHandlers}
+              codeEditor
             />
             {prettierConfigError}
           </SettingRow>

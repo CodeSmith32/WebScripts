@@ -5,6 +5,7 @@ import {
   number,
   object,
   partial,
+  prettifyError,
   record,
   string,
   union,
@@ -195,7 +196,7 @@ export class TypeScriptConfigManager {
 
     const tsConfigParsed = typescriptConfigSchema.safeParse(jsonData);
     if (!tsConfigParsed.success) {
-      this.#lastErrors.push(tsConfigParsed.error.message);
+      this.#lastErrors.push(...prettifyError(tsConfigParsed.error).split("\n"));
       return null;
     }
 

@@ -30,6 +30,16 @@ Object.setPrototypeOf(wrappers, null);
 
 const { min, max } = Math;
 
+export interface TextAreaControllerEvents {
+  change: { type: "change"; value: string };
+}
+
+export type TextAreaControllerEventName = keyof TextAreaControllerEvents;
+
+export type TextAreaControllerEventHandler<
+  T extends TextAreaControllerEventName,
+> = (event: TextAreaControllerEvents[T]) => void;
+
 /** Create and return a new textarea code controller. */
 export const createTextAreaController = (textArea: HTMLTextAreaElement) => {
   type HistoryPositionState = [number, number, Direction];
@@ -50,6 +60,12 @@ export const createTextAreaController = (textArea: HTMLTextAreaElement) => {
   // indicates cursor's most recent position state
   // when undo is pushed, this is used as the 'before change' cursor state
   let latestCursor: HistoryPositionState = [0, 0, "none"];
+
+  const eventHandlers = Object.create(null) as {
+    [event in TextAreaControllerEventName]?: Set<
+      TextAreaControllerEventHandler<event>
+    >;
+  };
 
   const ctl = {
     get length() {
@@ -353,6 +369,32 @@ export const createTextAreaController = (textArea: HTMLTextAreaElement) => {
         yield [spos, epos];
       }
     },
+
+    on<T extends TextAreaControllerEventName>(
+      type: T,
+      handler: TextAreaControllerEventHandler<T>
+    ) {
+      const set = (eventHandlers[type] ??= new Set() as never);
+      set.add(handler);
+    },
+    off<T extends TextAreaControllerEventName>(
+      type: T,
+      handler: TextAreaControllerEventHandler<T>
+    ) {
+      const set = eventHandlers[type];
+      set?.delete(handler);
+    },
+    emit<T extends TextAreaControllerEventName>(
+      type: T,
+      event: TextAreaControllerEvents[T]
+    ) {
+      const set = eventHandlers[type];
+      if (!set) return;
+
+      for (const handler of [...set]) {
+        handler(event);
+      }
+    },
   };
 
   // store the initial state
@@ -414,6 +456,8 @@ export const textAreaCodeHandler = (
       ].join("");
 
       let pushUndo = true;
+
+      const prevValue = ctl.value;
 
       switch (shortcut) {
         case "ctrl+]":
@@ -651,6 +695,13 @@ export const textAreaCodeHandler = (
       if (pushUndo) ctl.pushUndo();
 
       evt.preventDefault();
+
+      if (ctl.value !== prevValue) {
+        ctl.emit("change", {
+          type: "change",
+          value: ctl.value,
+        });
+      }
       return;
     }
     if (evt.type === "keyup") {

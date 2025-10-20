@@ -4,7 +4,14 @@ import {
   MonacoEditor,
   type IDisposable,
 } from "../monacoSetup";
-import { array, object, optional, string, unknown } from "zod/mini";
+import {
+  array,
+  object,
+  optional,
+  prettifyError,
+  string,
+  unknown,
+} from "zod/mini";
 
 export const keyMapping = {
   backspace: KeyCode.Backspace,
@@ -224,7 +231,9 @@ export class KeybindingManager {
 
     const keybindingsParsed = keybindingSchema.safeParse(jsonData);
     if (!keybindingsParsed.success) {
-      this.#lastErrors.push(keybindingsParsed.error.message);
+      this.#lastErrors.push(
+        ...prettifyError(keybindingsParsed.error).split("\n")
+      );
       return null;
     }
 

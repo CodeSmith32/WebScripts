@@ -9,6 +9,7 @@ import {
   number,
   object,
   partial,
+  prettifyError,
   string,
   tuple,
   union,
@@ -650,7 +651,9 @@ export class EditorSettingsManager {
 
     const editorConfigParsed = editorSettingsSchema.safeParse(jsonData);
     if (!editorConfigParsed.success) {
-      this.#lastErrors.push(editorConfigParsed.error.message);
+      this.#lastErrors.push(
+        ...prettifyError(editorConfigParsed.error).split("\n")
+      );
       return null;
     }
 
