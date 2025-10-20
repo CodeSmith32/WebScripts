@@ -8,7 +8,7 @@ import type { StoredSettings } from "../../includes/webscripts";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
 import { TextArea } from "../core/TextArea";
 import { useMemo, useRef, useState } from "preact/hooks";
-import { debounce } from "../../includes/debounce";
+import { debounce } from "../../includes/core/debounce";
 import { editorSettingsManager } from "../../includes/managers/editorSettingsManager";
 import { HelpUrl } from "../HelpUrl";
 import type { ComponentChildren } from "preact";
@@ -16,7 +16,7 @@ import { ErrorList } from "../ErrorList";
 import { keybindingManager } from "../../includes/managers/keybindingManager";
 import { typescriptConfigManager } from "../../includes/managers/typescriptConfigManager";
 import { prettierConfigManager } from "../../includes/managers/prettierConfigManager";
-import { prettifyJson } from "../../includes/prettifyJson";
+import { prettifyJson } from "../../includes/core/prettifyJson";
 
 export interface SettingsPanelProps {
   onClose?: () => void;

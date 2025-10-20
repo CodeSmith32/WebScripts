@@ -3,9 +3,12 @@ import type {
   TargetedEvent,
   TextareaHTMLAttributes,
 } from "preact";
-import { cn } from "../../includes/classes";
+import { cn } from "../../includes/core/classes";
 import { useEffect, useId, useRef } from "preact/hooks";
-import { CodeArea, type CodeAreaEventHandler } from "../../includes/CodeArea";
+import {
+  CodeArea,
+  type CodeAreaEventHandler,
+} from "../../includes/core/CodeArea";
 
 const mergeEvents =
   <T extends TargetedEvent>(handler?: EventHandler<T>, codeEditor?: boolean) =>

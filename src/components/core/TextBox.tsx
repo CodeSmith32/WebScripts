@@ -1,5 +1,5 @@
 import type { InputHTMLAttributes } from "preact";
-import { cn } from "../../includes/classes";
+import { cn } from "../../includes/core/classes";
 import { useId } from "preact/hooks";
 
 export interface TextBoxProps extends InputHTMLAttributes {

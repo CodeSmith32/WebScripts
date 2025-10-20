@@ -1,5 +1,5 @@
 import type { ComponentChildren } from "preact";
-import { cn } from "../../includes/classes";
+import { cn } from "../../includes/core/classes";
 
 export interface StatusIndicatorProps {
   className?: string;

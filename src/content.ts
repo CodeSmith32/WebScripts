@@ -1,4 +1,4 @@
-import { CodePack } from "./includes/codepack";
+import { CodePack } from "./includes/core/codepack";
 import { Chrome, injectScript } from "./includes/utils";
 import { type MessageTypes, webScripts } from "./includes/webscripts";
 

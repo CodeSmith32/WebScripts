@@ -7,7 +7,7 @@ import {
 } from "../includes/webscripts";
 import { useAsyncLoader } from "./core/useAsyncLoader";
 import { lexSort } from "../includes/utils";
-import { CodePack } from "../includes/codepack";
+import { CodePack } from "../includes/core/codepack";
 import { editorSettingsManager } from "../includes/managers/editorSettingsManager";
 import { keybindingManager } from "../includes/managers/keybindingManager";
 import { typescriptConfigManager } from "../includes/managers/typescriptConfigManager";

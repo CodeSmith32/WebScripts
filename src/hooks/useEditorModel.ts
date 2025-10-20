@@ -8,7 +8,7 @@ import {
 import { useCarried } from "./core/useCarried";
 import { useFutureCallback } from "./core/useFutureCallback";
 import { EditableScript } from "../includes/editableScript";
-import { debounce } from "../includes/debounce";
+import { debounce } from "../includes/core/debounce";
 import prettier from "prettier/standalone";
 import prettierBabel from "prettier/plugins/babel";
 import prettierEstree from "prettier/plugins/estree";

@@ -4,7 +4,7 @@ import { useOptionsData } from "../hooks/useOptionsData";
 import { webScripts, type StoredScript } from "../includes/webscripts";
 import { IconButton } from "../components/core/IconButton";
 import { SettingsIcon } from "lucide-preact";
-import { cn } from "../includes/classes";
+import { cn } from "../includes/core/classes";
 import { BlankPanel } from "../components/panels/BlankPanel";
 import { SettingsPanel } from "../components/panels/SettingsPanel";
 import { EditorPanel } from "../components/panels/EditorPanel";
@@ -19,7 +19,7 @@ import {
   PopupConfirm,
   type PopupConfirmCloseData,
 } from "../components/PopupConfirm";
-import type { OnlyRequire } from "../includes/types/utility";
+import type { OnlyRequire } from "../includes/core/types/utility";
 import { ScriptIcon } from "../components/ScriptIcon";
 import { usePreventDefaultSave } from "../hooks/usePreventDefaultSave";
 

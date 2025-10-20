@@ -8,7 +8,7 @@ import { LanguageDropdown } from "../LanguageDropdown";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
 import { SavingIndicator } from "../SavingIndicator";
 import { useEffect, useMemo, useState } from "preact/hooks";
-import { debounce } from "../../includes/debounce";
+import { debounce } from "../../includes/core/debounce";
 import { PrettierStatus } from "../PrettierStatus";
 
 export interface EditorPanelProps {

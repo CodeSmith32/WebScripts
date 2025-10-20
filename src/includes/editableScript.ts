@@ -1,12 +1,12 @@
 import ts from "typescript";
-import { CodePack } from "./codepack";
+import { CodePack } from "./core/codepack";
 import {
   webScripts,
   type ScriptLanguage,
   type StoredScript,
 } from "./webscripts";
 import { randAlphaNum } from "./utils";
-import { arraysEqual } from "./arrayFns";
+import { arraysEqual } from "./core/arrayFns";
 
 const scriptLanguages: Record<ScriptLanguage, true> = {
   javascript: true,

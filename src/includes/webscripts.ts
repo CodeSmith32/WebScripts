@@ -1,6 +1,6 @@
 import { CSPHeader, CSPValue } from "./csp";
 import { Chrome, hostFromURL, type SendMessageOptions } from "./utils";
-import { wrapAsyncLast, wrapAsyncMerge } from "./wrapAsync";
+import { wrapAsyncLast, wrapAsyncMerge } from "./core/wrapAsync";
 
 export type ScriptLanguage = "typescript" | "javascript";
 
