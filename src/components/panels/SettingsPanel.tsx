@@ -16,6 +16,7 @@ import { ErrorList } from "../ErrorList";
 import { keybindingManager } from "../../includes/managers/keybindingManager";
 import { typescriptConfigManager } from "../../includes/managers/typescriptConfigManager";
 import { prettierConfigManager } from "../../includes/managers/prettierConfigManager";
+import { prettifyJson } from "../../includes/prettifyJson";
 
 export interface SettingsPanelProps {
   onClose?: () => void;
@@ -143,6 +144,13 @@ export const SettingsPanel = ({
                 handleChange();
                 debounceUpdateConfigs();
               }}
+              onBlur={() => {
+                settings.editorSettingsJson = prettifyJson(
+                  settings.editorSettingsJson
+                );
+                handleChange();
+                debounceUpdateConfigs();
+              }}
               codeEditor
             />
             {editorSettingsError}
@@ -156,6 +164,13 @@ export const SettingsPanel = ({
               value={settings.editorKeybindingsJson}
               onValueChange={(value) => {
                 settings.editorKeybindingsJson = value;
+                handleChange();
+                debounceUpdateConfigs();
+              }}
+              onBlur={() => {
+                settings.editorKeybindingsJson = prettifyJson(
+                  settings.editorKeybindingsJson
+                );
                 handleChange();
                 debounceUpdateConfigs();
               }}
@@ -175,6 +190,13 @@ export const SettingsPanel = ({
                 handleChange();
                 debounceUpdateConfigs();
               }}
+              onBlur={() => {
+                settings.typescriptConfigJson = prettifyJson(
+                  settings.typescriptConfigJson
+                );
+                handleChange();
+                debounceUpdateConfigs();
+              }}
               codeEditor
             />
             {tsConfigError}
@@ -188,6 +210,13 @@ export const SettingsPanel = ({
               value={settings.prettierConfigJson}
               onValueChange={(value) => {
                 settings.prettierConfigJson = value;
+                handleChange();
+                debounceUpdateConfigs();
+              }}
+              onBlur={() => {
+                settings.prettierConfigJson = prettifyJson(
+                  settings.prettierConfigJson
+                );
                 handleChange();
                 debounceUpdateConfigs();
               }}

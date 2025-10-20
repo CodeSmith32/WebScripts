@@ -1,11 +1,18 @@
-import type { TextareaHTMLAttributes } from "preact";
+import type {
+  EventHandler,
+  TargetedEvent,
+  TextareaHTMLAttributes,
+} from "preact";
 import { cn } from "../../includes/classes";
 import { useEffect, useId, useRef } from "preact/hooks";
-import {
-  getTextAreaController,
-  textAreaReactHandlers,
-  type TextAreaControllerEventHandler,
-} from "../../includes/textAreaCodeHandler";
+import { CodeArea, type CodeAreaEventHandler } from "../../includes/CodeArea";
+
+const mergeEvents =
+  <T extends TargetedEvent>(handler?: EventHandler<T>, codeEditor?: boolean) =>
+  (evt: T) => {
+    handler?.(evt);
+    if (codeEditor) CodeArea.autoHandler(evt as never);
+  };
 
 export interface TextAreaProps
   extends TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -16,6 +23,12 @@ export interface TextAreaProps
 export const TextArea = ({
   className,
   name,
+  onKeyDown,
+  onKeyUp,
+  onMouseDown,
+  onMouseUp,
+  onFocus,
+  onBlur,
   onInput,
   onValueChange,
   codeEditor,
@@ -26,8 +39,8 @@ export const TextArea = ({
 
   useEffect(() => {
     if (codeEditor) {
-      const ctl = getTextAreaController(ref.current!);
-      const onChange: TextAreaControllerEventHandler<"change"> = (evt) => {
+      const ctl = CodeArea.getController(ref.current!);
+      const onChange: CodeAreaEventHandler<"change"> = (evt) => {
         onValueChange?.(evt.value);
       };
 
@@ -47,14 +60,20 @@ export const TextArea = ({
         className
       )}
       name={name ?? fallbackName}
-      {...(codeEditor ? textAreaReactHandlers : null)}
+      onKeyDown={mergeEvents(onKeyDown, codeEditor)}
+      onKeyUp={mergeEvents(onKeyUp, codeEditor)}
+      onMouseDown={mergeEvents(onMouseDown, codeEditor)}
+      onMouseUp={mergeEvents(onMouseUp, codeEditor)}
+      onFocus={mergeEvents(onFocus, codeEditor)}
+      onBlur={mergeEvents(onBlur, codeEditor)}
       onInput={(evt) => {
-        const target = evt.target as HTMLTextAreaElement;
-        if (codeEditor) {
-          textAreaReactHandlers.onFocus(evt);
-        }
         onInput?.(evt);
-        onValueChange?.(target.value);
+
+        if (codeEditor) {
+          CodeArea.reactHandlers.onInput(evt);
+        } else {
+          onValueChange?.((evt.target as HTMLTextAreaElement).value);
+        }
       }}
       {...props}
     />
