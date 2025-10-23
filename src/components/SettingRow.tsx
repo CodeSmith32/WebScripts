@@ -17,7 +17,7 @@ export const SettingRow = ({
         <p className="w-full truncate">{label}</p>
         {subHeading}
       </div>
-      <div className="w-0 grow-[1.5]">{children}</div>
+      <div className="w-0 grow-[2]">{children}</div>
     </div>
   );
 };

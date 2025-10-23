@@ -1,6 +1,7 @@
 import { CSPHeader, CSPValue } from "./csp";
 import { Chrome, hostFromURL, type SendMessageOptions } from "./utils";
 import { wrapAsyncLast, wrapAsyncMerge } from "./core/wrapAsync";
+import { minifyJson, prettifyJson } from "./core/prettifyJson";
 
 export type ScriptLanguage = "typescript" | "javascript";
 
@@ -72,14 +73,33 @@ class WebScripts {
   /** Save all user settings. Async-wrapped to prevent simultaneous calls. */
   saveSettings = wrapAsyncLast(
     async (settings: StoredSettings): Promise<void> => {
-      await Chrome.storage?.local.set({ settings });
+      const compressedSettings: StoredSettings = {
+        ...settings,
+        editorSettingsJson: minifyJson(settings.editorSettingsJson),
+        editorKeybindingsJson: minifyJson(settings.editorKeybindingsJson),
+        typescriptConfigJson: minifyJson(settings.typescriptConfigJson),
+        prettierConfigJson: minifyJson(settings.prettierConfigJson),
+      };
+      await Chrome.storage?.local.set({ settings: compressedSettings });
     }
   );
 
   /** Load all user settings. Async-wrapped to prevent simultaneous calls. */
   loadSettings = wrapAsyncMerge(async (): Promise<StoredSettings> => {
-    const settings = (await Chrome.storage?.local.get("settings"))?.settings;
-    return { ...defaultSettings, ...settings };
+    let settings: StoredSettings = (await Chrome.storage?.local.get("settings"))
+      ?.settings;
+    settings = {
+      ...defaultSettings,
+      ...settings,
+    };
+    settings = {
+      ...settings,
+      editorSettingsJson: prettifyJson(settings.editorSettingsJson),
+      editorKeybindingsJson: prettifyJson(settings.editorKeybindingsJson),
+      typescriptConfigJson: prettifyJson(settings.typescriptConfigJson),
+      prettierConfigJson: prettifyJson(settings.prettierConfigJson),
+    };
+    return settings;
   });
 
   /** Get referred script. */
