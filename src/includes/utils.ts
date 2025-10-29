@@ -11,6 +11,8 @@ export type SendTabMessageOptions = browser.tabs._SendMessageOptions &
 
 export type Tab = browser.tabs.Tab | chrome.tabs.Tab;
 
+export type UserScript = chrome.userScripts.RegisteredUserScript;
+
 /** The extension environment (whether for Chrome or Firefox). */
 export const Chrome =
   typeof browser !== "undefined"
@@ -20,6 +22,11 @@ export const Chrome =
 /** The browser being used, for switching on browser-specific logic ("chrome" or "firefox"). */
 export const browserName =
   typeof browser !== "undefined" ? "firefox" : "chrome";
+
+/** Get browser version. */
+export const chromiumVersion = Number(
+  navigator.userAgent.match(/Chrom(?:e|ium)\/(\d+)/)?.[1] ?? NaN
+);
 
 /** Inject code into the current webpage. */
 export const injectScript = (code: string) => {

@@ -24,7 +24,7 @@
     "@preact/preset-vite": "^2.10.2",
     "@tailwindcss/vite": "^4.1.13",
     "@types/chrome": "^0.1.12",
-    "@types/firefox-webext-browser": "^120.0.4",
+    "@types/firefox-webext-browser": "^143.0.0",
     "@types/node": "^24.5.2",
     "eslint": "^9.36.0",
     "tailwindcss": "^4.1.13",

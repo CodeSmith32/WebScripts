@@ -3,7 +3,7 @@ import { ScriptList } from "../components/ScriptList";
 import { useOptionsData } from "../hooks/useOptionsData";
 import { webScripts, type StoredScript } from "../includes/webscripts";
 import { IconButton } from "../components/core/IconButton";
-import { SettingsIcon } from "lucide-preact";
+import { SettingsIcon, TriangleAlertIcon } from "lucide-preact";
 import { cn } from "../includes/core/classes";
 import { BlankPanel } from "../components/panels/BlankPanel";
 import { SettingsPanel } from "../components/panels/SettingsPanel";
@@ -22,6 +22,7 @@ import {
 import type { OnlyRequire } from "../includes/core/types/utility";
 import { ScriptIcon } from "../components/ScriptIcon";
 import { usePreventDefaultSave } from "../hooks/usePreventDefaultSave";
+import { PopupAlert } from "../components/PopupAlert";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -99,6 +100,24 @@ export const OptionsPage = () => {
       if (script) setActive(script);
     }
   }, [optionsData?.refer]);
+
+  // show error if userScripts is disabled
+  useEffect(() => {
+    if (!webScripts.getUserScripts()) {
+      const message = webScripts.getUserScriptsError();
+
+      popupManager.open(
+        <PopupAlert
+          message={
+            <div className="flex flex-row items-start">
+              <TriangleAlertIcon className="text-destructive p-4" size={32} />
+              <p>{message}</p>
+            </div>
+          }
+        />
+      );
+    }
+  }, []);
 
   return (
     <div className="text-text fixed inset-0 bg-background flex flex-col">

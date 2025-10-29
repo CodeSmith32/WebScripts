@@ -1,28 +1,60 @@
 import { CSPHeader, CSPValue } from "./csp";
-import { Chrome, hostFromURL, type SendMessageOptions } from "./utils";
+import {
+  Chrome,
+  chromiumVersion,
+  hostFromURL,
+  type SendMessageOptions,
+  type UserScript,
+} from "./utils";
 import { wrapAsyncLast, wrapAsyncMerge } from "./core/wrapAsync";
 import { minifyJson, prettifyJson } from "./core/prettifyJson";
+import { CodePack } from "./core/codepack";
 
 export type ScriptLanguage = "typescript" | "javascript";
 
 export interface StoredScript {
+  /** Random alphanumeric id. */
   id: string;
+  /** Script name. */
   name: string;
+  /** Pattern strings.
+   *
+   * `/pattern/i` indicates regex-type match.
+   * `*.domain.com` indicates domain-type match. */
   patterns: string[];
+  /** The language of the script. `"javascript"` or `"typescript"`. */
   language?: ScriptLanguage;
+  /** If the code will be prettified on save. */
   prettify?: boolean;
+  /** The source code, compressed with CodePack. */
   code: string;
+  /** The compiled code, compressed with CodePack. */
   compiled?: string | null;
 
-  saved?: never; // EditableScript must not be assignable to StoredScript
+  // This is a trick to force EditableScript to never be assignable to StoredScript:
+  saved?: never;
 }
 
 export interface StoredSettings {
+  /** The default language for newly created scripts. */
   defaultLanguage: ScriptLanguage;
+  /** If prettifying code should be checked by default for newly created scripts. */
   defaultPrettify: boolean;
+  /** The editor settings json string.
+   *
+   * This JSON is stored minified, but is prettified when displayed. */
   editorSettingsJson: string;
+  /** Keybindings json, designed to match the keybindings pattern in VSCode.
+   *
+   * This JSON is stored minified, but is prettified when displayed. */
   editorKeybindingsJson: string;
+  /** Typescript `compilerOptions` configuration JSON.
+   *
+   * This JSON is stored minified, but is prettified when displayed. */
   typescriptConfigJson: string;
+  /** Prettier configuration JSON.
+   *
+   * This JSON is stored minified, but is prettified when displayed. */
   prettierConfigJson: string;
 }
 
@@ -44,6 +76,9 @@ export type MessageTypes =
   | { cmd: "listRunning" }
   | { cmd: "updateBackgroundScripts" }
   | { cmd: "reloaded" };
+
+const rgxPatternRegex = /^(-?)\s*\/(.*)\/(\w*)$/;
+const rgxPatternDomain = /^(-?)\s*([\w\.\*-]+)$/;
 
 class WebScripts {
   /** Send a message to the extension runtime. */
@@ -119,20 +154,20 @@ class WebScripts {
 
     // iterate patterns
     for (const pattern of patterns) {
-      if ((m = pattern.match(/^(-?)\s*\/(.*)\/(\w*)$/))) {
+      if ((m = pattern.match(rgxPatternRegex))) {
         // pattern is a regex: m[] 1: negated, 2: pattern, 3: flags
-
         const [, negated, regexPattern, regexFlags] = m;
+
         const regex = new RegExp(
           regexPattern,
           regexFlags.replace(/[^ugimsy]/g, "")
         );
 
         if (regex.test(url)) found = negated ? false : true;
-      } else if ((m = pattern.match(/^(-?)\s*([\w\.\*-]+)$/))) {
+      } else if ((m = pattern.match(rgxPatternDomain))) {
         // pattern is a domain: m[] 1: negated, 2: domain
-
         const [, negated, domain] = m;
+
         if (!host) continue;
 
         const regexPattern = domain.replace(/\./g, "\\.").replace(/\*/g, ".*");
@@ -143,6 +178,85 @@ class WebScripts {
     }
 
     return found;
+  }
+
+  /** Convert the match patterns to a standard host match pattern set.
+   *
+   * This process is not an exact conversion, since host matching doesn't support regexs. But
+   * the generated patterns will at least be loose enough to cover any host that matches the
+   * original patterns. */
+  matchesToUrlPatterns(patterns: string[]): {
+    include: string[];
+    exclude: string[];
+  } {
+    let m: RegExpMatchArray | null;
+
+    let include: string[] = [];
+    let exclude: string[] = [];
+
+    for (const pattern of patterns) {
+      if ((m = pattern.match(rgxPatternRegex))) {
+        // pattern is a regex: m[] 1: negated, 2: pattern, 3: flags
+        const [, negated, _regexPattern, _regexFlags] = m;
+
+        if (!negated) {
+          include = ["*://*/*"];
+          exclude = [];
+        }
+      } else if ((m = pattern.match(rgxPatternDomain))) {
+        // pattern is a domain: m[] 1: negated, 2: domain
+        const [, negated, domain] = m;
+
+        if (negated) {
+          exclude.push(`*://${domain}/*`);
+        } else {
+          include.push(`*://${domain}/*`);
+        }
+      }
+    }
+
+    return { include, exclude };
+  }
+
+  /** Convert the match patterns to a piece of code that will test the url and return if
+   * matching fails. */
+  matchesToCode(patterns: string[]): string {
+    let m: RegExpMatchArray | null; // pattern match
+
+    let conditions: string[] = [];
+
+    for (const pattern of patterns) {
+      let rgx: string;
+      let neg: boolean;
+      let fullUrl: boolean;
+
+      if ((m = pattern.match(rgxPatternRegex))) {
+        // pattern is a regex: m[] 1: negated, 2: pattern, 3: flags
+        const [, negated, regexPattern, regexFlags] = m;
+
+        const flags = regexFlags.replace(/[^ugimsy]/g, "");
+        rgx = `new RegExp(${JSON.stringify(regexPattern)}, ${JSON.stringify(flags)})`;
+        neg = !!negated;
+        fullUrl = true;
+      } else if ((m = pattern.match(rgxPatternDomain))) {
+        // pattern is a domain: m[] 1: negated, 2: domain
+        const [, negated, domain] = m;
+
+        const regexPattern =
+          "^" + domain.replace(/\./g, "\\.").replace(/\*/g, ".*") + "$";
+        rgx = `new RegExp(${JSON.stringify(regexPattern)}, "i")`;
+        neg = !!negated;
+        fullUrl = false;
+      } else {
+        continue;
+      }
+
+      conditions.push(
+        `${neg ? "!" : ""}${rgx}.test(${fullUrl ? "location.href" : "location.hostname"})`
+      );
+    }
+
+    return `if(${conditions.join("\n&& ")}) return;\n`;
   }
 
   /** Parse the header of a user script. */
@@ -320,6 +434,97 @@ class WebScripts {
   openEditor = wrapAsyncMerge(async (refer: string) => {
     await Chrome.storage?.local.set({ refer });
     await Chrome.runtime?.openOptionsPage();
+  });
+
+  private userScripts: (typeof chrome)["userScripts"] | null = null;
+  private userScriptsError: string = "";
+
+  /** Initiate userScripts access. */
+  initiateUserScripts() {
+    try {
+      Chrome.userScripts?.getScripts();
+      this.userScripts = Chrome.userScripts as (typeof chrome)["userScripts"];
+    } catch (_err) {
+      this.userScriptsError =
+        chromiumVersion >= 138
+          ? "You must enable 'Allow User Scripts' for this extension in order to be able to use it"
+          : "You must enable 'Developer Mode' in extensions in order to be able to use this extension.";
+    }
+  }
+
+  /** Get the userScripts utility, or capture an error indicating which toggle must be
+   * enabled. */
+  getUserScripts() {
+    this.initiateUserScripts();
+    return this.userScripts;
+  }
+
+  /** Get the message indicating which toggle must be enabled for userScripts to work. */
+  getUserScriptsError() {
+    return this.userScriptsError;
+  }
+
+  /** Resynchronize stored scripts with registered userScripts. */
+  resynchronizeScripts = wrapAsyncLast(async () => {
+    const userScripts = this.getUserScripts();
+    if (!userScripts) return;
+
+    const storedScripts = await this.loadScripts();
+    const registeredScripts = await userScripts.getScripts();
+
+    const storedMap = storedScripts.reduce(
+      (map, obj) => (map.set(obj.id, obj), map),
+      new Map<string, StoredScript>()
+    );
+    const registeredMap = registeredScripts.reduce(
+      (map, obj) => (map.set(obj.id, obj), map),
+      new Map<string, UserScript>()
+    );
+
+    const removeList: string[] = [];
+    const updateList: UserScript[] = [];
+    const addList: UserScript[] = [];
+
+    // find difference between registered scripts and stored scripts
+
+    // search for removed scripts
+    for (const script of registeredScripts) {
+      if (!storedMap.has(script.id)) {
+        removeList.push(script.id);
+      }
+    }
+    // add or update existing scripts
+    for (const script of storedScripts) {
+      const codePrefix = this.matchesToCode(script.patterns);
+      const source = CodePack.unpack(script.compiled ?? script.code);
+      const code = `(()=>{\n${codePrefix}\n${source}\n})();`;
+      const matches = this.matchesToUrlPatterns(script.patterns);
+
+      const userScript: UserScript = {
+        id: script.id,
+        js: [{ code }],
+        allFrames: false,
+        runAt: "document_start",
+        world: "MAIN",
+        includeGlobs: matches.include,
+        excludeGlobs: matches.exclude,
+      };
+
+      if (registeredMap.has(script.id)) {
+        updateList.push(userScript);
+      } else {
+        addList.push(userScript);
+      }
+    }
+
+    // apply updates
+
+    // remove old scripts
+    await userScripts.unregister({ ids: removeList });
+    // update existing scripts
+    await userScripts.update(updateList);
+    // add new scripts
+    await userScripts.register(addList);
   });
 }
 export const webScripts = new WebScripts();
