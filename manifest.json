@@ -1,17 +1,10 @@
 {
   "manifest_version": 3,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "name": "WebScripts",
   "description": "Manipulate webpages with custom Javascript injection.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'"
-  },
-
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "webscript@mindno.de",
-      "strict_min_version": "57.0"
-    }
   },
 
   "permissions": [

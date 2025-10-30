@@ -1,5 +1,4 @@
-import { CodePack } from "./includes/core/codepack";
-import { Chrome, injectScript } from "./includes/utils";
+import { Chrome } from "./includes/utils";
 import { type MessageTypes, webScripts } from "./includes/webscripts";
 
 // list of running scripts
@@ -16,19 +15,14 @@ Chrome.runtime?.onMessage.addListener(
   }
 );
 
-/** Inject all scripts that match the current page url. */
-const injectMatching = async () => {
+/** Find scripts that match the current page url and mark as running. */
+const detectMatching = async () => {
   const scripts = await webScripts.loadScripts();
   const url = location.href;
 
-  for (const { id, patterns, language, code, compiled } of scripts) {
+  for (const { id, patterns } of scripts) {
     if (webScripts.match(url, patterns)) {
       running.push(id);
-
-      const js = CodePack.unpack(
-        language === "typescript" ? (compiled ?? "") : code
-      );
-      injectScript(js);
     }
   }
 
@@ -37,7 +31,7 @@ const injectMatching = async () => {
   } catch (_err) {}
 };
 
-injectMatching().catch((err) => {
+detectMatching().catch((err) => {
   // inject error as an html comment
   document.appendChild(document.createComment(err.message));
 });

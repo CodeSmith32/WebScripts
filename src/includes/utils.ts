@@ -1,16 +1,21 @@
+/** Type of an HTTP header in an intercepted request. */
 export type HttpHeader = Omit<
   browser.webRequest._HttpHeaders & chrome.webRequest.HttpHeader,
   "binaryValue"
 >;
 
+/** Type for a message sent via the runtime extension library. */
 export type SendMessageOptions = browser.runtime._SendMessageOptions &
   chrome.runtime.MessageOptions;
 
+/** Type for a message sent to a specific tab. */
 export type SendTabMessageOptions = browser.tabs._SendMessageOptions &
   chrome.tabs.MessageSendOptions;
 
+/** Type for a browser tab. */
 export type Tab = browser.tabs.Tab | chrome.tabs.Tab;
 
+/** Type of a registered userScript. */
 export type UserScript = chrome.userScripts.RegisteredUserScript;
 
 /** The extension environment (whether for Chrome or Firefox). */
@@ -79,6 +84,8 @@ export const wait = (ms: number) =>
 export const lexSort = <T extends string | number>(a: T, b: T) =>
   a < b ? -1 : a > b ? 1 : 0;
 
+/** Generate a factory that creates strings made of random characters from the given
+ * alphabet. */
 export const randStrFactory = (alphabet: string) => {
   const alphaLen = alphabet.length;
 
@@ -90,6 +97,7 @@ export const randStrFactory = (alphabet: string) => {
   };
 };
 
+/** Generate a random string made of lowercase letters and numbers. */
 export const randAlphaNum = randStrFactory(
   "abcdefghijklmnopqrstuvwxyz0123456789"
 );

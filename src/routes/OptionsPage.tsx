@@ -1,7 +1,11 @@
 import { useEffect, useState } from "preact/hooks";
 import { ScriptList } from "../components/ScriptList";
 import { useOptionsData } from "../hooks/useOptionsData";
-import { webScripts, type StoredScript } from "../includes/webscripts";
+import {
+  webScripts,
+  type StoredScript,
+  type UserScriptsErrorType,
+} from "../includes/webscripts";
 import { IconButton } from "../components/core/IconButton";
 import { SettingsIcon, TriangleAlertIcon } from "lucide-preact";
 import { cn } from "../includes/core/classes";
@@ -23,6 +27,7 @@ import type { OnlyRequire } from "../includes/core/types/utility";
 import { ScriptIcon } from "../components/ScriptIcon";
 import { usePreventDefaultSave } from "../hooks/usePreventDefaultSave";
 import { PopupAlert } from "../components/PopupAlert";
+import type { ComponentChildren } from "preact";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -88,6 +93,7 @@ export const OptionsPage = () => {
 
     if (active === script) setActive(null);
     await optionsData.deleteScript(script);
+    await webScripts.removeUserScript(script);
   };
 
   // trigger jump to referred script
@@ -103,20 +109,75 @@ export const OptionsPage = () => {
 
   // show error if userScripts is disabled
   useEffect(() => {
-    if (!webScripts.getUserScripts()) {
-      const message = webScripts.getUserScriptsError();
+    let cancel = false;
 
-      popupManager.open(
-        <PopupAlert
-          message={
-            <div className="flex flex-row items-start">
-              <TriangleAlertIcon className="text-destructive p-4" size={32} />
-              <p>{message}</p>
+    (async () => {
+      const userScripts = await webScripts.getUserScripts();
+      if (cancel) return;
+
+      if (userScripts) {
+        // Make sure scripts are up-to-data:
+        // Run resync task in background when options page is opened.
+        await webScripts.resynchronizeUserScripts();
+      } else {
+        const messageTable: Record<UserScriptsErrorType, ComponentChildren> = {
+          allowUserScripts: (
+            <div>
+              <p className="mb-3">
+                You must enable <em>Allow User Scripts</em> for this extension
+                in order to be able to use it.
+              </p>
+              <p className="mb-3">
+                Go to <code>chrome://extensions</code>, find the{" "}
+                <em>WebScripts</em> extension, and switch on the{" "}
+                <em>Allow User Scripts</em> option.
+              </p>
             </div>
-          }
-        />
-      );
-    }
+          ),
+          enableDeveloperMode: (
+            <div>
+              <p className="mb-3">
+                You must enable <em>Developer Mode</em> in extensions in order
+                to be able to use this extension.
+              </p>
+              <p className="mb-3">
+                Go to <code>chrome://extensions</code>, and at the top-right
+                look for and toggle on the <em>Developer Mode</em> switch.
+              </p>
+            </div>
+          ),
+          "": (
+            <div>
+              <p className="mb-3">
+                An unknown error prevented the extension from accessing the
+                userScripts API. Be sure to enable this extension's{" "}
+                <em>Allow User Scripts</em> option, or <em>Developer Mode</em>.
+              </p>
+            </div>
+          ),
+        };
+        const message = messageTable[webScripts.getUserScriptsError()];
+
+        popupManager.open(
+          <PopupAlert
+            title="User Scripts Not Allowed"
+            message={
+              <div className="flex flex-row items-start">
+                <TriangleAlertIcon
+                  className="text-destructive p-4 box-content shrink-0"
+                  size={40}
+                />
+                {message}
+              </div>
+            }
+          />
+        );
+      }
+    })();
+
+    return () => {
+      cancel = true;
+    };
   }, []);
 
   return (

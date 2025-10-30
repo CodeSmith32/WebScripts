@@ -9,6 +9,7 @@ import {
 import { wrapAsyncLast, wrapAsyncMerge } from "./core/wrapAsync";
 import { minifyJson, prettifyJson } from "./core/prettifyJson";
 import { CodePack } from "./core/codepack";
+import type { OnlyRequire } from "./core/types/utility";
 
 export type ScriptLanguage = "typescript" | "javascript";
 
@@ -77,8 +78,35 @@ export type MessageTypes =
   | { cmd: "updateBackgroundScripts" }
   | { cmd: "reloaded" };
 
+export type UserScriptsErrorType =
+  | "allowUserScripts"
+  | "enableDeveloperMode"
+  | "";
+
 const rgxPatternRegex = /^(-?)\s*\/(.*)\/(\w*)$/;
 const rgxPatternDomain = /^(-?)\s*([\w\.\*-]+)$/;
+
+export interface PatternParts {
+  /** The type of pattern, if it's a regex (`/pattern/`), or a domain with wildcards
+   * (`*.domain.com`). */
+  type: "regex" | "domain";
+  /** The original pattern, without the negation `-` flag. */
+  original: string;
+  /** A regex pattern string to use for this match pattern. */
+  pattern: string;
+  /** A regex flags string to use for this match pattern. */
+  flags: string;
+  /** What the pattern should be tested on: The full url, or just the hostname. */
+  target: "url" | "host";
+  /** If the match is negated. If `true`, when this pattern matches, the script should *not*
+   * load. */
+  negated: boolean;
+}
+
+export interface IncludesExcludes {
+  include: string[];
+  exclude: string[];
+}
 
 class WebScripts {
   /** Send a message to the extension runtime. */
@@ -146,35 +174,65 @@ class WebScripts {
     }
   );
 
+  /** Parse pattern and return regex parts. */
+  parsePattern(original: string): PatternParts | null {
+    let m: RegExpMatchArray | null; // pattern match
+
+    if ((m = original.match(rgxPatternRegex))) {
+      // pattern is a regex: m[] 1: negated, 2: pattern, 3: flags
+      const [, negated, pattern, flags] = m;
+
+      return {
+        type: "regex",
+        original: original.replace(/^-/, ""),
+        pattern,
+        flags: flags.replace(/[^ugimsy]/g, ""),
+        negated: !!negated,
+        target: "url",
+      };
+    }
+    if ((m = original.match(rgxPatternDomain))) {
+      // pattern is a domain: m[] 1: negated, 2: domain
+      const [, negated, domain] = m;
+
+      const pattern = domain.replace(/^\*\.|\.\*$|\.(\*\.)*/g, (m) => {
+        if (m === "*.") return "(.+\\.)?";
+        if (m === ".*") return "(\\..+)?";
+        if (m === ".") return "\\.";
+        return "\\.(.+\\.)?";
+      });
+
+      return {
+        type: "domain",
+        original: original.replace(/^-/, ""),
+        pattern: `^${pattern}$`,
+        flags: "i",
+        negated: !!negated,
+        target: "host",
+      };
+    }
+    return null;
+  }
+
   /** Check if url matches the pattern-list for a user script. */
   match(url: string, patterns: string[]): boolean {
-    let m: RegExpMatchArray | null; // pattern match
     let found = false;
     const host = hostFromURL(url);
 
     // iterate patterns
-    for (const pattern of patterns) {
-      if ((m = pattern.match(rgxPatternRegex))) {
-        // pattern is a regex: m[] 1: negated, 2: pattern, 3: flags
-        const [, negated, regexPattern, regexFlags] = m;
+    for (const matchPattern of patterns) {
+      // parse pattern
+      const parts = this.parsePattern(matchPattern);
+      if (!parts) continue;
 
-        const regex = new RegExp(
-          regexPattern,
-          regexFlags.replace(/[^ugimsy]/g, "")
-        );
+      // build regex
+      const { pattern, flags, negated, target } = parts;
+      const regex = new RegExp(pattern, flags);
+      const urlHost = target === "host" ? host : url;
+      if (!urlHost) continue;
 
-        if (regex.test(url)) found = negated ? false : true;
-      } else if ((m = pattern.match(rgxPatternDomain))) {
-        // pattern is a domain: m[] 1: negated, 2: domain
-        const [, negated, domain] = m;
-
-        if (!host) continue;
-
-        const regexPattern = domain.replace(/\./g, "\\.").replace(/\*/g, ".*");
-        const regex = new RegExp("^" + regexPattern + "$", "i");
-
-        if (regex.test(host)) found = negated ? false : true;
-      }
+      // apply test
+      if (regex.test(urlHost)) found = !negated;
     }
 
     return found;
@@ -185,32 +243,35 @@ class WebScripts {
    * This process is not an exact conversion, since host matching doesn't support regexs. But
    * the generated patterns will at least be loose enough to cover any host that matches the
    * original patterns. */
-  matchesToUrlPatterns(patterns: string[]): {
-    include: string[];
-    exclude: string[];
-  } {
-    let m: RegExpMatchArray | null;
-
+  matchesToUrlPatterns(patterns: string[]): IncludesExcludes {
     let include: string[] = [];
     let exclude: string[] = [];
 
-    for (const pattern of patterns) {
-      if ((m = pattern.match(rgxPatternRegex))) {
-        // pattern is a regex: m[] 1: negated, 2: pattern, 3: flags
-        const [, negated, _regexPattern, _regexFlags] = m;
+    for (const matchPattern of patterns) {
+      const parts = this.parsePattern(matchPattern);
+      if (!parts) continue;
 
+      const { type, negated, original } = parts;
+
+      if (type === "regex") {
         if (!negated) {
-          include = ["*://*/*"];
+          include = ["<all_urls>", "file:///*"];
           exclude = [];
         }
-      } else if ((m = pattern.match(rgxPatternDomain))) {
-        // pattern is a domain: m[] 1: negated, 2: domain
-        const [, negated, domain] = m;
-
-        if (negated) {
-          exclude.push(`*://${domain}/*`);
+      } else if (type === "domain") {
+        if (/^\*?[^*]*$/.test(original)) {
+          if (negated) {
+            exclude.push(`*://${original}/*`);
+          } else {
+            // TODO: instead of clearing exclusions, remove exclusions assignable to new inclusion
+            exclude = [];
+            include.push(`*://${original}/*`);
+          }
         } else {
-          include.push(`*://${domain}/*`);
+          if (!negated) {
+            include = ["<all_urls>"];
+            exclude = [];
+          }
         }
       }
     }
@@ -221,49 +282,35 @@ class WebScripts {
   /** Convert the match patterns to a piece of code that will test the url and return if
    * matching fails. */
   matchesToCode(patterns: string[]): string {
-    let m: RegExpMatchArray | null; // pattern match
+    // initialize condition: final decision is to fail match
+    const conditions: string[] = ["true"];
 
-    let conditions: string[] = [];
+    for (const matchPattern of patterns) {
+      // parse pattern
+      const parts = this.parsePattern(matchPattern);
+      if (!parts) continue;
 
-    for (const pattern of patterns) {
-      let rgx: string;
-      let neg: boolean;
-      let fullUrl: boolean;
+      // generate regex and test condition
+      const pattern = JSON.stringify(parts.pattern);
+      const flags = JSON.stringify(parts.flags);
+      const target =
+        parts.target === "host" ? "location.hostname" : "location.href";
+      const negated = JSON.stringify(parts.negated);
 
-      if ((m = pattern.match(rgxPatternRegex))) {
-        // pattern is a regex: m[] 1: negated, 2: pattern, 3: flags
-        const [, negated, regexPattern, regexFlags] = m;
-
-        const flags = regexFlags.replace(/[^ugimsy]/g, "");
-        rgx = `new RegExp(${JSON.stringify(regexPattern)}, ${JSON.stringify(flags)})`;
-        neg = !!negated;
-        fullUrl = true;
-      } else if ((m = pattern.match(rgxPatternDomain))) {
-        // pattern is a domain: m[] 1: negated, 2: domain
-        const [, negated, domain] = m;
-
-        const regexPattern =
-          "^" + domain.replace(/\./g, "\\.").replace(/\*/g, ".*") + "$";
-        rgx = `new RegExp(${JSON.stringify(regexPattern)}, "i")`;
-        neg = !!negated;
-        fullUrl = false;
-      } else {
-        continue;
-      }
-
-      conditions.push(
-        `${neg ? "!" : ""}${rgx}.test(${fullUrl ? "location.href" : "location.hostname"})`
+      // push in reverse order (last expression takes highest precedence)
+      conditions.unshift(
+        `new RegExp(${pattern}, ${flags}).test(${target}) ? ${negated}\n : `
       );
     }
 
-    return `if(${conditions.join("\n&& ")}) return;\n`;
+    // join and return condition code
+    return `if(${conditions.join("")}) return;\n`;
   }
 
-  /** Parse the header of a user script. */
+  /** Parse the header comment of a script. */
   parseHeader(code: string): HeaderData {
-    const headerMatch = code.match(
-      /^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/
-    );
+    const header = this.extractHeader(code).replace(/^s*/, "");
+
     let name: string = "";
     let patterns: string[] = [];
     let language: ScriptLanguage | undefined = undefined;
@@ -275,9 +322,9 @@ class WebScripts {
       return ["true", "yes", "on"].includes(value.toLowerCase());
     };
 
-    if (headerMatch) {
+    if (header) {
       const params = new Map<string, string[]>();
-      const lines = headerMatch[1].split(/\r?\n/);
+      const lines = header.split(/\r?\n/);
 
       for (let line of lines) {
         let [, key, value] = line.match(/^\/+([\w\s]+):\s*(.*)$/) ?? [];
@@ -319,17 +366,25 @@ class WebScripts {
       .join("\n");
   }
 
-  /** Safely update the header in the code to use the newly provided field values. */
-  updateHeader(
-    code: string,
-    { name, patterns, language, prettify }: HeaderData
-  ) {
+  /** Extract header comment from start of code. */
+  extractHeader(code: string): string {
     const headerMatch = code.match(
       /^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/
     );
+    if (headerMatch) return headerMatch[0];
+    return "";
+  }
+
+  /** Update the given header data in the header comment, and return a new header comment. */
+  updateHeader(
+    header: string,
+    { name, patterns, language, prettify }: HeaderData
+  ): string {
+    // trim off leading white-space
+    header = header.replace(/^\s*/, "");
 
     // parse old lines
-    let lines: [string, string][] = (headerMatch?.[1].split(/\r?\n/) ?? []).map(
+    let lines: [string, string][] = (header.split(/\r?\n/) ?? []).map(
       (line) => {
         let [, key, value] = line.match(/^\/+([\w\s]+):\s*(.*)$/) ?? [];
         return [key.trim().toLowerCase(), value];
@@ -337,44 +392,38 @@ class WebScripts {
     );
 
     // line mutation utilities
-    const removeKey = (key: string) => {
-      lines = lines.filter((line) => line[0] !== key);
+    const removeKeys = (...keys: string[]) => {
+      lines = lines.filter((line) => !keys.includes(line[0]));
     };
-    const updateKey = (
+    const makeKey = (
       key: string,
       value: string | number | boolean | undefined
-    ) => {
-      if (value == null) {
-        removeKey(key);
-        return;
-      }
-
-      if (typeof value !== "string") value = "" + value;
-
-      let found = false;
-      lines = lines.map((line) => {
-        if (line[0] !== key) return line;
-        found = true;
-        return [line[0], value];
-      });
-      if (!found) lines.unshift([key, value]);
+    ): [string, string] | null => {
+      if (value == null) return null;
+      return [key, "" + value];
     };
 
-    // generate header lines
-    removeKey("match");
-    updateKey("prettify", prettify);
-    updateKey("language", language);
-    updateKey("name", name);
+    // regenerate header lines
+    removeKeys("name", "language", "prettify", "match");
     lines = [
+      makeKey("name", name),
+      makeKey("language", language),
+      makeKey("prettify", prettify),
       ...lines,
-      ...patterns.map((pattern) => ["match", pattern] as [string, string]),
-    ];
+      ...patterns.map((pattern) => makeKey("match", pattern)),
+    ].filter((v) => !!v);
 
     // build header
-    const newHeader = this.buildHeaderLines(lines);
+    return this.buildHeaderLines(lines);
+  }
+
+  /** Safely update the header in the code to use the newly provided field values. */
+  updateHeaderInCode(code: string, headerData: HeaderData) {
+    const header = this.extractHeader(code);
+    const newHeader = this.updateHeader(header, headerData);
 
     // replace old header with new header
-    code = code.slice(headerMatch?.[0].length ?? 0); // cut off old header
+    code = code.slice(header.length ?? 0); // cut off old header
     code = newHeader + "\n\n" + code.replace(/^\s+/, ""); // add new header and separating line
 
     return code;
@@ -437,25 +486,24 @@ class WebScripts {
   });
 
   private userScripts: (typeof chrome)["userScripts"] | null = null;
-  private userScriptsError: string = "";
+  private userScriptsError: UserScriptsErrorType | "" = "";
 
   /** Initiate userScripts access. */
-  initiateUserScripts() {
+  async initiateUserScripts() {
     try {
-      Chrome.userScripts?.getScripts();
+      this.userScriptsError = "";
+      await Chrome.userScripts!.getScripts();
       this.userScripts = Chrome.userScripts as (typeof chrome)["userScripts"];
     } catch (_err) {
       this.userScriptsError =
-        chromiumVersion >= 138
-          ? "You must enable 'Allow User Scripts' for this extension in order to be able to use it"
-          : "You must enable 'Developer Mode' in extensions in order to be able to use this extension.";
+        chromiumVersion >= 138 ? "allowUserScripts" : "enableDeveloperMode";
     }
   }
 
   /** Get the userScripts utility, or capture an error indicating which toggle must be
    * enabled. */
-  getUserScripts() {
-    this.initiateUserScripts();
+  async getUserScripts() {
+    await this.initiateUserScripts();
     return this.userScripts;
   }
 
@@ -464,9 +512,44 @@ class WebScripts {
     return this.userScriptsError;
   }
 
-  /** Resynchronize stored scripts with registered userScripts. */
-  resynchronizeScripts = wrapAsyncLast(async () => {
-    const userScripts = this.getUserScripts();
+  /** Convert a stored script to a user script. */
+  storedScriptToUserScript(script: StoredScript): UserScript {
+    const debug = `console.log(${JSON.stringify({
+      name: script.name,
+      id: script.id,
+      patterns: script.patterns,
+    })})`;
+
+    const codePrefix = this.matchesToCode(script.patterns);
+    const source = CodePack.unpack(script.compiled ?? script.code);
+    const code = `(async()=>{\n${debug}\n${codePrefix}\n${source}\n})();`;
+    const matches = this.matchesToUrlPatterns(script.patterns);
+
+    const userScript: UserScript = {
+      id: script.id,
+      js: [{ code }],
+      allFrames: false,
+      runAt: "document_start",
+      world: "MAIN",
+      matches: matches.include,
+      excludeMatches: matches.exclude,
+    };
+
+    if (!userScript.matches!.length) {
+      userScript.matches = ["*://bad.invalid/*"];
+    }
+    if (!userScript.excludeMatches!.length) {
+      delete userScript.excludeMatches;
+    }
+
+    console.log(userScript);
+    return userScript;
+  }
+
+  /** Update all user scripts to match the list of stored scripts. Adds missing, removes
+   * deleted, and updates other user scripts to synchronize user scripts with stored scripts. */
+  resynchronizeUserScripts = wrapAsyncLast(async () => {
+    const userScripts = await this.getUserScripts();
     if (!userScripts) return;
 
     const storedScripts = await this.loadScripts();
@@ -495,20 +578,7 @@ class WebScripts {
     }
     // add or update existing scripts
     for (const script of storedScripts) {
-      const codePrefix = this.matchesToCode(script.patterns);
-      const source = CodePack.unpack(script.compiled ?? script.code);
-      const code = `(()=>{\n${codePrefix}\n${source}\n})();`;
-      const matches = this.matchesToUrlPatterns(script.patterns);
-
-      const userScript: UserScript = {
-        id: script.id,
-        js: [{ code }],
-        allFrames: false,
-        runAt: "document_start",
-        world: "MAIN",
-        includeGlobs: matches.include,
-        excludeGlobs: matches.exclude,
-      };
+      const userScript = this.storedScriptToUserScript(script);
 
       if (registeredMap.has(script.id)) {
         updateList.push(userScript);
@@ -526,5 +596,31 @@ class WebScripts {
     // add new scripts
     await userScripts.register(addList);
   });
+
+  /** Resynchronize a single user script associated with the given stored script. If the script
+   * doesn't exist, it will be added. If it does, it will be updated. */
+  async resynchronizeUserScript(script: StoredScript) {
+    const userScripts = await this.getUserScripts();
+    if (!userScripts) return;
+
+    const exists =
+      (await userScripts.getScripts({ ids: [script.id] })).length > 0;
+
+    const userScript = this.storedScriptToUserScript(script);
+
+    if (exists) {
+      await userScripts.update([userScript]);
+    } else {
+      await userScripts.register([userScript]);
+    }
+  }
+
+  /** Remove the user script registered for the given stored script. */
+  async removeUserScript(script: OnlyRequire<StoredScript, "id">) {
+    const userScripts = await this.getUserScripts();
+    if (!userScripts) return;
+
+    await userScripts.unregister({ ids: [script.id] });
+  }
 }
 export const webScripts = new WebScripts();

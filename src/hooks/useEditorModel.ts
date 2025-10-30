@@ -86,7 +86,16 @@ export const useEditorModel = (
 
       // format code with prettier, and update editor
       const prettifyCode = async () => {
-        const code = getEditorCode();
+        const originalCode = getEditorCode();
+
+        // prettify header comment
+        const data = webScripts.parseHeader(originalCode);
+        const header = webScripts.extractHeader(originalCode);
+        const newHeader = webScripts.updateHeader(header, data);
+        const code = newHeader + originalCode.slice(header.length);
+        const headerOffset = newHeader.length - header.length; // cursor shift
+
+        // prepare prettier options
         const prettierOptions = {
           ...prettierConfigManager.getPrettierConfig(),
           parser: "babel-ts",
@@ -94,17 +103,18 @@ export const useEditorModel = (
           cursorOffset: -1,
         };
 
+        // apply prettier transform
         try {
           if (modelData.editor) {
             // editor is available: maintain cursor position
             let pos = modelData.editor.getPosition();
-            let offset = pos ? model.getOffsetAt(pos) : 0;
+            let offset = pos ? model.getOffsetAt(pos) + headerOffset : 0;
 
             prettierOptions.cursorOffset = offset;
 
             const { formatted, cursorOffset: newOffset } =
               await prettier.formatWithCursor(code, prettierOptions);
-            if (formatted === code) return true;
+            if (formatted === originalCode) return true;
 
             if (newOffset !== -1) offset = newOffset;
 
@@ -119,7 +129,7 @@ export const useEditorModel = (
           } else {
             // editor not available: just format the code
             const formatted = await prettier.format(code, prettierOptions);
-            if (formatted === code) return true;
+            if (formatted === originalCode) return true;
 
             model.pushEditOperations(
               [],
@@ -145,10 +155,11 @@ export const useEditorModel = (
       const save = async () => {
         // update stored script
         updateCode.immediate();
-        editorScript.storedScript();
+        const storedScript = editorScript.storedScript();
 
         // save
         await saveScripts();
+        await webScripts.resynchronizeUserScript(storedScript);
         editorScript.markSaved();
 
         // trigger update in background script

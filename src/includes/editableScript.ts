@@ -178,7 +178,7 @@ export class EditableScript {
 
   /** Regenerates the header from the script's details. */
   regenerateHeader(): boolean {
-    const newCode = webScripts.updateHeader(this.code, this.#script);
+    const newCode = webScripts.updateHeaderInCode(this.code, this.#script);
     if (this.code === newCode) return false;
 
     this.code = newCode;

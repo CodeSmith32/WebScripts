@@ -22,6 +22,11 @@ Chrome.runtime?.onMessage.addListener((message: MessageTypes) => {
   }
 });
 
+// on install, resynchronize userScripts with stored scripts
+Chrome.runtime?.onInstalled.addListener(async () => {
+  await webScripts.resynchronizeUserScripts();
+});
+
 // test if url matches against any script patterns
 const match = (url: string) => {
   for (const { patterns } of scripts) {
