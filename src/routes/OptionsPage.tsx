@@ -177,6 +177,7 @@ export const OptionsPage = () => {
                 settings={optionsData.settings}
                 onSave={optionsData.saveSettings}
                 onImportScripts={onImportScripts}
+                getScripts={() => optionsData.scripts}
               />
             ) : null
           ) : active && typeof active === "object" ? (

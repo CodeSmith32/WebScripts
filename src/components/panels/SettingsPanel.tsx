@@ -24,12 +24,14 @@ import { Button } from "../core/Button";
 import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { usePopupManager } from "../popupCore/ClassPopupManager";
 import { PopupImport, type PopupImportCloseData } from "../popups/PopupImport";
+import { PopupExport } from "../popups/PopupExport";
 
 export interface SettingsPanelProps {
   onClose?: () => void;
   settings: StoredSettings;
   onSave?: () => Promise<void>;
   onImportScripts?: (scripts: StoredScript[]) => void | Promise<void>;
+  getScripts?: () => StoredScript[];
 }
 
 export const SettingsPanel = ({
@@ -37,6 +39,7 @@ export const SettingsPanel = ({
   settings,
   onSave,
   onImportScripts,
+  getScripts,
 }: SettingsPanelProps) => {
   const [saveStatus, handleChange] = useSavingStatus(onSave);
 
@@ -62,7 +65,9 @@ export const SettingsPanel = ({
   });
 
   const handleExport = useFutureCallback(async () => {
-    // TODO
+    await popupManager.open<void>(
+      <PopupExport scripts={getScripts?.() ?? []} />
+    ).waitClose;
   });
 
   // handler for updating configs

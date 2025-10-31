@@ -2,7 +2,6 @@ import { useState } from "preact/hooks";
 import { webScripts, type StoredScript } from "../../includes/webscripts";
 import { usePopup } from "../popupCore/ClassPopup";
 import { Popup } from "../popupCore/Popup";
-import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import {
   array,
   boolean,
@@ -19,6 +18,7 @@ import { Spinner } from "../core/Spinner";
 import { ErrorList } from "../ErrorList";
 import { CodePack } from "../../includes/core/codepack";
 import type { OnlyRequire } from "../../includes/core/types/utility";
+import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 
 const importedScriptsSchema: ZodMiniType<{
   compressed?: boolean;
@@ -53,12 +53,12 @@ export const PopupImport = ({ onSubmit }: PopupImportProps) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
-  const handleCancel = useFutureCallback(() => {
+  const handleCancel = () => {
     popup.close({ importedScripts: null });
-  });
+  };
 
   const handleAccept = useFutureCallback(async () => {
-    if (!file) return;
+    if (!file || loading) return;
 
     setLoading(true);
 
@@ -132,9 +132,13 @@ export const PopupImport = ({ onSubmit }: PopupImportProps) => {
   return (
     <Popup
       title="Import Scripts"
-      onEscape={handleCancel}
       onEnter={handleAccept}
+      onEscape={handleCancel}
+      onClickOut={handleCancel}
+      onClickX={handleCancel}
     >
+      <p className="mb-4">Import scripts as JSON:</p>
+
       <FileUpload onFileSelect={(file) => setFile(file?.[0] ?? null)} />
 
       <div className="flex flex-row justify-between mt-4">

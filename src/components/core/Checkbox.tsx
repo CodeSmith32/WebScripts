@@ -1,5 +1,6 @@
 import type { ComponentChildren, InputHTMLAttributes } from "preact";
 import { cn } from "../../includes/core/classes";
+import { useId } from "preact/hooks";
 
 export interface CheckboxProps extends InputHTMLAttributes {
   wrapperStyles?: string;
@@ -15,13 +16,17 @@ export const Checkbox = ({
   onValueChange,
   onChange,
   className,
+  name,
   ...props
 }: CheckboxProps) => {
+  const fallbackName = useId();
+
   return (
     <label className={cn("flex flex-row items-center gap-2", wrapperStyles)}>
       <input
+        name={name ?? fallbackName}
         type="checkbox"
-        className={cn("ml-1", className)}
+        className={cn("ml-1 w-4 h-4 mt-px", className)}
         onChange={(evt) => {
           onChange?.(evt);
           onValueChange?.((evt.target as HTMLInputElement).checked);

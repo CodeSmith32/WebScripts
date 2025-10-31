@@ -30,6 +30,9 @@ export const PopupAlert = ({
   return (
     <Popup
       onEnter={handleClose}
+      onEscape={handleClose}
+      onClickOut={handleClose}
+      onClickX={handleClose}
       contentClassName={cn("flex flex-col gap-2", contentClassName)}
       {...props}
     >

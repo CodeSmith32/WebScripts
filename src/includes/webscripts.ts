@@ -144,7 +144,7 @@ class WebScripts {
 
   /** Take parts of a stored script, reconstitute it, and resynchronize parts with code
    * header. */
-  normalizeScript(sourceScript: Partial<StoredScript>) {
+  normalizeScript(sourceScript: Readonly<Partial<StoredScript>>) {
     let code = CodePack.unpack(sourceScript.code ?? "");
 
     let { name, patterns, language, prettify } = this.parseHeader(code);
