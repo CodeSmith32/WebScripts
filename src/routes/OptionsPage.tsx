@@ -1,13 +1,9 @@
 import { useEffect, useState } from "preact/hooks";
 import { ScriptList } from "../components/ScriptList";
 import { useOptionsData } from "../hooks/useOptionsData";
-import {
-  webScripts,
-  type StoredScript,
-  type UserScriptsErrorType,
-} from "../includes/webscripts";
+import { webScripts, type StoredScript } from "../includes/webscripts";
 import { IconButton } from "../components/core/IconButton";
-import { SettingsIcon, TriangleAlertIcon } from "lucide-preact";
+import { SettingsIcon } from "lucide-preact";
 import { cn } from "../includes/core/classes";
 import { BlankPanel } from "../components/panels/BlankPanel";
 import { SettingsPanel } from "../components/panels/SettingsPanel";
@@ -25,9 +21,9 @@ import {
 } from "../components/popups/PopupConfirm";
 import type { OnlyRequire } from "../includes/core/types/utility";
 import { ScriptIcon } from "../components/ScriptIcon";
-import { usePreventDefaultSave } from "../hooks/usePreventDefaultSave";
-import { PopupAlert } from "../components/popups/PopupAlert";
-import type { ComponentChildren } from "preact";
+import { usePreventDefaultSave } from "../hooks/core/usePreventDefaultSave";
+import { PopupUserScriptsWarning } from "../components/popups/PopupUserScriptsWarning";
+import type { Popup } from "../components/popupCore/ClassPopup";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -95,6 +91,11 @@ export const OptionsPage = () => {
     await optionsData.deleteScript(script);
     await webScripts.removeUserScript(script);
   };
+  const onImportScripts = async (scripts: StoredScript[]) => {
+    if (!optionsData) return;
+
+    await optionsData.addScripts(scripts);
+  };
 
   // trigger jump to referred script
   useEffect(() => {
@@ -110,6 +111,7 @@ export const OptionsPage = () => {
   // show error if userScripts is disabled
   useEffect(() => {
     let cancel = false;
+    let popup: Popup | null = null;
 
     (async () => {
       const userScripts = await webScripts.getUserScripts();
@@ -120,56 +122,9 @@ export const OptionsPage = () => {
         // Run resync task in background when options page is opened.
         await webScripts.resynchronizeUserScripts();
       } else {
-        const messageTable: Record<UserScriptsErrorType, ComponentChildren> = {
-          allowUserScripts: (
-            <div>
-              <p className="mb-3">
-                You must enable <em>Allow User Scripts</em> for this extension
-                in order to be able to use it.
-              </p>
-              <p className="mb-3">
-                Go to <code>chrome://extensions</code>, find the{" "}
-                <em>WebScripts</em> extension, and switch on the{" "}
-                <em>Allow User Scripts</em> option.
-              </p>
-            </div>
-          ),
-          enableDeveloperMode: (
-            <div>
-              <p className="mb-3">
-                You must enable <em>Developer Mode</em> in extensions in order
-                to be able to use this extension.
-              </p>
-              <p className="mb-3">
-                Go to <code>chrome://extensions</code>, and at the top-right
-                look for and toggle on the <em>Developer Mode</em> switch.
-              </p>
-            </div>
-          ),
-          "": (
-            <div>
-              <p className="mb-3">
-                An unknown error prevented the extension from accessing the
-                userScripts API. Be sure to enable this extension's{" "}
-                <em>Allow User Scripts</em> option, or <em>Developer Mode</em>.
-              </p>
-            </div>
-          ),
-        };
-        const message = messageTable[webScripts.getUserScriptsError()];
-
-        popupManager.open(
-          <PopupAlert
-            title="User Scripts Not Allowed"
-            message={
-              <div className="flex flex-row items-start">
-                <TriangleAlertIcon
-                  className="text-destructive px-4 py-1.5 box-content shrink-0"
-                  size={40}
-                />
-                {message}
-              </div>
-            }
+        popup = popupManager.open(
+          <PopupUserScriptsWarning
+            errorType={webScripts.getUserScriptsError()}
           />
         );
       }
@@ -177,6 +132,7 @@ export const OptionsPage = () => {
 
     return () => {
       cancel = true;
+      popup?.close();
     };
   }, []);
 
@@ -220,6 +176,7 @@ export const OptionsPage = () => {
                 onClose={onClose}
                 settings={optionsData.settings}
                 onSave={optionsData.saveSettings}
+                onImportScripts={onImportScripts}
               />
             ) : null
           ) : active && typeof active === "object" ? (

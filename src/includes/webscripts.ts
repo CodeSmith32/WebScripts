@@ -3,6 +3,7 @@ import {
   Chrome,
   chromiumVersion,
   hostFromURL,
+  randAlphaNum,
   type SendMessageOptions,
   type UserScript,
 } from "./utils";
@@ -11,6 +12,7 @@ import { minifyJson, prettifyJson } from "./core/prettifyJson";
 import { CodePack } from "./core/codepack";
 import type { OnlyRequire } from "./core/types/utility";
 import { isDomainSupersetOf } from "./core/isDomainSupersetOf";
+import ts from "typescript";
 
 export type ScriptLanguage = "typescript" | "javascript";
 
@@ -109,7 +111,67 @@ export interface IncludesExcludes {
   exclude: string[];
 }
 
+const tsCompileOptions: ts.CompilerOptions = {
+  experimentalDecorators: true,
+};
+
 class WebScripts {
+  private latestScripts: StoredScript[] = [];
+  private latestSettings: StoredSettings = { ...defaultSettings };
+
+  constructor() {
+    // preload scripts and settings
+    this.loadScripts();
+    this.loadSettings();
+  }
+
+  /** Compile source code from script. */
+  compileCode(code: string, language: ScriptLanguage = "javascript") {
+    return language === "typescript"
+      ? CodePack.pack(ts.transpile(code, tsCompileOptions))
+      : null;
+  }
+
+  /** Generate an id for a script. */
+  generateId() {
+    let id = "";
+    // guarantee uniqueness
+    do {
+      id = randAlphaNum(16);
+    } while (this.latestScripts.some((script) => script.id === id));
+    return id;
+  }
+
+  /** Take parts of a stored script, reconstitute it, and resynchronize parts with code
+   * header. */
+  normalizeScript(sourceScript: Partial<StoredScript>) {
+    let code = CodePack.unpack(sourceScript.code ?? "");
+
+    let { name, patterns, language, prettify } = this.parseHeader(code);
+    name ||= sourceScript.name ?? "";
+    if (!patterns.length) patterns = sourceScript.patterns ?? [];
+    language ??= sourceScript.language ?? this.latestSettings.defaultLanguage;
+    prettify ??= sourceScript.prettify ?? this.latestSettings.defaultPrettify;
+
+    code = this.updateHeaderInCode(code, {
+      name,
+      patterns,
+      language,
+      prettify,
+    });
+
+    const script: StoredScript = {
+      id: this.generateId(),
+      name,
+      patterns,
+      language,
+      code: CodePack.pack(code),
+      compiled: webScripts.compileCode(code, language),
+    };
+
+    return script;
+  }
+
   /** Send a message to the extension runtime. */
   async sendMessage<T>(
     message: MessageTypes,
@@ -125,18 +187,22 @@ class WebScripts {
   /** Save all user scripts. Async-wrapped to prevent simultaneous calls. */
   saveScripts = wrapAsyncLast(
     async (scripts: StoredScript[]): Promise<void> => {
+      this.latestScripts = scripts;
       await Chrome.storage?.local.set({ scripts });
     }
   );
 
   /** Load all user scripts. Async-wrapped to prevent simultaneous calls. */
   loadScripts = wrapAsyncMerge(async (): Promise<StoredScript[]> => {
-    return (await Chrome.storage?.local.get("scripts"))?.scripts ?? [];
+    const scripts = (await Chrome.storage?.local.get("scripts"))?.scripts ?? [];
+    this.latestScripts = scripts;
+    return scripts;
   });
 
   /** Save all user settings. Async-wrapped to prevent simultaneous calls. */
   saveSettings = wrapAsyncLast(
     async (settings: StoredSettings): Promise<void> => {
+      this.latestSettings = settings;
       const compressedSettings: StoredSettings = {
         ...settings,
         editorSettingsJson: minifyJson(settings.editorSettingsJson),
@@ -163,6 +229,7 @@ class WebScripts {
       typescriptConfigJson: prettifyJson(settings.typescriptConfigJson),
       prettierConfigJson: prettifyJson(settings.prettierConfigJson),
     };
+    this.latestSettings = settings;
     return settings;
   });
 

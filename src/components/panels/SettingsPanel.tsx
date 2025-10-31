@@ -4,7 +4,10 @@ import { SettingRow } from "../SettingRow";
 import { LanguageDropdown } from "../LanguageDropdown";
 import { Checkbox } from "../core/Checkbox";
 import { SavingIndicator } from "../SavingIndicator";
-import type { StoredSettings } from "../../includes/webscripts";
+import {
+  type StoredScript,
+  type StoredSettings,
+} from "../../includes/webscripts";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
 import { TextArea } from "../core/TextArea";
 import { useMemo, useRef, useState } from "preact/hooks";
@@ -19,17 +22,21 @@ import { prettierConfigManager } from "../../includes/managers/prettierConfigMan
 import { prettifyJson } from "../../includes/core/prettifyJson";
 import { Button } from "../core/Button";
 import { useFutureCallback } from "../../hooks/core/useFutureCallback";
+import { usePopupManager } from "../popupCore/ClassPopupManager";
+import { PopupImport, type PopupImportCloseData } from "../popups/PopupImport";
 
 export interface SettingsPanelProps {
   onClose?: () => void;
   settings: StoredSettings;
   onSave?: () => Promise<void>;
+  onImportScripts?: (scripts: StoredScript[]) => void | Promise<void>;
 }
 
 export const SettingsPanel = ({
   onClose,
   settings,
   onSave,
+  onImportScripts,
 }: SettingsPanelProps) => {
   const [saveStatus, handleChange] = useSavingStatus(onSave);
 
@@ -46,8 +53,12 @@ export const SettingsPanel = ({
   const [prettierConfigError, setPrettierConfigError] =
     useState<ComponentChildren>(null);
 
+  const popupManager = usePopupManager();
+
   const handleImport = useFutureCallback(async () => {
-    // TODO
+    await popupManager.open<PopupImportCloseData>(
+      <PopupImport onSubmit={onImportScripts} />
+    ).waitClose;
   });
 
   const handleExport = useFutureCallback(async () => {

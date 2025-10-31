@@ -5,6 +5,8 @@ const le = al.length;
 for (let i = 0; i < le; i++) la[al[i]] = i;
 
 const rgxWord = /[a-zA-Z0-9_$]+/g;
+const rgxPack = /^([^:]*):([\s\S]*)$/;
+const rgxInvalidDictChar = /[^a-zA-Z0-9_$,]/;
 
 /** Convert number to alphanumeric string.
  * `0 = a, 1 = b, 26 = A, 64 = ba, 115903 = $sC` */
@@ -45,9 +47,37 @@ export const CodePack = {
   },
   /** Decompress a packed code string. */
   unpack(packed: string) {
-    const [dictStr, code] = packed.split(/:([\s\S]+)$/);
+    const parts = packed.match(rgxPack);
+    if (!parts) return "";
+
+    const [, dictStr, code] = parts;
     const dict = dictStr.split(",");
 
     return (code || "").replace(rgxWord, (m) => dict[strToNum(m)] || "");
+  },
+  /** Validates a packed code string. Throws an error on any detected issues. */
+  validate(packed: string) {
+    const parts = packed.match(rgxPack);
+    if (!parts) {
+      throw new SyntaxError(
+        "Decompression Failed: Missing dictionary-content separator."
+      );
+    }
+
+    const [, dictStr] = parts;
+
+    const invalid = dictStr.match(rgxInvalidDictChar);
+    if (invalid) {
+      throw new SyntaxError(
+        "Decompression Failed: Invalid character in dictionary: " + invalid[0]
+      );
+    }
+    if (/^,|,$|,,/.test(dictStr)) {
+      throw new SyntaxError(
+        "Decompression Failed: Blank dictionary word detected."
+      );
+    }
+
+    return true;
   },
 };

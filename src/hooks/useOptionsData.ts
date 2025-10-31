@@ -39,7 +39,7 @@ export const useOptionsData = () => {
     typescriptConfigManager.setTypeScriptConfig(settings.typescriptConfigJson);
     prettierConfigManager.setPrettierConfig(settings.prettierConfigJson);
 
-    // temporary test scripts
+    // Temporary test scripts
     if (!scripts.length) {
       scripts.push(
         {
@@ -63,14 +63,14 @@ export const useOptionsData = () => {
       );
     }
 
-    // save all scripts (expects that script objects changed directly)
+    /** Save all scripts (expects that script objects changed directly). */
     const saveAllScripts = async () => {
       scripts.sort((a, b) => lexSort(a.name, b.name) || lexSort(a.id, b.id));
 
       await webScripts.saveScripts(scripts);
     };
 
-    // update and save a script to the extension storage
+    /** Update and save a script to the extension storage. */
     const saveScript = async (script: StoredScript) => {
       let found = false;
 
@@ -88,7 +88,33 @@ export const useOptionsData = () => {
       refresh({});
     };
 
-    // remove a script and save to the extension storage
+    /** Add a batch of scripts. */
+    const addScripts = async (newScripts: StoredScript[]) => {
+      const newScriptMap = newScripts.reduce(
+        (map, script) => map.set(script.id, script),
+        new Map()
+      );
+
+      for (let i = 0; i < scripts.length; i++) {
+        const id = scripts[i].id;
+        const newScript = newScriptMap.get(id);
+
+        if (newScript) {
+          scripts[i] = newScript;
+          newScriptMap.delete(id);
+        }
+      }
+
+      for (const script of newScriptMap.values()) {
+        scripts.push(script);
+      }
+
+      await saveAllScripts();
+
+      refresh({});
+    };
+
+    /** Remove a script and save to the extension storage. */
     const deleteScript = async (script: StoredScript) => {
       let found = false;
 
@@ -106,7 +132,7 @@ export const useOptionsData = () => {
       refresh({});
     };
 
-    // save settings
+    /** Save settings. */
     const saveSettings = async () => {
       await webScripts.saveSettings(settings);
     };
@@ -117,6 +143,7 @@ export const useOptionsData = () => {
       refer,
       saveAllScripts,
       saveScript,
+      addScripts,
       deleteScript,
       saveSettings,
     };

@@ -1,11 +1,9 @@
-import ts from "typescript";
 import { CodePack } from "./core/codepack";
 import {
   webScripts,
   type ScriptLanguage,
   type StoredScript,
 } from "./webscripts";
-import { randAlphaNum } from "./utils";
 import { arraysEqual } from "./core/arrayFns";
 
 const scriptLanguages: Record<ScriptLanguage, true> = {
@@ -13,15 +11,6 @@ const scriptLanguages: Record<ScriptLanguage, true> = {
   typescript: true,
 };
 Object.setPrototypeOf(scriptLanguages, null);
-
-const tsCompileOptions: ts.CompilerOptions = {
-  experimentalDecorators: true,
-};
-
-const compile = (code: string, language: ScriptLanguage = "javascript") =>
-  language === "typescript"
-    ? CodePack.pack(ts.transpile(code, tsCompileOptions))
-    : null;
 
 /** A class to manage the state for editable scripts. */
 export class EditableScript {
@@ -39,7 +28,7 @@ export class EditableScript {
     const code = details.code ?? "";
 
     const script: StoredScript = {
-      id: randAlphaNum(16),
+      id: webScripts.generateId(),
       name: "",
       patterns: [],
       language: "javascript",
@@ -47,7 +36,7 @@ export class EditableScript {
       code: CodePack.pack(code),
       compiled: null,
     };
-    script.compiled = compile(code, script.language);
+    script.compiled = webScripts.compileCode(code, script.language);
 
     return new EditableScript(script);
   }
@@ -61,7 +50,7 @@ export class EditableScript {
   static fromCode(code: string) {
     const { name, language, patterns, prettify } = webScripts.parseHeader(code);
     const script: StoredScript = {
-      id: randAlphaNum(16),
+      id: webScripts.generateId(),
       name,
       patterns,
       language,
@@ -69,7 +58,7 @@ export class EditableScript {
       code: CodePack.pack(code),
       compiled: null,
     };
-    script.compiled = compile(script.code, script.language);
+    script.compiled = webScripts.compileCode(script.code, script.language);
 
     return new EditableScript(script);
   }
@@ -93,7 +82,10 @@ export class EditableScript {
   storedScript(): StoredScript {
     if (this.#codeChanged) {
       this.#script.code = CodePack.pack(this.#code!);
-      this.#script.compiled = compile(this.#code!, this.language);
+      this.#script.compiled = webScripts.compileCode(
+        this.#code!,
+        this.language
+      );
       this.#codeChanged = false;
     }
     return this.#script;
