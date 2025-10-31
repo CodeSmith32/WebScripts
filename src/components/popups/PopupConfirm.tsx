@@ -1,8 +1,8 @@
 import type { ComponentChildren } from "preact";
-import { Popup, type PopupProps } from "./popups/Popup";
-import { usePopup } from "./popups/ClassPopup";
-import { cn } from "../includes/core/classes";
-import { Button, type ButtonVariantType } from "./core/Button";
+import { Popup, type PopupProps } from "../popupCore/Popup";
+import { usePopup } from "../popupCore/ClassPopup";
+import { cn } from "../../includes/core/classes";
+import { Button, type ButtonVariantType } from "../core/Button";
 
 export interface PopupConfirmCloseData {
   decision: boolean | null;

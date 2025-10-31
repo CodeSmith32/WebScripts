@@ -13,20 +13,20 @@ import { BlankPanel } from "../components/panels/BlankPanel";
 import { SettingsPanel } from "../components/panels/SettingsPanel";
 import { EditorPanel } from "../components/panels/EditorPanel";
 import { useEditorModel } from "../hooks/useEditorModel";
-import { usePopupManager } from "../components/popups/ClassPopupManager";
+import { usePopupManager } from "../components/popupCore/ClassPopupManager";
 import {
   PopupCreateNew,
   type PopupCreateNewCloseData,
-} from "../components/PopupCreateNew";
+} from "../components/popups/PopupCreateNew";
 import { EditableScript } from "../includes/editableScript";
 import {
   PopupConfirm,
   type PopupConfirmCloseData,
-} from "../components/PopupConfirm";
+} from "../components/popups/PopupConfirm";
 import type { OnlyRequire } from "../includes/core/types/utility";
 import { ScriptIcon } from "../components/ScriptIcon";
 import { usePreventDefaultSave } from "../hooks/usePreventDefaultSave";
-import { PopupAlert } from "../components/PopupAlert";
+import { PopupAlert } from "../components/popups/PopupAlert";
 import type { ComponentChildren } from "preact";
 
 const settingsIdentifier = Symbol("SETTINGS");
@@ -164,7 +164,7 @@ export const OptionsPage = () => {
             message={
               <div className="flex flex-row items-start">
                 <TriangleAlertIcon
-                  className="text-destructive p-4 box-content shrink-0"
+                  className="text-destructive px-4 py-1.5 box-content shrink-0"
                   size={40}
                 />
                 {message}

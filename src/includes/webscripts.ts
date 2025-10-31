@@ -426,7 +426,7 @@ class WebScripts {
     header = header.replace(/^\s*/, "");
 
     // parse old lines
-    let lines: [string, string][] = (header.split(/\r?\n/) ?? []).map(
+    let lines: [string, string][] = (header ? header.split(/\r?\n/) : []).map(
       (line) => {
         let [, key, value] = line.match(/^\/+([\w\s]+):\s*(.*)$/) ?? [];
         return [key.trim().toLowerCase(), value];

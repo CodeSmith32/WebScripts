@@ -1,4 +1,4 @@
-import { XIcon } from "lucide-preact";
+import { ImportIcon, XIcon } from "lucide-preact";
 import { IconButton } from "../core/IconButton";
 import { SettingRow } from "../SettingRow";
 import { LanguageDropdown } from "../LanguageDropdown";
@@ -17,6 +17,8 @@ import { keybindingManager } from "../../includes/managers/keybindingManager";
 import { typescriptConfigManager } from "../../includes/managers/typescriptConfigManager";
 import { prettierConfigManager } from "../../includes/managers/prettierConfigManager";
 import { prettifyJson } from "../../includes/core/prettifyJson";
+import { Button } from "../core/Button";
+import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 
 export interface SettingsPanelProps {
   onClose?: () => void;
@@ -43,6 +45,14 @@ export const SettingsPanel = ({
   const [tsConfigError, setTSConfigError] = useState<ComponentChildren>(null);
   const [prettierConfigError, setPrettierConfigError] =
     useState<ComponentChildren>(null);
+
+  const handleImport = useFutureCallback(async () => {
+    // TODO
+  });
+
+  const handleExport = useFutureCallback(async () => {
+    // TODO
+  });
 
   // handler for updating configs
   const debounceUpdateConfigs = useMemo(() => {
@@ -131,6 +141,26 @@ export const SettingsPanel = ({
                 handleChange();
               }}
             />
+          </SettingRow>
+
+          <SettingRow label="Import Scripts From JSON">
+            <Button
+              variant="secondary"
+              className="flex flex-row gap-2 justify-center items-center px-0 w-32"
+              onClick={handleImport}
+            >
+              <ImportIcon size={20} /> Import
+            </Button>
+          </SettingRow>
+
+          <SettingRow label="Export Scripts To JSON">
+            <Button
+              variant="secondary"
+              className="flex flex-row gap-2 justify-center items-center px-0 w-32"
+              onClick={handleExport}
+            >
+              <ImportIcon className="rotate-180" size={20} /> Export
+            </Button>
           </SettingRow>
 
           <SettingRow

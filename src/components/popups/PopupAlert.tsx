@@ -1,8 +1,8 @@
 import type { ComponentChildren } from "preact";
-import { usePopup } from "./popups/ClassPopup";
-import { Popup, type PopupProps } from "./popups/Popup";
-import { Button, type ButtonVariantType } from "./core/Button";
-import { cn } from "../includes/core/classes";
+import { usePopup } from "../popupCore/ClassPopup";
+import { Popup, type PopupProps } from "../popupCore/Popup";
+import { Button, type ButtonVariantType } from "../core/Button";
+import { cn } from "../../includes/core/classes";
 
 export interface PopupAlertProps extends PopupProps {
   message?: ComponentChildren;
@@ -29,6 +29,7 @@ export const PopupAlert = ({
 
   return (
     <Popup
+      onEnter={handleClose}
       contentClassName={cn("flex flex-col gap-2", contentClassName)}
       {...props}
     >
