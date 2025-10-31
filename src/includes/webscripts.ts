@@ -10,6 +10,7 @@ import { wrapAsyncLast, wrapAsyncMerge } from "./core/wrapAsync";
 import { minifyJson, prettifyJson } from "./core/prettifyJson";
 import { CodePack } from "./core/codepack";
 import type { OnlyRequire } from "./core/types/utility";
+import { isDomainSupersetOf } from "./core/isDomainSupersetOf";
 
 export type ScriptLanguage = "typescript" | "javascript";
 
@@ -248,26 +249,67 @@ class WebScripts {
     let exclude: string[] = [];
 
     for (const matchPattern of patterns) {
+      // parse the pattern
       const parts = this.parsePattern(matchPattern);
       if (!parts) continue;
 
       const { type, negated, original } = parts;
 
       if (type === "regex") {
+        // if it's a regex, we cannot know what it will match: match everything
         if (!negated) {
           include = ["<all_urls>", "file:///*"];
           exclude = [];
         }
       } else if (type === "domain") {
+        // if it's a domain...
         if (/^\*?[^*]*$/.test(original)) {
+          // if it only has a wildcard at the start, add it to exclusions or inclusions
+          // dependent on the negation flag
           if (negated) {
             exclude.push(`*://${original}/*`);
           } else {
-            // TODO: instead of clearing exclusions, remove exclusions assignable to new inclusion
-            exclude = [];
+            const newInclude = original.toLowerCase();
+
+            // remove exclusions that are culled or would otherwise cull the newest inclusion
+            exclude = exclude.filter((exclude) => {
+              exclude = exclude.slice(4, -2).toLowerCase(); // cut off *:// and /*
+
+              // remove in any of the three cases:
+
+              // exclusion equals inclusion
+              // (because exclusion has no effect)
+              // match  -www.google.com
+              // match  www.google.com
+              if (exclude === newInclude) {
+                return false;
+              }
+
+              // exclusion is a subset of inclusion
+              // (because exclusion has no effect)
+              // match  -www.google.com
+              // match  *.google.com
+              if (isDomainSupersetOf(newInclude, exclude)) {
+                return false;
+              }
+
+              // inclusion is a subset of exclusion
+              // (because exclusions are applied after inclusions in userScripts)
+              // match  -*.google.com
+              // match  www.google.com
+              if (isDomainSupersetOf(exclude, newInclude)) {
+                return false;
+              }
+
+              return true;
+            });
+
+            // add the new inclusion
             include.push(`*://${original}/*`);
           }
         } else {
+          // if it has wildcards not at the start, we cannot know what it will match, other than
+          // that it's a non-file url
           if (!negated) {
             include = ["<all_urls>"];
             exclude = [];
