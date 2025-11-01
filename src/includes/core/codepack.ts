@@ -36,12 +36,17 @@ export const CodePack = {
   pack(code: string) {
     const dict: string[] = [];
 
-    code = code.replace(rgxWord, (m) => {
-      let i = dict.indexOf(m);
-      if (i === -1) i = dict.push(m) - 1;
+    code = code
+      .replace(rgxWord, (m) => {
+        let i = dict.indexOf(m);
+        if (i === -1) i = dict.push(m) - 1;
 
-      return numToStr(i);
-    });
+        return numToStr(i);
+      })
+      .replace(/[ \t]{4,}|#/g, (m) => {
+        if (m === "#") return "##";
+        return `#${m.length.toString(36)}${m[0]}`;
+      });
 
     return dict.join(",") + ":" + code;
   },
@@ -53,7 +58,12 @@ export const CodePack = {
     const [, dictStr, code] = parts;
     const dict = dictStr.split(",");
 
-    return (code || "").replace(rgxWord, (m) => dict[strToNum(m)] || "");
+    return (code || "")
+      .replace(/#(#|[\w+][ \t])/g, (_, m) => {
+        if (m === "#") return "#";
+        return m[m.length - 1].repeat(parseInt(m.slice(0, -1), 36));
+      })
+      .replace(rgxWord, (m) => dict[strToNum(m)] || "");
   },
   /** Validates a packed code string. Throws an error on any detected issues. */
   validate(packed: string) {

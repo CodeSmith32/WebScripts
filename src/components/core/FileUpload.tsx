@@ -5,17 +5,23 @@ import { cn } from "../../includes/core/classes";
 export interface FileUploadProps extends InputHTMLAttributes {
   disabled?: boolean;
   wrapperStyle?: string;
+  headerStyle?: string;
+  subHeaderStyle?: string;
   className?: string;
   onFileSelect?: (file: FileList | null) => void;
+  error?: boolean;
 }
 
 export const FileUpload = ({
   disabled,
   wrapperStyle,
+  headerStyle,
+  subHeaderStyle,
   className,
   onChange,
   onFileSelect,
   multiple,
+  error,
   ...props
 }: FileUploadProps) => {
   const [files, setFiles] = useState<FileList | null>(null);
@@ -25,6 +31,7 @@ export const FileUpload = ({
       className={cn(
         "relative w-full min-h-60 text-text/70",
         files && "text-primary",
+        error && "text-destructive",
         wrapperStyle
       )}
     >
@@ -48,11 +55,14 @@ export const FileUpload = ({
           "absolute inset-0 border-2 border-text/70 border-dashed rounded-xl flex flex-col " +
             "justify-center items-center gap-2 text-center pointer-events-none",
           files && "border-primary",
+          error && "border-destructive",
           className
         )}
       >
-        <p className="text-2xl">{multiple ? "Select Files" : "Select File"}</p>
-        <p>
+        <p className={cn("text-2xl", headerStyle)}>
+          {multiple ? "Select Files" : "Select File"}
+        </p>
+        <p className={subHeaderStyle}>
           {files
             ? multiple
               ? `${files.length} files selected.`

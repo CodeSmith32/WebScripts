@@ -23,7 +23,7 @@ export const ScriptList = ({
   onSelect,
 }: ScriptListProps) => {
   return (
-    <div className={cn("px-2 pb-2 overflow-y-auto", className)}>
+    <div className={cn("px-2 pt-[2px] pb-2 overflow-y-auto", className)}>
       {scripts.length ? (
         scripts.map((script) => (
           <div
@@ -50,7 +50,11 @@ export const ScriptList = ({
                 (evt as MouseEvent & { __handled?: boolean }).__handled = true;
                 onDelete?.(script);
               }}
-              className="w-9 h-9 p-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              className={
+                "w-9 h-9 p-2 opacity-0 max-w-0 " +
+                "group-hover:opacity-100 group-hover:max-w-none " +
+                "focus-visible:opacity-100 focus-visible:max-w-none"
+              }
               title="Delete"
             >
               <TrashIcon size={16} />

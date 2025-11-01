@@ -71,6 +71,8 @@ export const PopupExport = ({ scripts }: PopupExportProps) => {
     await wait(200);
 
     setLoading(false);
+
+    popup.close();
   });
 
   return (

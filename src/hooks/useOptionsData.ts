@@ -42,7 +42,7 @@ export const useOptionsData = () => {
     // Temporary test scripts
     if (!scripts.length) {
       scripts.push(
-        {
+        webScripts.normalizeScript({
           id: "example",
           name: "Example Script",
           language: "typescript",
@@ -51,15 +51,15 @@ export const useOptionsData = () => {
             'const x: string = "hello world";\nconsole.log(x);'
           ),
           compiled: "",
-        },
-        {
+        }),
+        webScripts.normalizeScript({
           id: "example2",
           name: "Test",
           language: "javascript",
           patterns: [],
           code: CodePack.pack('console.log("Test!");'),
           compiled: "",
-        }
+        })
       );
     }
 
