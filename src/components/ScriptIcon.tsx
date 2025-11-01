@@ -4,7 +4,7 @@ import {
   ScrollTextIcon,
   type LucideProps,
 } from "lucide-preact";
-import type { StoredScript } from "../includes/webscripts";
+import type { StoredScript } from "../includes/services/webScriptService";
 
 export interface ScriptIconProps extends LucideProps {
   script: StoredScript;

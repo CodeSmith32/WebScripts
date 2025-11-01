@@ -1,5 +1,8 @@
 import { useState } from "preact/hooks";
-import { webScripts, type StoredScript } from "../../includes/webscripts";
+import {
+  webScripts,
+  type StoredScript,
+} from "../../includes/services/webScriptService";
 import { Checkbox } from "../core/Checkbox";
 import { MultiSelect, Option } from "../core/Dropdown";
 import { usePopup } from "../popupCore/ClassPopup";
@@ -52,12 +55,10 @@ export const PopupExport = ({ scripts }: PopupExportProps) => {
       json = JSON.stringify(contents);
     } else {
       const contents = {
-        scripts: selection.map(
-          ({ id: _id, compiled: _compiled, code, ...script }) => ({
-            ...script,
-            code: CodePack.unpack(code),
-          })
-        ),
+        scripts: selection.map(({ id: _id, code, ...script }) => ({
+          ...script,
+          code: CodePack.unpack(code),
+        })),
       };
       json = JSON.stringify(contents, null, "  ");
     }

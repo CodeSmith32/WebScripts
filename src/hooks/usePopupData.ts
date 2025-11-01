@@ -1,5 +1,5 @@
 import { getActiveTab, tabSendMessage } from "../includes/utils";
-import { webScripts } from "../includes/webscripts";
+import { webScripts } from "../includes/services/webScriptService";
 import { useAsyncLoader } from "./core/useAsyncLoader";
 
 export const usePopupData = () => {
@@ -11,18 +11,12 @@ export const usePopupData = () => {
     try {
       const running = await tabSendMessage<string[]>(
         tab,
-        {
-          cmd: "listRunning",
-        },
-        {
-          frameId: 0,
-        }
+        { cmd: "listRunning" },
+        { frameId: 0 }
       );
       if (!running) throw new Error("Failed to retrieve running scripts.");
       runningScripts = running;
-    } catch (_err) {
-      // noop
-    }
+    } catch (_err) {}
 
     return { allScripts, runningScripts };
   });

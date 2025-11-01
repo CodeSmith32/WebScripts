@@ -1,5 +1,5 @@
 import type { ComponentChildren } from "preact";
-import type { UserScriptsErrorType } from "../../includes/webscripts";
+import type { UserScriptsErrorType } from "../../includes/services/userScriptService";
 import { PopupAlert } from "./PopupAlert";
 import { TriangleAlertIcon } from "lucide-preact";
 

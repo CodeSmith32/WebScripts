@@ -7,7 +7,7 @@ import { SavingIndicator } from "../SavingIndicator";
 import {
   type StoredScript,
   type StoredSettings,
-} from "../../includes/webscripts";
+} from "../../includes/services/webScriptService";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
 import { TextArea } from "../core/TextArea";
 import { useMemo, useRef, useState } from "preact/hooks";

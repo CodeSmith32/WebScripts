@@ -2,7 +2,7 @@ import { useState } from "preact/hooks";
 import { usePopup } from "../popupCore/ClassPopup";
 import { Popup } from "../popupCore/Popup";
 import { TextBox } from "../core/TextBox";
-import type { ScriptLanguage } from "../../includes/webscripts";
+import type { ScriptLanguage } from "../../includes/services/webScriptService";
 import { Checkbox } from "../core/Checkbox";
 import { Button } from "../core/Button";
 import { LanguageDropdown } from "../LanguageDropdown";

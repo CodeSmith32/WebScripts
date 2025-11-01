@@ -3,7 +3,10 @@ import { PopupScriptRow } from "../components/PopupScriptRow";
 import { Spinner } from "../components/core/Spinner";
 import { useFutureCallback } from "../hooks/core/useFutureCallback";
 import { usePopupData } from "../hooks/usePopupData";
-import { webScripts, type StoredScript } from "../includes/webscripts";
+import {
+  webScripts,
+  type StoredScript,
+} from "../includes/services/webScriptService";
 
 export const PopupFrame = () => {
   const { data, available } = usePopupData();

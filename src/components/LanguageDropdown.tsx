@@ -1,4 +1,4 @@
-import type { ScriptLanguage } from "../includes/webscripts";
+import type { ScriptLanguage } from "../includes/services/webScriptService";
 import { Dropdown, Option, type DropdownProps } from "./core/Dropdown";
 
 export interface LanguageDropdownProps

@@ -33,7 +33,7 @@ export const Button = ({
         "rounded-md bg-transparent cursor-pointer px-5 py-2 text-center relative z-0 overflow-hidden " +
           "after:absolute after:-z-10 after:inset-0 after:pointer-events-none hover:after:bg-white/10 active:after:bg-black/50",
         variant && buttonVariants[variant],
-        disabled && "opacity-70 after:hidden cursor-default",
+        disabled && "opacity-50 after:hidden cursor-default",
         className
       )}
       disabled={disabled}

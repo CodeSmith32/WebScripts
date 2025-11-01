@@ -3,7 +3,7 @@ import {
   webScripts,
   type ScriptLanguage,
   type StoredScript,
-} from "./webscripts";
+} from "./services/webScriptService";
 import { arraysEqual } from "./core/arrayFns";
 
 const scriptLanguages: Record<ScriptLanguage, true> = {
@@ -34,9 +34,7 @@ export class EditableScript {
       language: "javascript",
       ...details,
       code: CodePack.pack(code),
-      compiled: null,
     };
-    script.compiled = webScripts.compileCode(code, script.language);
 
     return new EditableScript(script);
   }
@@ -56,9 +54,7 @@ export class EditableScript {
       language,
       prettify,
       code: CodePack.pack(code),
-      compiled: null,
     };
-    script.compiled = webScripts.compileCode(script.code, script.language);
 
     return new EditableScript(script);
   }
@@ -82,10 +78,6 @@ export class EditableScript {
   storedScript(): StoredScript {
     if (this.#codeChanged) {
       this.#script.code = CodePack.pack(this.#code!);
-      this.#script.compiled = webScripts.compileCode(
-        this.#code!,
-        this.language
-      );
       this.#codeChanged = false;
     }
     return this.#script;

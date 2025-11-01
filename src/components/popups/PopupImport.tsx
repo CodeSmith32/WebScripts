@@ -1,5 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
-import { webScripts, type StoredScript } from "../../includes/webscripts";
+import {
+  webScripts,
+  type StoredScript,
+} from "../../includes/services/webScriptService";
 import { usePopup } from "../popupCore/ClassPopup";
 import { Popup } from "../popupCore/Popup";
 import {
@@ -30,7 +33,7 @@ const importedScriptsSchema: ZodMiniType<{
   compressed: optional(boolean()),
   scripts: array(
     object({
-      id: optional(string()),
+      // id: optional(string()),
       name: optional(string()),
       patterns: optional(array(string())),
       language: optional(zenum(["typescript", "javascript"])),

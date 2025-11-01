@@ -3,7 +3,8 @@ import {
   webScripts,
   type MessageTypes,
   type StoredScript,
-} from "./includes/webscripts";
+} from "./includes/services/webScriptService";
+import { userScriptService } from "./includes/services/userScriptService";
 
 let scripts: StoredScript[] = [];
 
@@ -24,7 +25,7 @@ Chrome.runtime?.onMessage.addListener((message: MessageTypes) => {
 
 // on install, resynchronize userScripts with stored scripts
 Chrome.runtime?.onInstalled.addListener(async () => {
-  await webScripts.resynchronizeUserScripts();
+  await userScriptService.resynchronizeUserScripts();
 });
 
 // test if url matches against any script patterns

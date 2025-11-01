@@ -1,5 +1,8 @@
 import { Chrome } from "./includes/utils";
-import { type MessageTypes, webScripts } from "./includes/webscripts";
+import {
+  type MessageTypes,
+  webScripts,
+} from "./includes/services/webScriptService";
 
 // list of running scripts
 const running: string[] = [];

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "preact/hooks";
 import { ScriptList } from "../components/ScriptList";
 import { useOptionsData } from "../hooks/useOptionsData";
-import { webScripts, type StoredScript } from "../includes/webscripts";
+import {
+  webScripts,
+  type StoredScript,
+} from "../includes/services/webScriptService";
 import { IconButton } from "../components/core/IconButton";
 import { SettingsIcon } from "lucide-preact";
 import { cn } from "../includes/core/classes";
@@ -24,6 +27,7 @@ import { ScriptIcon } from "../components/ScriptIcon";
 import { usePreventDefaultSave } from "../hooks/core/usePreventDefaultSave";
 import { PopupUserScriptsWarning } from "../components/popups/PopupUserScriptsWarning";
 import type { Popup } from "../components/popupCore/ClassPopup";
+import { userScriptService } from "../includes/services/userScriptService";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -89,7 +93,7 @@ export const OptionsPage = () => {
 
     if (active === script) setActive(null);
     await optionsData.deleteScript(script);
-    await webScripts.removeUserScript(script);
+    await userScriptService.removeUserScript(script);
   };
   const onImportScripts = async (scripts: StoredScript[]) => {
     if (!optionsData) return;
@@ -114,17 +118,17 @@ export const OptionsPage = () => {
     let popup: Popup | null = null;
 
     (async () => {
-      const userScripts = await webScripts.getUserScripts();
+      const userScripts = await userScriptService.getUserScripts();
       if (cancel) return;
 
       if (userScripts) {
         // Make sure scripts are up-to-data:
         // Run resync task in background when options page is opened.
-        await webScripts.resynchronizeUserScripts();
+        await userScriptService.resynchronizeUserScripts();
       } else {
         popup = popupManager.open(
           <PopupUserScriptsWarning
-            errorType={webScripts.getUserScriptsError()}
+            errorType={userScriptService.getUserScriptsError()}
           />
         );
       }

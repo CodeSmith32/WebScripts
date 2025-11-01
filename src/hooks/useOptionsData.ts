@@ -4,7 +4,7 @@ import {
   type StoredSettings,
   type StoredScript,
   defaultSettings,
-} from "../includes/webscripts";
+} from "../includes/services/webScriptService";
 import { useAsyncLoader } from "./core/useAsyncLoader";
 import { lexSort } from "../includes/utils";
 import { CodePack } from "../includes/core/codepack";
@@ -50,7 +50,6 @@ export const useOptionsData = () => {
           code: CodePack.pack(
             'const x: string = "hello world";\nconsole.log(x);'
           ),
-          compiled: "",
         }),
         webScripts.normalizeScript({
           id: "example2",
@@ -58,7 +57,6 @@ export const useOptionsData = () => {
           language: "javascript",
           patterns: [],
           code: CodePack.pack('console.log("Test!");'),
-          compiled: "",
         })
       );
     }

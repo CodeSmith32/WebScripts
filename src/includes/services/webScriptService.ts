@@ -1,18 +1,14 @@
-import { CSPHeader, CSPValue } from "./csp";
+import { CSPHeader, CSPValue } from "../csp";
 import {
   Chrome,
-  chromiumVersion,
   hostFromURL,
   randAlphaNum,
   type SendMessageOptions,
-  type UserScript,
-} from "./utils";
-import { wrapAsyncLast, wrapAsyncMerge } from "./core/wrapAsync";
-import { minifyJson, prettifyJson } from "./core/prettifyJson";
-import { CodePack } from "./core/codepack";
-import type { OnlyRequire } from "./core/types/utility";
-import { isDomainSupersetOf } from "./core/isDomainSupersetOf";
-import ts from "typescript";
+} from "../utils";
+import { wrapAsyncLast, wrapAsyncMerge } from "../core/wrapAsync";
+import { minifyJson, prettifyJson } from "../core/prettifyJson";
+import { CodePack } from "../core/codepack";
+import { isDomainSupersetOf } from "../core/isDomainSupersetOf";
 
 export type ScriptLanguage = "typescript" | "javascript";
 
@@ -32,8 +28,6 @@ export interface StoredScript {
   prettify?: boolean;
   /** The source code, compressed with CodePack. */
   code: string;
-  /** The compiled code, compressed with CodePack. */
-  compiled?: string | null;
 
   // This is a trick to force EditableScript to never be assignable to StoredScript:
   saved?: never;
@@ -81,11 +75,6 @@ export type MessageTypes =
   | { cmd: "updateBackgroundScripts" }
   | { cmd: "reloaded" };
 
-export type UserScriptsErrorType =
-  | "allowUserScripts"
-  | "enableDeveloperMode"
-  | "";
-
 const rgxPatternRegex = /^(-?)\s*\/(.*)\/(\w*)$/;
 const rgxPatternDomain = /^(-?)\s*([\w\.\*-]+)$/;
 
@@ -111,10 +100,6 @@ export interface IncludesExcludes {
   exclude: string[];
 }
 
-const tsCompileOptions: ts.CompilerOptions = {
-  experimentalDecorators: true,
-};
-
 class WebScripts {
   private latestScripts: StoredScript[] = [];
   private latestSettings: StoredSettings = { ...defaultSettings };
@@ -123,13 +108,6 @@ class WebScripts {
     // preload scripts and settings
     this.loadScripts();
     this.loadSettings();
-  }
-
-  /** Compile source code from script. */
-  compileCode(code: string, language: ScriptLanguage = "javascript") {
-    return language === "typescript"
-      ? CodePack.pack(ts.transpile(code, tsCompileOptions))
-      : null;
   }
 
   /** Generate an id for a script. */
@@ -166,7 +144,6 @@ class WebScripts {
       patterns,
       language,
       code: CodePack.pack(code),
-      compiled: webScripts.compileCode(code, language),
     };
 
     return script;
@@ -252,7 +229,7 @@ class WebScripts {
 
       return {
         type: "regex",
-        original: original.replace(/^-/, ""),
+        original: original.replace(/^-\s*/, ""),
         pattern,
         flags: flags.replace(/[^ugimsy]/g, ""),
         negated: !!negated,
@@ -272,7 +249,7 @@ class WebScripts {
 
       return {
         type: "domain",
-        original: original.replace(/^-/, ""),
+        original: original.replace(/^-\s*/, ""),
         pattern: `^${pattern}$`,
         flags: "i",
         negated: !!negated,
@@ -551,7 +528,7 @@ class WebScripts {
     return this.buildHeaderLines(lines);
   }
 
-  /** Process content-security-policy header: allow executing user scripts. */
+  /** DEPRECATED: Process content-security-policy header: allow executing user scripts. */
   processCSPHeader(header: string): string {
     // parse csp header string
     const csp = CSPHeader.fromString(header);
@@ -593,143 +570,5 @@ class WebScripts {
     await Chrome.storage?.local.set({ refer });
     await Chrome.runtime?.openOptionsPage();
   });
-
-  private userScripts: (typeof chrome)["userScripts"] | null = null;
-  private userScriptsError: UserScriptsErrorType | "" = "";
-
-  /** Initiate userScripts access. */
-  async initiateUserScripts() {
-    try {
-      this.userScriptsError = "";
-      await Chrome.userScripts!.getScripts();
-      this.userScripts = Chrome.userScripts as (typeof chrome)["userScripts"];
-    } catch (_err) {
-      this.userScriptsError =
-        chromiumVersion >= 138 ? "allowUserScripts" : "enableDeveloperMode";
-    }
-  }
-
-  /** Get the userScripts utility, or capture an error indicating which toggle must be
-   * enabled. */
-  async getUserScripts() {
-    await this.initiateUserScripts();
-    return this.userScripts;
-  }
-
-  /** Get the message indicating which toggle must be enabled for userScripts to work. */
-  getUserScriptsError() {
-    return this.userScriptsError;
-  }
-
-  /** Convert a stored script to a user script. */
-  storedScriptToUserScript(script: StoredScript): UserScript {
-    const debug = `console.log(${JSON.stringify({
-      name: script.name,
-      id: script.id,
-      patterns: script.patterns,
-    })})`;
-
-    const codePrefix = this.matchesToCode(script.patterns);
-    const source = CodePack.unpack(script.compiled ?? script.code);
-    const code = `(async()=>{\n${debug}\n${codePrefix}\n${source}\n})();`;
-    const matches = this.matchesToUrlPatterns(script.patterns);
-
-    const userScript: UserScript = {
-      id: script.id,
-      js: [{ code }],
-      allFrames: false,
-      runAt: "document_start",
-      world: "MAIN",
-      matches: matches.include,
-      excludeMatches: matches.exclude,
-    };
-
-    if (!userScript.matches!.length) {
-      userScript.matches = ["*://bad.invalid/*"];
-    }
-    if (!userScript.excludeMatches!.length) {
-      delete userScript.excludeMatches;
-    }
-
-    console.log(userScript);
-    return userScript;
-  }
-
-  /** Update all user scripts to match the list of stored scripts. Adds missing, removes
-   * deleted, and updates other user scripts to synchronize user scripts with stored scripts. */
-  resynchronizeUserScripts = wrapAsyncLast(async () => {
-    const userScripts = await this.getUserScripts();
-    if (!userScripts) return;
-
-    const storedScripts = await this.loadScripts();
-    const registeredScripts = await userScripts.getScripts();
-
-    const storedMap = storedScripts.reduce(
-      (map, obj) => (map.set(obj.id, obj), map),
-      new Map<string, StoredScript>()
-    );
-    const registeredMap = registeredScripts.reduce(
-      (map, obj) => (map.set(obj.id, obj), map),
-      new Map<string, UserScript>()
-    );
-
-    const removeList: string[] = [];
-    const updateList: UserScript[] = [];
-    const addList: UserScript[] = [];
-
-    // find difference between registered scripts and stored scripts
-
-    // search for removed scripts
-    for (const script of registeredScripts) {
-      if (!storedMap.has(script.id)) {
-        removeList.push(script.id);
-      }
-    }
-    // add or update existing scripts
-    for (const script of storedScripts) {
-      const userScript = this.storedScriptToUserScript(script);
-
-      if (registeredMap.has(script.id)) {
-        updateList.push(userScript);
-      } else {
-        addList.push(userScript);
-      }
-    }
-
-    // apply updates
-
-    // remove old scripts
-    await userScripts.unregister({ ids: removeList });
-    // update existing scripts
-    await userScripts.update(updateList);
-    // add new scripts
-    await userScripts.register(addList);
-  });
-
-  /** Resynchronize a single user script associated with the given stored script. If the script
-   * doesn't exist, it will be added. If it does, it will be updated. */
-  async resynchronizeUserScript(script: StoredScript) {
-    const userScripts = await this.getUserScripts();
-    if (!userScripts) return;
-
-    const exists =
-      (await userScripts.getScripts({ ids: [script.id] })).length > 0;
-
-    const userScript = this.storedScriptToUserScript(script);
-
-    if (exists) {
-      await userScripts.update([userScript]);
-    } else {
-      await userScripts.register([userScript]);
-    }
-  }
-
-  /** Remove the user script registered for the given stored script. */
-  async removeUserScript(script: OnlyRequire<StoredScript, "id">) {
-    const userScripts = await this.getUserScripts();
-    if (!userScripts) return;
-
-    await userScripts.unregister({ ids: [script.id] });
-  }
 }
 export const webScripts = new WebScripts();
