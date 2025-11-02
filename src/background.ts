@@ -1,27 +1,21 @@
-import { browserName, Chrome, type HttpHeader } from "./includes/utils";
-import {
-  webScripts,
-  type MessageTypes,
-  type StoredScript,
-} from "./includes/services/webScriptService";
+import { browserName, Chrome } from "./includes/utils";
 import { userScriptService } from "./includes/services/userScriptService";
+import { storageService } from "./includes/services/storageService";
+import { messageService } from "./includes/services/messageService";
+import { patternService } from "./includes/services/patternService";
+import type { HttpHeader, StoredScript } from "./includes/types";
+import { cspService } from "./includes/services/cspService";
 
 let scripts: StoredScript[] = [];
 
 // reload scripts
 const reloadScripts = async () => {
-  scripts = await webScripts.loadScripts();
+  scripts = await storageService.loadScripts();
 };
 reloadScripts();
 
 // listen for script updates and reload when changes occur
-Chrome.runtime?.onMessage.addListener((message: MessageTypes) => {
-  switch (message.cmd) {
-    case "updateBackgroundScripts":
-      reloadScripts();
-      break;
-  }
-});
+messageService.listen("updateBackgroundScripts", () => reloadScripts());
 
 // on install, resynchronize userScripts with stored scripts
 Chrome.runtime?.onInstalled.addListener(async () => {
@@ -31,7 +25,7 @@ Chrome.runtime?.onInstalled.addListener(async () => {
 // test if url matches against any script patterns
 const match = (url: string) => {
   for (const { patterns } of scripts) {
-    if (webScripts.match(url, patterns)) return true;
+    if (patternService.match(url, patterns)) return true;
   }
   return false;
 };
@@ -52,7 +46,7 @@ if (browserName === "firefox") {
           /^(x-)?content-security-policy$/i.test(header.name) &&
           header.value != null
         ) {
-          const newValue = webScripts.processCSPHeader(header.value);
+          const newValue = cspService.allowUnsafeInline(header.value);
           if (!newValue) continue;
 
           header.value = newValue;

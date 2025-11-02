@@ -1,8 +1,5 @@
 import { useState } from "preact/hooks";
-import {
-  webScripts,
-  type StoredScript,
-} from "../../includes/services/webScriptService";
+import { webScripts } from "../../includes/services/webScriptService";
 import { Checkbox } from "../core/Checkbox";
 import { MultiSelect, Option } from "../core/Dropdown";
 import { usePopup } from "../popupCore/ClassPopup";
@@ -14,6 +11,7 @@ import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { wait } from "../../includes/utils";
 import { downloadBlob } from "../../includes/core/download";
 import { CodePack } from "../../includes/core/codepack";
+import type { StoredScript } from "../../includes/types";
 
 export interface PopupExportProps {
   scripts: StoredScript[];

@@ -1,16 +1,13 @@
 import { useMemo, useRef, useState } from "preact/hooks";
 import { MonacoEditor, type TextModel } from "../includes/monacoSetup";
-import {
-  webScripts,
-  type ScriptLanguage,
-  type StoredScript,
-} from "../includes/services/webScriptService";
 import { useCarried } from "./core/useCarried";
 import { useFutureCallback } from "./core/useFutureCallback";
 import { EditableScript } from "../includes/editableScript";
 import { debounce } from "../includes/core/debounce";
 import { prettierService } from "../includes/services/prettierService";
 import { userScriptService } from "../includes/services/userScriptService";
+import type { ScriptLanguage, StoredScript } from "../includes/types";
+import { messageService } from "../includes/services/messageService";
 
 export interface EditorModelData {
   script: EditableScript;
@@ -112,7 +109,7 @@ export const useEditorModel = (
         editorScript.markSaved();
 
         // trigger update in background script
-        await webScripts.sendMessage({ cmd: "updateBackgroundScripts" });
+        await messageService.send("updateBackgroundScripts", {});
       };
 
       // script changed

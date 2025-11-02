@@ -1,10 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { ScriptList } from "../components/ScriptList";
 import { useOptionsData } from "../hooks/useOptionsData";
-import {
-  webScripts,
-  type StoredScript,
-} from "../includes/services/webScriptService";
+import { webScripts } from "../includes/services/webScriptService";
 import { IconButton } from "../components/core/IconButton";
 import { SettingsIcon } from "lucide-preact";
 import { cn } from "../includes/core/classes";
@@ -28,6 +25,7 @@ import { usePreventDefaultSave } from "../hooks/core/usePreventDefaultSave";
 import { PopupUserScriptsWarning } from "../components/popups/PopupUserScriptsWarning";
 import type { Popup } from "../components/popupCore/ClassPopup";
 import { userScriptService } from "../includes/services/userScriptService";
+import type { StoredScript } from "../includes/types";
 
 const settingsIdentifier = Symbol("SETTINGS");
 

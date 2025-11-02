@@ -1,15 +1,15 @@
 import ts from "typescript";
-import type { ScriptLanguage } from "./webScriptService";
-
-const tsCompileOptions: ts.CompilerOptions = {
-  experimentalDecorators: true,
-};
+import type { ScriptLanguage } from "../types";
 
 export class TypeScriptService {
+  tsCompileOptions: ts.CompilerOptions = {
+    experimentalDecorators: true,
+  };
+
   /** Compile source code from script. */
   compile(code: string, language: ScriptLanguage = "javascript") {
     return language === "typescript"
-      ? ts.transpile(code, tsCompileOptions)
+      ? ts.transpile(code, { ...this.tsCompileOptions })
       : null;
   }
 }

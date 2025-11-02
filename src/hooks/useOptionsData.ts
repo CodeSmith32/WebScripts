@@ -1,10 +1,5 @@
 import { useState } from "preact/hooks";
-import {
-  webScripts,
-  type StoredSettings,
-  type StoredScript,
-  defaultSettings,
-} from "../includes/services/webScriptService";
+import { webScripts } from "../includes/services/webScriptService";
 import { useAsyncLoader } from "./core/useAsyncLoader";
 import { lexSort } from "../includes/utils";
 import { CodePack } from "../includes/core/codepack";
@@ -12,25 +7,27 @@ import { editorSettingsManager } from "../includes/managers/editorSettingsManage
 import { keybindingManager } from "../includes/managers/keybindingManager";
 import { typescriptConfigManager } from "../includes/managers/typescriptConfigManager";
 import { prettierConfigManager } from "../includes/managers/prettierConfigManager";
+import { storageService } from "../includes/services/storageService";
+import type { StoredScript, StoredSettings } from "../includes/types";
 
 export const useOptionsData = () => {
   const [, refresh] = useState({});
 
   return useAsyncLoader(async () => {
     let scripts: StoredScript[] = [];
-    let settings: StoredSettings = { ...defaultSettings };
+    let settings: StoredSettings = { ...storageService.defaultSettings };
     let refer: string | null = null;
 
     try {
-      scripts = await webScripts.loadScripts();
+      scripts = await storageService.loadScripts();
     } catch (_err) {}
 
     try {
-      settings = await webScripts.loadSettings();
+      settings = await storageService.loadSettings();
     } catch (_err) {}
 
     try {
-      refer = await webScripts.getReferred();
+      refer = await storageService.getReferred();
     } catch (_err) {}
 
     // update managers from settings
@@ -65,7 +62,7 @@ export const useOptionsData = () => {
     const saveAllScripts = async () => {
       scripts.sort((a, b) => lexSort(a.name, b.name) || lexSort(a.id, b.id));
 
-      await webScripts.saveScripts(scripts);
+      await storageService.saveScripts(scripts);
     };
 
     /** Update and save a script to the extension storage. */
@@ -125,14 +122,14 @@ export const useOptionsData = () => {
 
       if (!found) return;
 
-      await webScripts.saveScripts(scripts);
+      await storageService.saveScripts(scripts);
 
       refresh({});
     };
 
     /** Save settings. */
     const saveSettings = async () => {
-      await webScripts.saveSettings(settings);
+      await storageService.saveSettings(settings);
     };
 
     return {

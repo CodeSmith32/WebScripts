@@ -1,23 +1,3 @@
-/** Type of an HTTP header in an intercepted request. */
-export type HttpHeader = Omit<
-  browser.webRequest._HttpHeaders & chrome.webRequest.HttpHeader,
-  "binaryValue"
->;
-
-/** Type for a message sent via the runtime extension library. */
-export type SendMessageOptions = browser.runtime._SendMessageOptions &
-  chrome.runtime.MessageOptions;
-
-/** Type for a message sent to a specific tab. */
-export type SendTabMessageOptions = browser.tabs._SendMessageOptions &
-  chrome.tabs.MessageSendOptions;
-
-/** Type for a browser tab. */
-export type Tab = browser.tabs.Tab | chrome.tabs.Tab;
-
-/** Type of a registered userScript. */
-export type UserScript = chrome.userScripts.RegisteredUserScript;
-
 /** The extension environment (whether for Chrome or Firefox). */
 export const Chrome =
   typeof browser !== "undefined"
@@ -33,47 +13,10 @@ export const chromiumVersion = Number(
   navigator.userAgent.match(/Chrom(?:e|ium)\/(\d+)/)?.[1] ?? NaN
 );
 
-/** Inject code into the current webpage. */
-export const injectScript = (code: string) => {
-  const script = document.createElement("script");
-  const el = document.head || document.documentElement;
-
-  script.textContent = code;
-
-  el.appendChild(script);
-  el.removeChild(script);
-};
-
-/** Get the domain:port part from a url. */
-export const hostFromURL = (url: string) => {
+/** Get the hostname from a url, i.e., the domain name without the port. */
+export const hostnameFromURL = (url: string) => {
   const host = url.match(/^https?:\/\/([^:\\\/]*)/);
   return host?.[1] ?? null;
-};
-
-/** Get the currently active browser tab. */
-export const getActiveTab = async (): Promise<Tab | null> => {
-  const active = await Chrome.tabs?.query({
-    active: true,
-    currentWindow: true,
-  });
-  return active?.[0] ?? null;
-};
-
-/** Send a message to the content script registered in the given tab. */
-export const tabSendMessage = async <T>(
-  tab: Tab | null | undefined,
-  message: unknown,
-  options: SendTabMessageOptions = {}
-): Promise<T | undefined> => {
-  if (!tab?.id) return undefined;
-
-  return await (
-    Chrome.tabs?.sendMessage as (
-      tabId: number,
-      message: unknown,
-      options: SendTabMessageOptions
-    ) => Promise<T>
-  )(tab.id, message, options);
 };
 
 /** Return a promise that resolves after the given number of milliseconds. */

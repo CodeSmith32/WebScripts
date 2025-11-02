@@ -1,9 +1,14 @@
 import { CodePack } from "../core/codepack";
 import type { OnlyRequire } from "../core/types/utility";
-import { Chrome, chromiumVersion, type UserScript } from "../utils";
-import { webScripts, type StoredScript } from "./webScriptService";
+import { Chrome, chromiumVersion } from "../utils";
 import { typescriptService } from "./typescriptService";
 import { wrapAsyncLast } from "../core/wrapAsync";
+import { storageService } from "./storageService";
+import { patternService } from "./patternService";
+import type { StoredScript } from "../types";
+
+/** Type of a registered userScript. */
+export type UserScript = chrome.userScripts.RegisteredUserScript;
 
 export type UserScriptsErrorType =
   | "allowUserScripts"
@@ -47,13 +52,13 @@ export class UserScriptService {
       patterns: script.patterns,
     })})`;
 
-    const codePrefix = webScripts.matchesToCode(script.patterns);
+    const codePrefix = patternService.toCode(script.patterns);
     const source = typescriptService.compile(
       CodePack.unpack(script.code),
       script.language
     );
     const code = `(async()=>{\n${debug}\n${codePrefix}\n${source}\n})();`;
-    const matches = webScripts.matchesToUrlPatterns(script.patterns);
+    const matches = patternService.toDomainPatterns(script.patterns);
 
     const userScript: UserScript = {
       id: script.id,
@@ -82,7 +87,7 @@ export class UserScriptService {
     const userScripts = await this.getUserScripts();
     if (!userScripts) return;
 
-    const storedScripts = await webScripts.loadScripts();
+    const storedScripts = await storageService.loadScripts();
     const registeredScripts = await userScripts.getScripts();
 
     const storedMap = storedScripts.reduce(

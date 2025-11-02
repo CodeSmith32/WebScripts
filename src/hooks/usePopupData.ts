@@ -1,17 +1,19 @@
-import { getActiveTab, tabSendMessage } from "../includes/utils";
-import { webScripts } from "../includes/services/webScriptService";
 import { useAsyncLoader } from "./core/useAsyncLoader";
+import { messageService } from "../includes/services/messageService";
+import { storageService } from "../includes/services/storageService";
+import { tabService } from "../includes/services/tabService";
 
 export const usePopupData = () => {
   return useAsyncLoader(async () => {
-    const tab = await getActiveTab();
-    const allScripts = await webScripts.loadScripts();
+    const tab = await tabService.active();
+    const allScripts = await storageService.loadScripts();
 
     let runningScripts: string[] | null = null;
     try {
-      const running = await tabSendMessage<string[]>(
+      const running = await messageService.sendToTab(
         tab,
-        { cmd: "listRunning" },
+        "listRunning",
+        {},
         { frameId: 0 }
       );
       if (!running) throw new Error("Failed to retrieve running scripts.");

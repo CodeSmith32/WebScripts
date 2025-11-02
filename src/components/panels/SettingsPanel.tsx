@@ -4,10 +4,6 @@ import { SettingRow } from "../SettingRow";
 import { LanguageDropdown } from "../LanguageDropdown";
 import { Checkbox } from "../core/Checkbox";
 import { SavingIndicator } from "../SavingIndicator";
-import {
-  type StoredScript,
-  type StoredSettings,
-} from "../../includes/services/webScriptService";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
 import { TextArea } from "../core/TextArea";
 import { useMemo, useRef, useState } from "preact/hooks";
@@ -25,6 +21,7 @@ import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { usePopupManager } from "../popupCore/ClassPopupManager";
 import { PopupImport, type PopupImportCloseData } from "../popups/PopupImport";
 import { PopupExport } from "../popups/PopupExport";
+import type { StoredScript, StoredSettings } from "../../includes/types";
 
 export interface SettingsPanelProps {
   onClose?: () => void;

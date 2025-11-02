@@ -3,10 +3,8 @@ import { PopupScriptRow } from "../components/PopupScriptRow";
 import { Spinner } from "../components/core/Spinner";
 import { useFutureCallback } from "../hooks/core/useFutureCallback";
 import { usePopupData } from "../hooks/usePopupData";
-import {
-  webScripts,
-  type StoredScript,
-} from "../includes/services/webScriptService";
+import { messageService } from "../includes/services/messageService";
+import type { StoredScript } from "../includes/types";
 
 export const PopupFrame = () => {
   const { data, available } = usePopupData();
@@ -16,7 +14,7 @@ export const PopupFrame = () => {
   });
 
   const handleOpenScripts = useFutureCallback(async (refer: string = "") => {
-    await webScripts.openEditor(refer);
+    await messageService.openEditor(refer);
   });
 
   return (

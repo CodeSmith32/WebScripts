@@ -1,8 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import {
-  webScripts,
-  type StoredScript,
-} from "../../includes/services/webScriptService";
+import { webScripts } from "../../includes/services/webScriptService";
 import { usePopup } from "../popupCore/ClassPopup";
 import { Popup } from "../popupCore/Popup";
 import {
@@ -25,6 +22,7 @@ import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { cn } from "../../includes/core/classes";
 import { MultiSelect, Option } from "../core/Dropdown";
 import { ImportIcon } from "lucide-preact";
+import type { StoredScript } from "../../includes/types";
 
 const importedScriptsSchema: ZodMiniType<{
   compressed?: boolean;

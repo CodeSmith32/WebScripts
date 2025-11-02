@@ -1,16 +1,11 @@
 import { CodePack } from "./core/codepack";
+import { webScripts } from "./services/webScriptService";
+import { arraysEqual } from "./core/arrayFns";
 import {
-  webScripts,
+  scriptLanguages,
   type ScriptLanguage,
   type StoredScript,
-} from "./services/webScriptService";
-import { arraysEqual } from "./core/arrayFns";
-
-const scriptLanguages: Record<ScriptLanguage, true> = {
-  javascript: true,
-  typescript: true,
-};
-Object.setPrototypeOf(scriptLanguages, null);
+} from "./types";
 
 /** A class to manage the state for editable scripts. */
 export class EditableScript {
