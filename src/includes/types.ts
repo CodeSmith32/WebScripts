@@ -9,9 +9,11 @@ export interface StoredScript {
    * `*.domain.com` indicates domain-type match. */
   patterns: string[];
   /** The language of the script. `"javascript"` or `"typescript"`. */
-  language?: ScriptLanguage;
+  language: ScriptLanguage;
   /** If the code will be prettified on save. */
-  prettify?: boolean;
+  prettify: boolean;
+  /** If the content security policy header should be removed for pages this script runs on. */
+  csp: CSPAction;
   /** The source code, compressed with CodePack. */
   code: string;
 
@@ -50,13 +52,10 @@ export type HttpHeader = Omit<
 
 export type ScriptLanguage = "typescript" | "javascript";
 
+export type CSPAction = "disable" | "leave";
+
 export const scriptLanguages: Record<ScriptLanguage, true> = {
   javascript: true,
   typescript: true,
 };
 Object.setPrototypeOf(scriptLanguages, null);
-
-export type HeaderData = Pick<
-  StoredScript,
-  "name" | "patterns" | "language" | "prettify"
->;

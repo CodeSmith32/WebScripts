@@ -3,6 +3,7 @@ import { webScripts } from "./services/webScriptService";
 import { arraysEqual } from "./core/arrayFns";
 import {
   scriptLanguages,
+  type CSPAction,
   type ScriptLanguage,
   type StoredScript,
 } from "./types";
@@ -27,6 +28,8 @@ export class EditableScript {
       name: "",
       patterns: [],
       language: "javascript",
+      prettify: false,
+      csp: "leave",
       ...details,
       code: CodePack.pack(code),
     };
@@ -41,13 +44,15 @@ export class EditableScript {
 
   /** Create an EditableScript from code, by parsing the header. */
   static fromCode(code: string) {
-    const { name, language, patterns, prettify } = webScripts.parseHeader(code);
+    const headerData = webScripts.parseHeader(code);
     const script: StoredScript = {
       id: webScripts.generateId(),
-      name,
-      patterns,
-      language,
-      prettify,
+      name: "",
+      patterns: [],
+      language: "javascript",
+      prettify: false,
+      csp: "leave",
+      ...headerData,
       code: CodePack.pack(code),
     };
 
@@ -97,7 +102,7 @@ export class EditableScript {
     return this.#script.language ?? "javascript";
   }
   set language(language: ScriptLanguage | undefined) {
-    if (typeof language === "string" && !scriptLanguages[language]) {
+    if (typeof language !== "string" || !scriptLanguages[language]) {
       language = "javascript";
     }
     this.#script.language = language;
@@ -110,7 +115,7 @@ export class EditableScript {
     return this.#script.prettify ?? false;
   }
   set prettify(prettify: boolean | undefined) {
-    this.#script.prettify = prettify;
+    this.#script.prettify = prettify ?? false;
   }
 
   /** The url match patterns. */
@@ -119,6 +124,15 @@ export class EditableScript {
   }
   set patterns(patterns: string[]) {
     this.#script.patterns = patterns;
+    this.markUnsaved();
+  }
+
+  /** The csp action. */
+  get csp(): CSPAction {
+    return this.#script.csp ?? "leave";
+  }
+  set csp(csp: CSPAction) {
+    this.#script.csp = csp;
     this.markUnsaved();
   }
 
@@ -135,14 +149,20 @@ export class EditableScript {
 
   /** Parses the header and updates the script's details accordingly. */
   reloadHeader(): boolean {
-    const { name, patterns, language, prettify } = webScripts.parseHeader(
-      this.code
-    );
+    const {
+      name = "",
+      patterns = [],
+      language = "javascript",
+      prettify = false,
+      csp = "leave",
+    } = webScripts.parseHeader(this.code);
+
     if (
       this.#script.name === name &&
       this.#script.language === language &&
       arraysEqual(this.#script.patterns, patterns) &&
-      this.#script.prettify === prettify
+      this.#script.prettify === prettify &&
+      this.#script.csp === csp
     ) {
       return false;
     }
@@ -151,6 +171,7 @@ export class EditableScript {
     this.#script.patterns = patterns;
     this.#script.language = language;
     this.#script.prettify = prettify;
+    this.#script.csp = csp;
     this.markUnsaved();
     return true;
   }

@@ -27,7 +27,7 @@ export const PopupFrame = () => {
       ) : data.allScripts.length ? (
         data.allScripts.map((script) => (
           <PopupScriptRow
-            name={script.name}
+            script={script}
             switched={data.runningScripts?.includes(script.id) ?? false}
             onSwitch={() => handleToggle(script)}
             onEdit={() => handleOpenScripts(script.id)}

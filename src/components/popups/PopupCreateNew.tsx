@@ -5,12 +5,16 @@ import { TextBox } from "../core/TextBox";
 import { Checkbox } from "../core/Checkbox";
 import { Button } from "../core/Button";
 import { LanguageDropdown } from "../LanguageDropdown";
-import type { ScriptLanguage } from "../../includes/types";
+import type { CSPAction, ScriptLanguage } from "../../includes/types";
+import { CSPActionDropdown } from "../CSPActionDropdown";
+import { ChevronDownIcon } from "lucide-preact";
+import { cn } from "../../includes/core/classes";
 
 export type PopupCreateNewCloseData = {
   name: string;
   language: ScriptLanguage;
   prettify: boolean;
+  csp: CSPAction;
 } | null;
 
 export const PopupCreateNew = () => {
@@ -18,6 +22,9 @@ export const PopupCreateNew = () => {
   const [name, setName] = useState<string>("");
   const [language, setLanguage] = useState<ScriptLanguage>("javascript");
   const [prettify, setPrettify] = useState<boolean>(false);
+  const [csp, setCsp] = useState<CSPAction>("leave");
+
+  const [advanced, setAdvanced] = useState(false);
 
   const isValid = !!(name && language);
 
@@ -26,7 +33,7 @@ export const PopupCreateNew = () => {
   };
   const onCreate = () => {
     if (!isValid) return;
-    popup.close({ name, language, prettify });
+    popup.close({ name, language, prettify, csp });
   };
 
   return (
@@ -61,7 +68,24 @@ export const PopupCreateNew = () => {
         />
       </div>
 
-      <div className="pt-1 flex flex-row justify-between">
+      <div className="flex flex-col">
+        <Button
+          className="flex flex-row justify-between w-full px-3 py-1 rounded-md bg-text/5"
+          onClick={() => setAdvanced((advanced) => !advanced)}
+        >
+          <p>Advanced Options</p>{" "}
+          <ChevronDownIcon className={cn(advanced && "rotate-180")} />
+        </Button>
+
+        <div className={cn("mt-4", advanced || "hidden")}>
+          <div className="flex flex-col gap-2">
+            <span>Content-Security-Policy Action</span>
+            <CSPActionDropdown value={csp} onValueChange={setCsp} />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 flex flex-row justify-between">
         <Button variant="primary" onClick={onCreate} disabled={!isValid}>
           Create
         </Button>

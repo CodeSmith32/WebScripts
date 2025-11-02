@@ -6,6 +6,16 @@ import { Chrome } from "../utils";
 export class StorageService {
   waitForPreload: Promise<void>;
 
+  defaultScriptData: StoredScript = {
+    id: "",
+    code: "",
+    name: "",
+    language: "javascript",
+    patterns: [],
+    prettify: false,
+    csp: "leave",
+  };
+
   defaultSettings: StoredSettings = {
     defaultLanguage: "javascript",
     defaultPrettify: false,
@@ -35,7 +45,13 @@ export class StorageService {
 
   /** Load all user scripts. Async-wrapped to prevent simultaneous calls. */
   loadScripts = wrapAsyncMerge(async (): Promise<StoredScript[]> => {
-    const scripts = (await Chrome.storage?.local.get("scripts"))?.scripts ?? [];
+    const scripts =
+      (await Chrome.storage?.local.get("scripts"))?.scripts.map(
+        (script: Partial<StoredScript>): StoredScript => ({
+          ...this.defaultScriptData,
+          ...script,
+        })
+      ) ?? [];
     this.latestScripts = scripts;
     return scripts;
   });
