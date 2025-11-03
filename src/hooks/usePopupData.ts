@@ -20,6 +20,6 @@ export const usePopupData = () => {
       runningScripts = running;
     } catch (_err) {}
 
-    return { allScripts, runningScripts };
+    return { allScripts, runningScripts, tab };
   });
 };

@@ -28,6 +28,11 @@ export interface MessageTable {
   listRunning: MessageTableEntry<EmptyObject, string[]>;
   updateBackgroundScripts: MessageTableEntry<EmptyObject, void>;
   reloaded: MessageTableEntry<EmptyObject, void>;
+  toggleDomain: MessageTableEntry<
+    { id: string; domain: string; enabled: boolean },
+    void
+  >;
+  scriptUpdated: MessageTableEntry<{ id: string }, void>;
 }
 
 export type MessageCmd = keyof MessageTable;
@@ -80,14 +85,22 @@ export class MessageService {
       sender: MessageSender
     ) => MessageReply<T> | Promise<MessageReply<T>>
   ) {
-    Chrome.runtime?.onMessage.addListener(
-      async (message: MessageReceive<T>, sender, reply) => {
-        if (message.cmd === cmd) {
-          const response = await callback(message, sender);
-          if (response !== undefined) reply(response);
-        }
+    const handler = async (
+      message: MessageReceive<T>,
+      sender: MessageSender,
+      reply: (message?: MessageReply<T>) => void
+    ) => {
+      if (message.cmd === cmd) {
+        const response = await callback(message, sender);
+        if (response !== undefined) reply(response);
       }
-    );
+    };
+
+    Chrome.runtime?.onMessage.addListener(handler);
+
+    return () => {
+      Chrome.runtime?.onMessage.removeListener(handler);
+    };
   }
 
   /** Open scripts management page. Async-wrapped to prevent simultaneous calls. */

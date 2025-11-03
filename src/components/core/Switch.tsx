@@ -2,34 +2,42 @@ import { cn } from "../../includes/core/classes";
 
 export interface SwitchProps {
   disabled?: boolean;
-  switched?: boolean;
+  value?: boolean;
   active?: boolean;
-  onClick?: () => void;
+  onChange?: (value: boolean) => void;
   className?: string;
 }
 
 export const Switch = ({
   disabled = false,
-  switched,
+  value,
   active,
-  onClick,
+  onChange: onChange,
   className,
 }: SwitchProps) => {
+  const handleToggle = () => {
+    if (!disabled) {
+      onChange?.(!value);
+    }
+  };
+
   return (
     <div
       tabIndex={0}
       className={cn(
-        "switch w-10 h-5 rounded-xl bg-neutral-800 relative cursor-pointer m-1",
+        "switch w-10 h-5 rounded-xl bg-black/50 relative cursor-pointer m-1",
         "focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-1",
-        "after:block after:absolute after:w-5 after:h-5 after:rounded-full after:transition-all after:bg-neutral-500",
-        switched && "after:left-5 after:bg-yellow-300",
-        switched && !active && "after:bg-neutral-400",
-        disabled && "after:bg-neutral-600",
+        "after:block after:absolute after:w-5 after:h-5 after:rounded-full after:left-0 after:transition-all after:bg-neutral-500",
+        value && "after:left-5",
+        active && "after:bg-secondary",
+        disabled && "opacity-50",
         className
       )}
-      onClick={onClick}
+      onClick={handleToggle}
       onKeyDown={(evt) => {
-        if (evt.key === " ") onClick?.();
+        if (evt.key === " " || evt.key === "Enter") {
+          handleToggle();
+        }
       }}
     />
   );

@@ -8,6 +8,8 @@ import {
   type StoredScript,
 } from "./types";
 
+// DEPRECATED: This layer adds unnecessary abstraction
+
 /** A class to manage the state for editable scripts. */
 export class EditableScript {
   #script: StoredScript;

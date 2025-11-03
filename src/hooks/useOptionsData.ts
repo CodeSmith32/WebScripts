@@ -132,6 +132,23 @@ export const useOptionsData = () => {
       await storageService.saveSettings(settings);
     };
 
+    /** Reload a specific script by id. */
+    const reloadScript = async (id: string, justHeader: boolean) => {
+      const updatedScripts = await storageService.loadScripts();
+      const oldScript = scripts.find((script) => script.id === id);
+      const newScript = updatedScripts.find((script) => script.id === id);
+      if (!oldScript || !newScript) return;
+
+      const oldCode = oldScript.code;
+      Object.assign(oldScript, newScript);
+
+      if (justHeader) {
+        let code = CodePack.unpack(oldCode);
+        code = webScripts.updateHeaderInCode(code, oldScript);
+        oldScript.code = CodePack.pack(code);
+      }
+    };
+
     return {
       scripts,
       settings,
@@ -141,6 +158,7 @@ export const useOptionsData = () => {
       addScripts,
       deleteScript,
       saveSettings,
+      reloadScript,
     };
   });
 };

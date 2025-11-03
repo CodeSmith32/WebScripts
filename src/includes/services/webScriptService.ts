@@ -27,7 +27,10 @@ export class WebScripts {
   normalizeScript(sourceScript: Readonly<Partial<StoredScript>>) {
     let code = CodePack.unpack(sourceScript.code ?? "");
 
+    // extract details from script code header
     let { name, patterns, language, prettify, csp } = this.parseHeader(code);
+
+    // fallback to details from script object, or otherwise global defaults
     name ||= sourceScript.name ?? "";
     if (!patterns?.length) patterns = sourceScript.patterns ?? [];
     language ??=
@@ -36,6 +39,7 @@ export class WebScripts {
       sourceScript.prettify ?? storageService.latestSettings.defaultPrettify;
     csp ??= sourceScript.csp ?? "leave";
 
+    // update header
     code = this.updateHeaderInCode(code, {
       name,
       patterns,
@@ -44,8 +48,9 @@ export class WebScripts {
       csp,
     });
 
+    // generate new script
     const script: StoredScript = {
-      id: this.generateId(),
+      id: sourceScript.id ?? this.generateId(),
       name,
       patterns,
       language,

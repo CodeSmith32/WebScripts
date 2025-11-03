@@ -2,25 +2,36 @@ import { PencilIcon, ShieldAlertIcon } from "lucide-preact";
 import { IconButton } from "./core/IconButton";
 import { Switch } from "./core/Switch";
 import type { StoredScript } from "../includes/types";
+import { useState } from "preact/hooks";
 
 export interface PopupScriptRowProps {
   disabled?: boolean;
   script: StoredScript;
-  switched: boolean;
-  onSwitch?: () => void;
+  running: boolean;
+  onChange?: (running: boolean) => void;
   onEdit?: () => void;
 }
 
 export const PopupScriptRow = ({
   disabled = false,
   script,
-  switched,
-  onSwitch,
+  running,
+  onChange,
   onEdit,
 }: PopupScriptRowProps) => {
+  const [value, setValue] = useState(running);
+
   return (
     <div className="flex flex-row items-center gap-2 p-1 rounded-md hover:bg-white/5">
-      <Switch disabled={disabled} onClick={onSwitch} switched={switched} />
+      <Switch
+        disabled={disabled}
+        onChange={(value) => {
+          setValue(value);
+          onChange?.(value);
+        }}
+        value={value}
+        active={value === running}
+      />
       <p className="text-text">{script.name}</p>
 
       <div className="grow" />

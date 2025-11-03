@@ -8,7 +8,7 @@ import { cn } from "../includes/core/classes";
 import { BlankPanel } from "../components/panels/BlankPanel";
 import { SettingsPanel } from "../components/panels/SettingsPanel";
 import { EditorPanel } from "../components/panels/EditorPanel";
-import { useEditorModel } from "../hooks/useEditorModel";
+import { useEditorModels } from "../hooks/useEditorModels";
 import { usePopupManager } from "../components/popupCore/ClassPopupManager";
 import {
   PopupCreateNew,
@@ -26,6 +26,7 @@ import { PopupUserScriptsWarning } from "../components/popups/PopupUserScriptsWa
 import type { Popup } from "../components/popupCore/ClassPopup";
 import { userScriptService } from "../includes/services/userScriptService";
 import type { StoredScript } from "../includes/types";
+import { messageService } from "../includes/services/messageService";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -34,7 +35,7 @@ export const OptionsPage = () => {
 
   const { data: optionsData } = useOptionsData();
   const [active, setActive] = useState<StoredScript | symbol | null>(null);
-  const currentModel = useEditorModel(
+  const models = useEditorModels(
     typeof active === "symbol" ? null : active,
     optionsData?.saveAllScripts
   );
@@ -98,6 +99,22 @@ export const OptionsPage = () => {
 
     await optionsData.addScripts(scripts);
   };
+
+  useEffect(() => {
+    const unsubscribe = messageService.listen(
+      "scriptUpdated",
+      async (message) => {
+        if (!optionsData) return;
+        await optionsData.reloadScript(message.id, true);
+
+        // models[message.id] // update
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // trigger jump to referred script
   useEffect(() => {
@@ -183,10 +200,10 @@ export const OptionsPage = () => {
               />
             ) : null
           ) : active && typeof active === "object" ? (
-            currentModel ? (
+            models[active.id] ? (
               <EditorPanel
                 key={active.id}
-                model={currentModel}
+                model={models[active.id]}
                 onClose={onClose}
               />
             ) : null

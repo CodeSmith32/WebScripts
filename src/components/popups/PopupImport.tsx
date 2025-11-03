@@ -110,7 +110,11 @@ const parseScriptsFromFile = async (file: Blob): Promise<ParseResult> => {
   // normalize scripts
   return {
     success: true,
-    scripts: scripts.map((script) => webScripts.normalizeScript(script)),
+    scripts: scripts.map((script) => {
+      const normalized = webScripts.normalizeScript(script);
+      normalized.id = webScripts.generateId();
+      return normalized;
+    }),
   };
 };
 

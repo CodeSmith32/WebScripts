@@ -200,6 +200,33 @@ export class PatternService {
     // join and return condition code
     return `if(${conditions.join("")}) return;\n`;
   }
+
+  /** Add or remove a domain from the list of pattern matches. */
+  setDomainForPatterns(
+    patterns: string[],
+    domain: string,
+    enable: boolean
+  ): string[] {
+    domain = domain.toLowerCase();
+
+    // if domain is not valid, bail with no changes
+    if (!/^[\da-z]+(\.[\da-z]+)+$/.test(domain)) return patterns;
+
+    // remove any existing patterns that match this domain
+    patterns = patterns.filter((pattern) => {
+      const parts = this.parse(pattern);
+
+      if (parts && parts.type === "domain" && parts.original === domain) {
+        return false;
+      }
+      return true;
+    });
+
+    // append domain match
+    patterns.push((enable ? "" : "-") + domain);
+
+    return patterns;
+  }
 }
 
 export const patternService = new PatternService();
