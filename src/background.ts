@@ -16,7 +16,9 @@ const reloadScripts = async () => {
 reloadScripts();
 
 // listen for script updates and reload when changes occur
-messageService.listen("updateBackgroundScripts", () => reloadScripts());
+messageService.listen("updateBackgroundScripts", async () => {
+  await reloadScripts();
+});
 
 // listen for a switch toggle from the popup
 messageService.listen("toggleDomain", async (message) => {

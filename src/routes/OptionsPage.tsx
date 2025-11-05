@@ -27,6 +27,7 @@ import type { Popup } from "../components/popupCore/ClassPopup";
 import { userScriptService } from "../includes/services/userScriptService";
 import type { StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";
+import { CodePack } from "../includes/core/codepack";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -105,9 +106,17 @@ export const OptionsPage = () => {
       "scriptUpdated",
       async (message) => {
         if (!optionsData) return;
-        await optionsData.reloadScript(message.id, true);
+        // reload script from stored scripts
+        const script = await optionsData.reloadScript(message.id, true);
+        if (!script) return;
 
-        // models[message.id] // update
+        // update code in editor
+        const model = models[message.id];
+        if (model) model.setEditorCode(CodePack.unpack(script.code));
+
+        // re-save any missing editor updates over background-saved scripts
+        await optionsData.saveAllScripts();
+        await userScriptService.resynchronizeUserScript(script);
       }
     );
 

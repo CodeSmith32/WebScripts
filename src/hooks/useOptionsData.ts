@@ -137,7 +137,7 @@ export const useOptionsData = () => {
       const updatedScripts = await storageService.loadScripts();
       const oldScript = scripts.find((script) => script.id === id);
       const newScript = updatedScripts.find((script) => script.id === id);
-      if (!oldScript || !newScript) return;
+      if (!oldScript || !newScript) return null;
 
       const oldCode = oldScript.code;
       Object.assign(oldScript, newScript);
@@ -147,6 +147,8 @@ export const useOptionsData = () => {
         code = webScripts.updateHeaderInCode(code, oldScript);
         oldScript.code = CodePack.pack(code);
       }
+
+      return oldScript;
     };
 
     return {
