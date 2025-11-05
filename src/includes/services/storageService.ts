@@ -2,19 +2,10 @@ import { minifyJson, prettifyJson } from "../core/prettifyJson";
 import { wrapAsyncLast, wrapAsyncMerge } from "../core/wrapAsync";
 import type { StoredScript, StoredSettings } from "../types";
 import { Chrome } from "../utils";
+import { webScripts } from "./webScriptService";
 
 export class StorageService {
   waitForPreload: Promise<void>;
-
-  defaultScriptData: StoredScript = {
-    id: "",
-    code: "",
-    name: "",
-    language: "javascript",
-    patterns: [],
-    prettify: false,
-    csp: "leave",
-  };
 
   defaultSettings: StoredSettings = {
     defaultLanguage: "javascript",
@@ -39,6 +30,11 @@ export class StorageService {
   saveScripts = wrapAsyncLast(
     async (scripts: StoredScript[]): Promise<void> => {
       this.latestScripts = scripts;
+      if (!Chrome.storage) {
+        console.warn(
+          "Failed to save scripts. Storage permission not available."
+        );
+      }
       await Chrome.storage?.local.set({ scripts });
     }
   );
@@ -48,7 +44,7 @@ export class StorageService {
     const scripts =
       (await Chrome.storage?.local.get("scripts"))?.scripts.map(
         (script: Partial<StoredScript>): StoredScript => ({
-          ...this.defaultScriptData,
+          ...webScripts.getScriptDefaults(),
           ...script,
         })
       ) ?? [];
@@ -67,6 +63,11 @@ export class StorageService {
         typescriptConfigJson: minifyJson(settings.typescriptConfigJson),
         prettierConfigJson: minifyJson(settings.prettierConfigJson),
       };
+      if (!Chrome.storage) {
+        console.warn(
+          "Failed to save settings. Storage permission not available."
+        );
+      }
       await Chrome.storage?.local.set({ settings: compressedSettings });
     }
   );

@@ -6,12 +6,38 @@ import {
   type ScriptLanguage,
   type StoredScript,
 } from "../types";
+import { arraysEqual } from "../core/arrayFns";
+import { pick } from "../core/pick";
 
 export type HeaderData = Partial<
-  Pick<StoredScript, "name" | "patterns" | "language" | "prettify" | "csp">
+  Pick<StoredScript, "name" | "language" | "patterns" | "prettify" | "csp">
 >;
 
 export class WebScripts {
+  /** Generate default property values for an empty script. */
+  getScriptDefaults(): StoredScript {
+    return {
+      id: "",
+      name: "",
+      language: "javascript",
+      patterns: [],
+      prettify: false,
+      csp: "leave",
+      code: "",
+    };
+  }
+
+  /** Generate default property values for an empty header data object. */
+  getHeaderDefaults(): Required<HeaderData> {
+    return pick(this.getScriptDefaults(), [
+      "name",
+      "language",
+      "patterns",
+      "prettify",
+      "csp",
+    ]);
+  }
+
   /** Generate an id for a script. */
   generateId() {
     let id = "";
@@ -30,14 +56,15 @@ export class WebScripts {
     // extract details from script code header
     let { name, patterns, language, prettify, csp } = this.parseHeader(code);
 
+    const defaults = this.getScriptDefaults();
+
     // fallback to details from script object, or otherwise global defaults
-    name ||= sourceScript.name ?? "";
-    if (!patterns?.length) patterns = sourceScript.patterns ?? [];
-    language ??=
-      sourceScript.language ?? storageService.latestSettings.defaultLanguage;
-    prettify ??=
-      sourceScript.prettify ?? storageService.latestSettings.defaultPrettify;
-    csp ??= sourceScript.csp ?? "leave";
+    name ||= sourceScript.name ?? defaults.name;
+    if (!patterns?.length)
+      patterns = sourceScript.patterns ?? defaults.patterns;
+    language ??= sourceScript.language ?? defaults.language;
+    prettify ??= sourceScript.prettify ?? defaults.prettify;
+    csp ??= sourceScript.csp ?? defaults.csp;
 
     // update header
     code = this.updateHeaderInCode(code, {
@@ -116,6 +143,17 @@ export class WebScripts {
     return { name, patterns, language, prettify, csp };
   }
 
+  /** Checks to see if two header data objects contain equivalent values. */
+  headersEqual(a: HeaderData, b: HeaderData) {
+    return (
+      a.name === b.name &&
+      a.language === b.language &&
+      arraysEqual(a.patterns ?? [], b.patterns ?? []) &&
+      a.prettify === b.prettify &&
+      a.csp === b.csp
+    );
+  }
+
   /** Take a list of [ string, string ] pairs, and generate new header string.
    * Use pair[0] as property key, and pair[1] as property value. */
   private buildHeaderLines(lines: [string, string][]) {
@@ -174,7 +212,7 @@ export class WebScripts {
       makeKey("name", name),
       makeKey("language", language),
       makeKey("prettify", prettify),
-      makeKey("csp", csp),
+      makeKey("csp", csp === "leave" ? undefined : csp),
       ...lines,
       ...(patterns ?? []).map((pattern) => makeKey("match", pattern)),
     ].filter((v) => !!v);
@@ -215,4 +253,5 @@ export class WebScripts {
     return this.buildHeaderLines(lines);
   }
 }
+
 export const webScripts = new WebScripts();

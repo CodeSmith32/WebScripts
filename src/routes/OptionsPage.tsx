@@ -14,7 +14,6 @@ import {
   PopupCreateNew,
   type PopupCreateNewCloseData,
 } from "../components/popups/PopupCreateNew";
-import { EditableScript } from "../includes/editableScript";
 import {
   PopupConfirm,
   type PopupConfirmCloseData,
@@ -38,7 +37,7 @@ export const OptionsPage = () => {
   const [active, setActive] = useState<StoredScript | symbol | null>(null);
   const models = useEditorModels(
     typeof active === "symbol" ? null : active,
-    optionsData?.saveAllScripts
+    () => optionsData?.saveAllScripts()
   );
 
   const popupManager = usePopupManager();
@@ -60,12 +59,7 @@ export const OptionsPage = () => {
     ).waitClose;
     if (!newData) return;
 
-    newData.code =
-      webScripts.generateHeader(Object.assign(newData, { patterns: [] })) +
-      "\n\n";
-
-    const newScript = EditableScript.createNew(newData);
-    const script = newScript.storedScript();
+    const script = webScripts.normalizeScript(newData);
     await optionsData.saveScript(script);
 
     setActive(script);
@@ -203,7 +197,7 @@ export const OptionsPage = () => {
               <SettingsPanel
                 onClose={onClose}
                 settings={optionsData.settings}
-                onSave={optionsData.saveSettings}
+                onSave={async () => await optionsData.saveSettings()}
                 onImportScripts={onImportScripts}
                 getScripts={() => optionsData.scripts}
               />

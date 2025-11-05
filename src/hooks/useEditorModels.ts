@@ -8,6 +8,7 @@ import { prettierService } from "../includes/services/prettierService";
 import { userScriptService } from "../includes/services/userScriptService";
 import type { ScriptLanguage, StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";
+import { webScripts } from "../includes/services/webScriptService";
 
 export class EditorModelData {
   script: EditableScript;
@@ -25,7 +26,7 @@ export class EditorModelData {
     refresh?: () => void;
     saveScripts?: () => void | Promise<void>;
   }) {
-    this.script = EditableScript.fromStoredScript(script);
+    this.script = new EditableScript(script);
     this.model = MonacoEditor.createModel(
       this.script.code,
       this.script.language
@@ -66,9 +67,30 @@ export class EditorModelData {
 
   /** Rebuild header in code. */
   rebuildHeader() {
-    if (this.script.regenerateHeader()) {
+    const newCode = webScripts.updateHeaderInCode(
+      this.script.code,
+      this.script
+    );
+
+    if (this.script.code !== newCode) {
+      this.script.code = newCode;
       this.setEditorCode(this.script.code);
     }
+  }
+
+  /** Parse the header from the code and update the script's details accordingly. */
+  reloadHeader(): boolean {
+    const headerData = {
+      ...webScripts.getHeaderDefaults(),
+      ...webScripts.parseHeader(this.script.code),
+    };
+
+    if (webScripts.headersEqual(this.script, headerData)) {
+      return false;
+    }
+
+    Object.assign(this.script, headerData);
+    return true;
   }
 
   /** Format code with prettier, and update editor. */
@@ -84,7 +106,7 @@ export class EditorModelData {
   /** Update the script code from the Monaco model. */
   updateCode = debounce(() => {
     this.script.code = this.getEditorCode();
-    this.script.reloadHeader();
+    this.reloadHeader();
     this.setEditorLanguage(this.script.language);
     this.refresh();
   }, 500);
@@ -98,7 +120,6 @@ export class EditorModelData {
     // save
     await this.saveScripts();
     await userScriptService.resynchronizeUserScript(storedScript);
-    this.script.markSaved();
 
     // trigger update in background script
     await messageService.send("updateBackgroundScripts", {});

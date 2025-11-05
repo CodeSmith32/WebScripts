@@ -3,13 +3,13 @@ export interface StoredScript {
   id: string;
   /** Script name. */
   name: string;
+  /** The language of the script. `"javascript"` or `"typescript"`. */
+  language: ScriptLanguage;
   /** Pattern strings.
    *
    * `/pattern/i` indicates regex-type match.
    * `*.domain.com` indicates domain-type match. */
   patterns: string[];
-  /** The language of the script. `"javascript"` or `"typescript"`. */
-  language: ScriptLanguage;
   /** If the code will be prettified on save. */
   prettify: boolean;
   /** If the content security policy header should be removed for pages this script runs on. */

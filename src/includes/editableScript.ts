@@ -1,6 +1,4 @@
 import { CodePack } from "./core/codepack";
-import { webScripts } from "./services/webScriptService";
-import { arraysEqual } from "./core/arrayFns";
 import {
   scriptLanguages,
   type CSPAction,
@@ -13,67 +11,11 @@ import {
 /** A class to manage the state for editable scripts. */
 export class EditableScript {
   #script: StoredScript;
-  #saved: boolean = true;
   #code: string | null = null;
   #codeChanged: boolean = false;
 
-  private constructor(script: StoredScript) {
+  constructor(script: StoredScript) {
     this.#script = script;
-  }
-
-  /** Create a fresh new EditableScript. */
-  static createNew(details: Partial<StoredScript>) {
-    const code = details.code ?? "";
-
-    const script: StoredScript = {
-      id: webScripts.generateId(),
-      name: "",
-      patterns: [],
-      language: "javascript",
-      prettify: false,
-      csp: "leave",
-      ...details,
-      code: CodePack.pack(code),
-    };
-
-    return new EditableScript(script);
-  }
-
-  /** Create an EditableScript from a StoredScript. */
-  static fromStoredScript(details: StoredScript) {
-    return new EditableScript(details);
-  }
-
-  /** Create an EditableScript from code, by parsing the header. */
-  static fromCode(code: string) {
-    const headerData = webScripts.parseHeader(code);
-    const script: StoredScript = {
-      id: webScripts.generateId(),
-      name: "",
-      patterns: [],
-      language: "javascript",
-      prettify: false,
-      csp: "leave",
-      ...headerData,
-      code: CodePack.pack(code),
-    };
-
-    return new EditableScript(script);
-  }
-
-  /** If the script has unsaved changes. */
-  get saved(): boolean {
-    return this.#saved;
-  }
-
-  /** Mark the script as saved. */
-  markSaved() {
-    this.#saved = true;
-  }
-
-  /** Mark the script as having unsaved changes. */
-  markUnsaved() {
-    this.#saved = false;
   }
 
   /** Get the stored script object to be saved. Compresses / recompiles code if necessary. */
@@ -96,7 +38,6 @@ export class EditableScript {
   }
   set name(name: string) {
     this.#script.name = name;
-    this.markUnsaved();
   }
 
   /** The language the script was written in. */
@@ -108,8 +49,14 @@ export class EditableScript {
       language = "javascript";
     }
     this.#script.language = language;
-    this.#codeChanged = true; // compilation may be necessary
-    this.markUnsaved();
+  }
+
+  /** The url match patterns. */
+  get patterns(): string[] {
+    return this.#script.patterns ?? [];
+  }
+  set patterns(patterns: string[]) {
+    this.#script.patterns = patterns;
   }
 
   /** Whether or not code is prettified when saved. */
@@ -120,22 +67,12 @@ export class EditableScript {
     this.#script.prettify = prettify ?? false;
   }
 
-  /** The url match patterns. */
-  get patterns(): string[] {
-    return this.#script.patterns ?? [];
-  }
-  set patterns(patterns: string[]) {
-    this.#script.patterns = patterns;
-    this.markUnsaved();
-  }
-
   /** The csp action. */
   get csp(): CSPAction {
     return this.#script.csp ?? "leave";
   }
   set csp(csp: CSPAction) {
     this.#script.csp = csp;
-    this.markUnsaved();
   }
 
   /** The script code. */
@@ -146,44 +83,5 @@ export class EditableScript {
   set code(code: string) {
     this.#code = code;
     this.#codeChanged = true;
-    this.markUnsaved();
-  }
-
-  /** Parses the header and updates the script's details accordingly. */
-  reloadHeader(): boolean {
-    const {
-      name = "",
-      patterns = [],
-      language = "javascript",
-      prettify = false,
-      csp = "leave",
-    } = webScripts.parseHeader(this.code);
-
-    if (
-      this.#script.name === name &&
-      this.#script.language === language &&
-      arraysEqual(this.#script.patterns, patterns) &&
-      this.#script.prettify === prettify &&
-      this.#script.csp === csp
-    ) {
-      return false;
-    }
-
-    this.#script.name = name;
-    this.#script.patterns = patterns;
-    this.#script.language = language;
-    this.#script.prettify = prettify;
-    this.#script.csp = csp;
-    this.markUnsaved();
-    return true;
-  }
-
-  /** Regenerates the header from the script's details. */
-  regenerateHeader(): boolean {
-    const newCode = webScripts.updateHeaderInCode(this.code, this.#script);
-    if (this.code === newCode) return false;
-
-    this.code = newCode;
-    return true;
   }
 }

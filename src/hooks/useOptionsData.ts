@@ -23,15 +23,17 @@ export class OptionsData {
   /** Wait for settings and config to load. */
   async initialize() {
     try {
-      this.scripts = await storageService.loadScripts();
+      this.scripts = (await storageService.loadScripts()) ?? [];
     } catch (_err) {}
 
     try {
-      this.settings = await storageService.loadSettings();
+      this.settings = (await storageService.loadSettings()) ?? {
+        ...storageService.defaultSettings,
+      };
     } catch (_err) {}
 
     try {
-      this.refer = await storageService.getReferred();
+      this.refer = (await storageService.getReferred()) ?? null;
     } catch (_err) {}
 
     this.updateManagerConfigs();
