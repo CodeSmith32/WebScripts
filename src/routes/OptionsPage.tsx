@@ -8,7 +8,7 @@ import { cn } from "../includes/core/classes";
 import { BlankPanel } from "../components/panels/BlankPanel";
 import { SettingsPanel } from "../components/panels/SettingsPanel";
 import { EditorPanel } from "../components/panels/EditorPanel";
-import { useEditorModels } from "../hooks/useEditorModels";
+import { EditorModelData, useEditorModels } from "../hooks/useEditorModels";
 import { usePopupManager } from "../components/popupCore/ClassPopupManager";
 import {
   PopupCreateNew,
@@ -26,7 +26,6 @@ import type { Popup } from "../components/popupCore/ClassPopup";
 import { userScriptService } from "../includes/services/userScriptService";
 import type { StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";
-import { CodePack } from "../includes/core/codepack";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -100,13 +99,17 @@ export const OptionsPage = () => {
       "scriptUpdated",
       async (message) => {
         if (!optionsData) return;
-        // reload script from stored scripts
+
+        // get the editor model, and recompress the script to get the latest code
+        const model = models[message.id] as EditorModelData | undefined;
+        model?.recompressScript();
+
+        // reload script from stored scripts, updating the header
         const script = await optionsData.reloadScript(message.id, true);
         if (!script) return;
 
         // update code in editor
-        const model = models[message.id];
-        if (model) model.setEditorCode(CodePack.unpack(script.code));
+        model?.reloadCompressedCode();
 
         // re-save any missing editor updates over background-saved scripts
         await optionsData.saveAllScripts();

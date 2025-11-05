@@ -1,3 +1,4 @@
+import { mergeDefined } from "../core/mergeDefined";
 import { minifyJson, prettifyJson } from "../core/prettifyJson";
 import { wrapAsyncLast, wrapAsyncMerge } from "../core/wrapAsync";
 import type { StoredScript, StoredSettings } from "../types";
@@ -43,10 +44,8 @@ export class StorageService {
   loadScripts = wrapAsyncMerge(async (): Promise<StoredScript[]> => {
     const scripts =
       (await Chrome.storage?.local.get("scripts"))?.scripts.map(
-        (script: Partial<StoredScript>): StoredScript => ({
-          ...webScripts.getScriptDefaults(),
-          ...script,
-        })
+        (script: Partial<StoredScript>): StoredScript =>
+          mergeDefined(webScripts.getScriptDefaults(), script)
       ) ?? [];
     this.latestScripts = scripts;
     return scripts;
@@ -76,10 +75,7 @@ export class StorageService {
   loadSettings = wrapAsyncMerge(async (): Promise<StoredSettings> => {
     let settings: StoredSettings = (await Chrome.storage?.local.get("settings"))
       ?.settings;
-    settings = {
-      ...this.defaultSettings,
-      ...settings,
-    };
+    settings = mergeDefined(this.defaultSettings, settings);
     settings = {
       ...settings,
       editorSettingsJson: prettifyJson(settings.editorSettingsJson),

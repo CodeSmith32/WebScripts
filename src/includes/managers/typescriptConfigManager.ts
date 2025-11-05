@@ -14,6 +14,7 @@ import {
   ZodMiniEnum,
 } from "zod/mini";
 import { MonacoLanguages } from "../monacoSetup";
+import { mergeDefined } from "../core/mergeDefined";
 
 type TSConfig = MonacoLanguages.typescript.CompilerOptions;
 
@@ -179,10 +180,9 @@ export class TypeScriptConfigManager {
     "https://www.typescriptlang.org/tsconfig/#compilerOptions";
 
   private updateTypeScriptConfig(config: TSConfig) {
-    MonacoLanguages.typescript.typescriptDefaults.setCompilerOptions({
-      ...defaultTypeScriptConfig,
-      ...config,
-    });
+    MonacoLanguages.typescript.typescriptDefaults.setCompilerOptions(
+      mergeDefined(defaultTypeScriptConfig, config)
+    );
   }
 
   private parseTypeScriptConfig(json: string): TSConfig | null {

@@ -16,6 +16,7 @@ import {
   enum as zenum,
 } from "zod/mini";
 import type { MonacoEditor } from "../monacoSetup";
+import { mergeDefined } from "../core/mergeDefined";
 
 type EditorSettings = MonacoEditor.IStandaloneEditorConstructionOptions;
 
@@ -632,10 +633,7 @@ export class EditorSettingsManager {
     "https://code.visualstudio.com/docs/configure/settings#_settings-json-file";
 
   private updateEditorSettings(config: EditorSettings) {
-    this.#config = {
-      ...defaultEditorSettings,
-      ...config,
-    };
+    this.#config = mergeDefined(defaultEditorSettings, config);
   }
 
   private parseEditorSettings(json: string): EditorSettings | null {

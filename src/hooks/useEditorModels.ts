@@ -2,16 +2,18 @@ import { useMemo, useRef, useState } from "preact/hooks";
 import { MonacoEditor, type TextModel } from "../includes/monacoSetup";
 import { useCarried } from "./core/useCarried";
 import { useFutureCallback } from "./core/useFutureCallback";
-import { EditableScript } from "../includes/editableScript";
 import { debounce } from "../includes/core/debounce";
 import { prettierService } from "../includes/services/prettierService";
 import { userScriptService } from "../includes/services/userScriptService";
 import type { ScriptLanguage, StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";
 import { webScripts } from "../includes/services/webScriptService";
+import { CodePack } from "../includes/core/codepack";
+import { mergeDefined } from "../includes/core/mergeDefined";
 
 export class EditorModelData {
-  script: EditableScript;
+  script: StoredScript;
+  code: string;
   model: MonacoEditor.ITextModel;
   editor: MonacoEditor.IStandaloneCodeEditor | null;
   refresh: () => void;
@@ -26,18 +28,16 @@ export class EditorModelData {
     refresh?: () => void;
     saveScripts?: () => void | Promise<void>;
   }) {
-    this.script = new EditableScript(script);
-    this.model = MonacoEditor.createModel(
-      this.script.code,
-      this.script.language
-    );
+    this.script = script;
+    this.code = CodePack.unpack(this.script.code);
+    this.model = MonacoEditor.createModel(this.code, this.script.language);
     this.editor = null;
     this.refresh = refresh;
     this.saveScripts = saveScripts;
 
     // script changed
     this.model.onDidChangeContent(() => {
-      this.updateCode();
+      this.delayUpdateFromCode();
     });
   }
 
@@ -67,21 +67,20 @@ export class EditorModelData {
 
   /** Rebuild header in code. */
   rebuildHeader() {
-    const oldCode = this.script.code;
-    const newCode = webScripts.updateHeaderInCode(oldCode, this.script);
+    const newCode = webScripts.updateHeaderInCode(this.code, this.script);
 
-    if (oldCode !== newCode) {
-      this.script.code = newCode;
+    if (this.code !== newCode) {
+      this.code = newCode;
       this.setEditorCode(newCode);
     }
   }
 
   /** Parse the header from the code and update the script's details accordingly. */
   reloadHeader(): boolean {
-    const headerData = {
-      ...webScripts.getHeaderDefaults(),
-      ...webScripts.parseHeader(this.script.code),
-    };
+    const headerData = mergeDefined(
+      webScripts.getHeaderDefaults(),
+      webScripts.parseHeader(this.code)
+    );
 
     if (webScripts.headersEqual(this.script, headerData)) {
       return false;
@@ -101,23 +100,34 @@ export class EditorModelData {
     );
   }
 
-  /** Update the script code from the Monaco model. */
-  updateCode = debounce(() => {
-    this.script.code = this.getEditorCode();
+  /** Reload the code and header details from the Monaco model, and refresh the editor. */
+  delayUpdateFromCode = debounce(() => {
+    this.code = this.getEditorCode();
     this.reloadHeader();
     this.setEditorLanguage(this.script.language);
     this.refresh();
   }, 500);
 
+  /** Update the script code from the Monaco model. */
+  recompressScript() {
+    this.code = this.getEditorCode();
+    this.script.code = CodePack.pack(this.code);
+  }
+
+  /** Reload the compressed code from the stored script, and update the Monaco editor. */
+  reloadCompressedCode() {
+    this.code = CodePack.unpack(this.script.code);
+    this.setEditorCode(this.code);
+  }
+
   /** Save script. */
   async save() {
     // update stored script
-    this.updateCode.immediate();
-    const storedScript = this.script.storedScript();
+    this.recompressScript();
 
     // save
     await this.saveScripts();
-    await userScriptService.resynchronizeUserScript(storedScript);
+    await userScriptService.resynchronizeUserScript(this.script);
 
     // trigger update in background script
     await messageService.send("updateBackgroundScripts", {});

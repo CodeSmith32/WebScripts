@@ -16,9 +16,6 @@ export interface StoredScript {
   csp: CSPAction;
   /** The source code, compressed with CodePack. */
   code: string;
-
-  // This is a trick to force EditableScript to never be assignable to StoredScript:
-  saved?: never;
 }
 
 export interface StoredSettings {

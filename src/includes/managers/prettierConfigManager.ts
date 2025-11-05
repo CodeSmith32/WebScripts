@@ -7,6 +7,7 @@ import {
   prettifyError,
   enum as zenum,
 } from "zod/mini";
+import { mergeDefined } from "../core/mergeDefined";
 
 type PrettierConfig = Options;
 
@@ -57,10 +58,7 @@ export class PrettierConfigManager {
   readonly helpUrl: string = "https://prettier.io/docs/options";
 
   private updatePrettierConfig(config: PrettierConfig) {
-    this.#config = {
-      ...defaultPrettierConfig,
-      ...config,
-    };
+    this.#config = mergeDefined(defaultPrettierConfig, config);
   }
 
   private parsePrettierConfig(json: string): PrettierConfig | null {
