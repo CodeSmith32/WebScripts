@@ -67,14 +67,12 @@ export class EditorModelData {
 
   /** Rebuild header in code. */
   rebuildHeader() {
-    const newCode = webScripts.updateHeaderInCode(
-      this.script.code,
-      this.script
-    );
+    const oldCode = this.script.code;
+    const newCode = webScripts.updateHeaderInCode(oldCode, this.script);
 
-    if (this.script.code !== newCode) {
+    if (oldCode !== newCode) {
       this.script.code = newCode;
-      this.setEditorCode(this.script.code);
+      this.setEditorCode(newCode);
     }
   }
 

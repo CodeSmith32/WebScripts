@@ -9,6 +9,7 @@ import type { CSPAction, ScriptLanguage } from "../../includes/types";
 import { CSPActionDropdown } from "../CSPActionDropdown";
 import { ChevronDownIcon } from "lucide-preact";
 import { cn } from "../../includes/core/classes";
+import { storageService } from "../../includes/services/storageService";
 
 export type PopupCreateNewCloseData = {
   name: string;
@@ -19,9 +20,12 @@ export type PopupCreateNewCloseData = {
 
 export const PopupCreateNew = () => {
   const popup = usePopup<PopupCreateNewCloseData>();
+
+  const { defaultLanguage, defaultPrettify } = storageService.latestSettings;
+
   const [name, setName] = useState<string>("");
-  const [language, setLanguage] = useState<ScriptLanguage>("javascript");
-  const [prettify, setPrettify] = useState<boolean>(false);
+  const [language, setLanguage] = useState<ScriptLanguage>(defaultLanguage);
+  const [prettify, setPrettify] = useState<boolean>(defaultPrettify);
   const [csp, setCsp] = useState<CSPAction>("leave");
 
   const [advanced, setAdvanced] = useState(false);
