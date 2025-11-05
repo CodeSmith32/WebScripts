@@ -2,7 +2,7 @@ import { Monaco } from "../Monaco";
 import { TextBox } from "../core/TextBox";
 import { IconButton } from "../core/IconButton";
 import { XIcon } from "lucide-preact";
-import type { EditorModelData } from "../../hooks/useEditorModel";
+import type { EditorModelData } from "../../hooks/useEditorModels";
 import { Checkbox } from "../core/Checkbox";
 import { LanguageDropdown } from "../LanguageDropdown";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
@@ -19,7 +19,9 @@ export interface EditorPanelProps {
 export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
   const { script } = model;
 
-  const [saveStatus, triggerSave, triggerUnsaved] = useSavingStatus(model.save);
+  const [saveStatus, triggerSave, triggerUnsaved] = useSavingStatus(() =>
+    model.save()
+  );
   const saveAfter = useMemo(() => debounce(triggerSave, 2000), []);
   const [prettierStatus, setPrettierStatus] =
     useState<PrettierStatus>("waiting");

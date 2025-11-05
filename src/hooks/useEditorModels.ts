@@ -9,24 +9,107 @@ import { userScriptService } from "../includes/services/userScriptService";
 import type { ScriptLanguage, StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";
 
-export interface EditorModelData {
+export class EditorModelData {
   script: EditableScript;
   model: MonacoEditor.ITextModel;
   editor: MonacoEditor.IStandaloneCodeEditor | null;
-  save: () => Promise<void>;
-  updateCode: () => void;
-  getEditorCode: () => string;
-  setEditorCode: (code: string) => void;
-  setEditorLanguage: (language: ScriptLanguage) => void;
-  prettifyCode: () => Promise<boolean>;
-  rebuildHeader: () => void;
+  refresh: () => void;
+  saveScripts: () => void | Promise<void>;
+
+  constructor({
+    script,
+    refresh = () => {},
+    saveScripts = () => {},
+  }: {
+    script: StoredScript;
+    refresh?: () => void;
+    saveScripts?: () => void | Promise<void>;
+  }) {
+    this.script = EditableScript.fromStoredScript(script);
+    this.model = MonacoEditor.createModel(
+      this.script.code,
+      this.script.language
+    );
+    this.editor = null;
+    this.refresh = refresh;
+    this.saveScripts = saveScripts;
+
+    // script changed
+    this.model.onDidChangeContent(() => {
+      this.updateCode();
+    });
+  }
+
+  /** Update the highlight language for the editor. */
+  setEditorLanguage(language: ScriptLanguage) {
+    if (this.model.getLanguageId() !== language) {
+      (this.model as TextModel).setLanguage(language);
+    }
+  }
+
+  /** Get code from monaco editor as string. */
+  getEditorCode() {
+    return this.model.getValue(MonacoEditor.EndOfLinePreference.LF, false);
+  }
+
+  /** Update monaco editor code from string. */
+  setEditorCode(code: string) {
+    // get current selection
+    const selection = [...(this.editor?.getSelections() ?? [])];
+    // update value and restore selection
+    this.model.pushEditOperations(
+      [],
+      [{ range: this.model.getFullModelRange(), text: code }],
+      () => selection
+    );
+  }
+
+  /** Rebuild header in code. */
+  rebuildHeader() {
+    if (this.script.regenerateHeader()) {
+      this.setEditorCode(this.script.code);
+    }
+  }
+
+  /** Format code with prettier, and update editor. */
+  async prettifyCode() {
+    return (
+      (await prettierService.format(this.getEditorCode(), {
+        model: this.model,
+        editor: this.editor ?? undefined,
+      })) !== null
+    );
+  }
+
+  /** Update the script code from the Monaco model. */
+  updateCode = debounce(() => {
+    this.script.code = this.getEditorCode();
+    this.script.reloadHeader();
+    this.setEditorLanguage(this.script.language);
+    this.refresh();
+  }, 500);
+
+  /** Save script. */
+  async save() {
+    // update stored script
+    this.updateCode.immediate();
+    const storedScript = this.script.storedScript();
+
+    // save
+    await this.saveScripts();
+    await userScriptService.resynchronizeUserScript(storedScript);
+    this.script.markSaved();
+
+    // trigger update in background script
+    await messageService.send("updateBackgroundScripts", {});
+  }
 }
 
 export const useEditorModels = (
   script: StoredScript | null,
   saveScripts?: () => void | Promise<void>
 ): Record<string, EditorModelData> => {
-  const monacoModels = useRef<Record<string, EditorModelData>>(
+  const modelDataMap = useRef<Record<string, EditorModelData>>(
     Object.create(null)
   );
 
@@ -38,96 +121,14 @@ export const useEditorModels = (
   useMemo(() => {
     // check that script is available but hasn't loaded yet
     const { script } = carried;
-    if (!script || monacoModels.current[script.id]) return;
+    if (!script) return;
 
-    const editorScript = EditableScript.fromStoredScript(script);
-    const model = MonacoEditor.createModel(
-      editorScript.code,
-      editorScript.language
-    );
-
-    // update the highlight language for the editor
-    const setEditorLanguage = (language: ScriptLanguage) => {
-      if (model.getLanguageId() !== language) {
-        (model as TextModel).setLanguage(language);
-      }
-    };
-
-    // get code from monaco editor as string
-    const getEditorCode = () => {
-      return model.getValue(MonacoEditor.EndOfLinePreference.LF, false);
-    };
-    // update monaco editor code from string
-    const setEditorCode = (code: string) => {
-      // get current selection
-      const selection = [...(modelData.editor?.getSelections() ?? [])];
-      // update value and restore selection
-      model.pushEditOperations(
-        [],
-        [{ range: model.getFullModelRange(), text: code }],
-        () => selection
-      );
-    };
-
-    // rebuild header in code
-    const rebuildHeader = () => {
-      if (editorScript.regenerateHeader()) {
-        setEditorCode(editorScript.code);
-      }
-    };
-
-    // format code with prettier, and update editor
-    const prettifyCode = async () => {
-      return (
-        (await prettierService.format(getEditorCode(), {
-          model,
-          editor: modelData.editor ?? undefined,
-        })) !== null
-      );
-    };
-
-    // update the script code from the Monaco model
-    const updateCode = debounce(() => {
-      editorScript.code = getEditorCode();
-      editorScript.reloadHeader();
-      setEditorLanguage(editorScript.language);
-      refresh({});
-    }, 500);
-
-    // save script
-    const save = async () => {
-      // update stored script
-      updateCode.immediate();
-      const storedScript = editorScript.storedScript();
-
-      // save
-      await saveScripts();
-      await userScriptService.resynchronizeUserScript(storedScript);
-      editorScript.markSaved();
-
-      // trigger update in background script
-      await messageService.send("updateBackgroundScripts", {});
-    };
-
-    // script changed
-    model.onDidChangeContent(() => {
-      updateCode();
+    modelDataMap.current[script.id] ??= new EditorModelData({
+      script,
+      refresh: () => refresh({}),
+      saveScripts,
     });
-
-    const modelData: EditorModelData = {
-      script: editorScript,
-      model,
-      editor: null,
-      save,
-      updateCode,
-      getEditorCode,
-      setEditorCode,
-      setEditorLanguage,
-      prettifyCode,
-      rebuildHeader,
-    };
-    monacoModels.current[script.id] = modelData;
   }, [script?.id]);
 
-  return monacoModels.current;
+  return modelDataMap.current;
 };
