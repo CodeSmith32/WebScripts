@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "preact/hooks";
-import { MonacoEditor } from "../includes/monacoSetup";
-import { editorSettingsManager } from "../includes/managers/editorSettingsManager";
+import {
+  type MonacoEditor,
+  monacoService,
+} from "../includes/services/monacoService";
 
 export interface MonacoProps {
   model: MonacoEditor.ITextModel;
@@ -16,10 +18,8 @@ export const Monaco = ({ model, editorContainer }: MonacoProps) => {
   // set up editor
   useEffect(() => {
     if (elementRef.current && !editorRef.current) {
-      editorRef.current = MonacoEditor.create(elementRef.current!, {
-        ...editorSettingsManager.getEditorSettings(),
-        theme: "theme",
-        automaticLayout: true,
+      editorRef.current = monacoService.createEditor({
+        node: elementRef.current,
         model,
       });
 

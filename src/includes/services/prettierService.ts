@@ -3,7 +3,7 @@ import prettierBabel from "prettier/plugins/babel";
 import prettierEstree from "prettier/plugins/estree";
 import { prettierConfigManager } from "../managers/prettierConfigManager";
 import { webScripts } from "./webScriptService";
-import type { MonacoEditor } from "../monacoSetup";
+import type { MonacoEditor } from "../services/monacoService";
 
 export class PrettierService {
   async format(

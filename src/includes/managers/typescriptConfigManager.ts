@@ -13,7 +13,7 @@ import {
   null as znull,
   ZodMiniEnum,
 } from "zod/mini";
-import { MonacoLanguages } from "../monacoSetup";
+import { MonacoLanguages } from "../services/monacoService";
 import { mergeDefined } from "../core/mergeDefined";
 
 type TSConfig = MonacoLanguages.typescript.CompilerOptions;

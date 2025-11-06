@@ -15,7 +15,7 @@ import {
   union,
   enum as zenum,
 } from "zod/mini";
-import type { MonacoEditor } from "../monacoSetup";
+import type { MonacoEditor } from "../services/monacoService";
 import { mergeDefined } from "../core/mergeDefined";
 
 type EditorSettings = MonacoEditor.IStandaloneEditorConstructionOptions;

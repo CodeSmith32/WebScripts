@@ -1,9 +1,10 @@
 import {
   KeyCode,
   KeyMod,
-  MonacoEditor,
+  type MonacoEditor,
   type IDisposable,
-} from "../monacoSetup";
+  monacoService,
+} from "../services/monacoService";
 import {
   array,
   object,
@@ -261,7 +262,7 @@ export class KeybindingManager {
     const keybindings = this.parseKeybindings(json);
     if (!keybindings) return false;
 
-    this.#bindingsSubscription = MonacoEditor.addKeybindingRules(keybindings);
+    this.#bindingsSubscription = monacoService.addKeybindings(keybindings);
     return true;
   }
 

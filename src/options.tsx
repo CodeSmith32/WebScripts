@@ -1,4 +1,4 @@
-import "./includes/monacoSetup";
+import "./includes/services/monacoService";
 import { render } from "preact";
 import { OptionsPage } from "./routes/OptionsPage";
 import { PopupManagerProvider } from "./components/popupCore/PopupManagerProvider";

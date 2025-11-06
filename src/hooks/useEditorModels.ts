@@ -1,5 +1,10 @@
 import { useMemo, useRef, useState } from "preact/hooks";
-import { MonacoEditor, type TextModel } from "../includes/monacoSetup";
+import {
+  type MonacoEditor,
+  monacoService,
+  MonacoUri,
+  type TextModel,
+} from "../includes/services/monacoService";
 import { useCarried } from "./core/useCarried";
 import { useFutureCallback } from "./core/useFutureCallback";
 import { debounce } from "../includes/core/debounce";
@@ -30,7 +35,11 @@ export class EditorModelData {
   }) {
     this.script = script;
     this.code = CodePack.unpack(this.script.code);
-    this.model = MonacoEditor.createModel(this.code, this.script.language);
+    this.model = monacoService.createModel({
+      code: this.code,
+      language: this.script.language,
+      uri: MonacoUri.parse(`script://${this.script.id}/index.ts`),
+    });
     this.editor = null;
     this.refresh = refresh;
     this.saveScripts = saveScripts;
@@ -50,7 +59,7 @@ export class EditorModelData {
 
   /** Get code from monaco editor as string. */
   getEditorCode() {
-    return this.model.getValue(MonacoEditor.EndOfLinePreference.LF, false);
+    return monacoService.getModelCode(this.model);
   }
 
   /** Update monaco editor code from string. */
