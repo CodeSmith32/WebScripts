@@ -48,10 +48,13 @@ export class PatternService {
       // pattern is a domain: m[] 1: negated, 2: domain
       const [, negated, domain] = m;
 
-      const pattern = domain.replace(/^\*\.|\.\*$|\.(\*\.)*/g, (m) => {
+      if (/\*\*|\.\./.test(domain)) return null; // "**" / ".." are invalid
+
+      const pattern = domain.replace(/^\*\.|\.\*$|\.(\*\.)*|^\*$/g, (m) => {
         if (m === "*.") return "(.+\\.)?";
         if (m === ".*") return "(\\..+)?";
         if (m === ".") return "\\.";
+        if (m === "*") return ".+";
         return "\\.(.+\\.)?";
       });
 
@@ -223,7 +226,7 @@ export class PatternService {
     });
 
     // append domain match
-    patterns.push((enable ? "" : "-") + domain);
+    patterns.push((enable ? "" : "- ") + domain);
 
     return patterns;
   }

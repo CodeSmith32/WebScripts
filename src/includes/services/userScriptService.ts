@@ -45,19 +45,12 @@ export class UserScriptService {
 
   /** Convert a stored script to a user script. */
   storedScriptToUserScript(script: StoredScript): UserScript {
-    // DEBUG
-    const debug = `console.log(${JSON.stringify({
-      name: script.name,
-      id: script.id,
-      patterns: script.patterns,
-    })})`;
-
     const codePrefix = patternService.toCode(script.patterns);
     const source = typescriptService.compile(
       CodePack.unpack(script.code),
       script.language
     );
-    const code = `(async()=>{\n${debug}\n${codePrefix}\n${source}\n})();`;
+    const code = `(async()=>{\n// apply precise pattern match test:\n${codePrefix}\n${source}\n})();`;
     const matches = patternService.toDomainPatterns(script.patterns);
 
     const userScript: UserScript = {
@@ -77,7 +70,6 @@ export class UserScriptService {
       delete userScript.excludeMatches;
     }
 
-    console.log(userScript); // DEBUG
     return userScript;
   }
 

@@ -29,7 +29,8 @@ export const Switch = ({
         "focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-1",
         "after:block after:absolute after:w-5 after:h-5 after:rounded-full after:left-0 after:transition-all after:bg-neutral-500",
         value && "after:left-5",
-        active && "after:bg-secondary",
+        active && "after:bg-secondary-dark",
+        value && active && "after:bg-secondary",
         disabled && "opacity-50",
         className
       )}

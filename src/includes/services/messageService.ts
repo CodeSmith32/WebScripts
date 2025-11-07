@@ -85,15 +85,18 @@ export class MessageService {
       sender: MessageSender
     ) => MessageReply<T> | Promise<MessageReply<T>>
   ) {
-    const handler = async (
+    const handler = (
       message: MessageReceive<T>,
       sender: MessageSender,
       reply: (message?: MessageReply<T>) => void
     ) => {
       if (message.cmd === cmd) {
-        const response = await callback(message, sender);
-        if (response !== undefined) reply(response);
+        Promise.resolve(callback(message, sender)).then((response) => {
+          reply(response);
+        });
+        return true;
       }
+      return false;
     };
 
     Chrome.runtime?.onMessage.addListener(handler);

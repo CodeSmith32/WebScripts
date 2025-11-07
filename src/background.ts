@@ -7,9 +7,11 @@ import type { StoredScript } from "./includes/types";
 import { CodePack } from "./includes/core/codepack";
 import { webScripts } from "./includes/services/webScriptService";
 
-let scripts: StoredScript[] = [];
+// background script handles CSP-disabling, and re-compiles / re-syncs scripts after applying
+// domain toggle requests from the popup.
 
-// reload scripts
+// keep track of most recent scripts
+let scripts: StoredScript[] = [];
 const reloadScripts = async () => {
   scripts = await storageService.loadScripts();
 };
@@ -67,7 +69,7 @@ const shouldDisableCSP = (url: string) => {
   return false;
 };
 
-// Remove CSP headers on Chrome
+// remove CSP headers
 Chrome.webNavigation?.onBeforeNavigate.addListener((evt) => {
   if (!shouldDisableCSP(evt.url)) return;
 

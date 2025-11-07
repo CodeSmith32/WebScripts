@@ -26,6 +26,7 @@ import type { Popup } from "../components/popupCore/ClassPopup";
 import { userScriptService } from "../includes/services/userScriptService";
 import type { StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";
+import { useCarried } from "../hooks/core/useCarried";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -94,10 +95,15 @@ export const OptionsPage = () => {
     await optionsData.addScripts(scripts);
   };
 
+  // make sure listener gets latest version of optionsData
+  const carried = useCarried({ optionsData });
+
   useEffect(() => {
+    // listen for domain toggles from popup, and update affected scripts
     const unsubscribe = messageService.listen(
       "scriptUpdated",
       async (message) => {
+        const { optionsData } = carried;
         if (!optionsData) return;
 
         // get the editor model, and recompress the script to get the latest code

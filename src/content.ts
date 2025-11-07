@@ -2,6 +2,8 @@ import { messageService } from "./includes/services/messageService";
 import { storageService } from "./includes/services/storageService";
 import { patternService } from "./includes/services/patternService";
 
+// content script live-tests which scripts match the current page and also catches page reloads.
+
 // list of running scripts
 const running: string[] = [];
 
@@ -19,9 +21,7 @@ const detectMatching = async () => {
     }
   }
 
-  try {
-    await messageService.send("reloaded", {});
-  } catch (_err) {}
+  await messageService.send("reloaded", {});
 };
 
 detectMatching().catch((err) => {
