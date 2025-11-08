@@ -5,7 +5,7 @@ import { typescriptService } from "./typescriptService";
 import { wrapAsyncLast } from "../core/wrapAsync";
 import { storageService } from "./storageService";
 import { patternService } from "./patternService";
-import type { StoredScript } from "../types";
+import type { ExecutionWorld, StoredScript, WhenTime } from "../types";
 
 /** Type of a registered userScript. */
 export type UserScript = chrome.userScripts.RegisteredUserScript;
@@ -14,6 +14,20 @@ export type UserScriptsErrorType =
   | "allowUserScripts"
   | "enableDeveloperMode"
   | "";
+
+export type UserScriptRunAt = chrome.extensionTypes.RunAt;
+
+export type UserScriptWorld = chrome.userScripts.ExecutionWorld;
+
+const whenTimeToRunAt: Record<WhenTime, UserScriptRunAt> = {
+  start: "document_start",
+  end: "document_end",
+  idle: "document_idle",
+};
+const worldToUserScriptWorld: Record<ExecutionWorld, UserScriptWorld> = {
+  main: "MAIN",
+  isolated: "USER_SCRIPT",
+};
 
 export class UserScriptService {
   private userScripts: (typeof chrome)["userScripts"] | null = null;
@@ -52,13 +66,17 @@ export class UserScriptService {
     );
     const code = `(async()=>{\n// apply precise pattern match test:\n${codePrefix}\n${source}\n})();`;
     const matches = patternService.toDomainPatterns(script.patterns);
+    const runAt: UserScriptRunAt =
+      whenTimeToRunAt[script.when] ?? "document_start";
+    const world: UserScriptWorld =
+      worldToUserScriptWorld[script.world] ?? "MAIN";
 
     const userScript: UserScript = {
       id: script.id,
       js: [{ code }],
       allFrames: false,
-      runAt: "document_start",
-      world: "MAIN",
+      runAt,
+      world,
       matches: matches.include,
       excludeMatches: matches.exclude,
     };

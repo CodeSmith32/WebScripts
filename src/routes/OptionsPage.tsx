@@ -18,7 +18,6 @@ import {
   PopupConfirm,
   type PopupConfirmCloseData,
 } from "../components/popups/PopupConfirm";
-import type { OnlyRequire } from "../includes/core/types/utility";
 import { ScriptIcon } from "../components/ScriptIcon";
 import { usePreventDefaultSave } from "../hooks/core/usePreventDefaultSave";
 import { PopupUserScriptsWarning } from "../components/popups/PopupUserScriptsWarning";
@@ -51,10 +50,7 @@ export const OptionsPage = () => {
   const onAddNew = async () => {
     if (!optionsData) return;
 
-    const newData: OnlyRequire<
-      StoredScript,
-      "name" | "language" | "prettify"
-    > | null = await popupManager.open<PopupCreateNewCloseData>(
+    const newData = await popupManager.open<PopupCreateNewCloseData>(
       <PopupCreateNew />
     ).waitClose;
     if (!newData) return;

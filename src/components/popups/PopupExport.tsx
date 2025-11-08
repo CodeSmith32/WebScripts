@@ -10,8 +10,8 @@ import { Spinner } from "../core/Spinner";
 import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { wait } from "../../includes/utils";
 import { downloadBlob } from "../../includes/core/download";
-import { CodePack } from "../../includes/core/codepack";
 import type { StoredScript } from "../../includes/types";
+import { exportService } from "../../includes/services/exportService";
 
 export interface PopupExportProps {
   scripts: StoredScript[];
@@ -44,28 +44,13 @@ export const PopupExport = ({ scripts }: PopupExportProps) => {
       .map((script) => webScripts.normalizeScript(script));
 
     // generate json
-    let json: string = "";
-    if (compress) {
-      const contents = {
-        compress: true,
-        scripts: selection.map(({ code }) => ({ code })),
-      };
-      json = JSON.stringify(contents);
-    } else {
-      const contents = {
-        scripts: selection.map(({ id: _id, code, ...script }) => ({
-          ...script,
-          code: CodePack.unpack(code),
-        })),
-      };
-      json = JSON.stringify(contents, null, "  ");
-    }
+    const exportData = await exportService.exportScriptsToBlob({
+      scripts: selection,
+      compress,
+    });
 
     // download
-    downloadBlob(
-      new Blob([json], { type: "application/json" }),
-      "webscripts-export.json"
-    );
+    downloadBlob(exportData, "webscripts-export.json");
 
     await wait(200);
 
@@ -76,13 +61,13 @@ export const PopupExport = ({ scripts }: PopupExportProps) => {
 
   return (
     <Popup
-      title="Export Scripts"
+      title="Export Scripts as JSON"
       onEnter={handleExport}
       onEscape={handleClose}
       onClickOut={handleClose}
       onClickX={handleClose}
     >
-      <p className="mb-4">Exports scripts to JSON:</p>
+      <p className="mb-4">Select scripts to export:</p>
 
       <MultiSelect
         className="w-full min-h-56"

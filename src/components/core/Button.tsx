@@ -2,9 +2,9 @@ import type { ComponentChildren, MouseEventHandler } from "preact";
 import { cn } from "../../includes/core/classes";
 
 export const buttonVariants = {
-  primary: "bg-primary",
-  secondary: "bg-neutral-700",
-  destructive: "bg-destructive",
+  primary: /*@tw*/ "bg-primary",
+  secondary: /*@tw*/ "bg-neutral-700",
+  destructive: /*@tw*/ "bg-destructive",
 };
 Object.setPrototypeOf(buttonVariants, null);
 

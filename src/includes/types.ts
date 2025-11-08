@@ -12,6 +12,10 @@ export interface StoredScript {
   patterns: string[];
   /** If the code will be prettified on save. */
   prettify: boolean;
+  /** A point during the page load when the script will be executed. */
+  when: WhenTime;
+  /** The world that the script should be executed within. */
+  world: ExecutionWorld;
   /** If the content security policy header should be removed for pages this script runs on. */
   csp: CSPAction;
   /** The source code, compressed with CodePack. */
@@ -23,6 +27,10 @@ export interface StoredSettings {
   defaultLanguage: ScriptLanguage;
   /** If prettifying code should be checked by default for newly created scripts. */
   defaultPrettify: boolean;
+  /** The default time to execute scripts. */
+  defaultWhen: WhenTime;
+  /** The default world to execute scripts in. */
+  defaultWorld: ExecutionWorld;
   /** The editor settings json string.
    *
    * This JSON is stored minified, but is prettified when displayed. */
@@ -49,6 +57,10 @@ export type HttpHeader = Omit<
 
 export type ScriptLanguage = "typescript" | "javascript";
 
+export type WhenTime = "start" | "end" | "idle";
+
+export type ExecutionWorld = "main" | "isolated";
+
 export type CSPAction = "disable" | "leave";
 
 export const scriptLanguages: Record<ScriptLanguage, true> = {
@@ -56,3 +68,16 @@ export const scriptLanguages: Record<ScriptLanguage, true> = {
   typescript: true,
 };
 Object.setPrototypeOf(scriptLanguages, null);
+
+export const whenTimes: Record<WhenTime, true> = {
+  start: true,
+  end: true,
+  idle: true,
+};
+Object.setPrototypeOf(whenTimes, null);
+
+export const executionWorlds: Record<ExecutionWorld, true> = {
+  main: true,
+  isolated: true,
+};
+Object.setPrototypeOf(executionWorlds, null);

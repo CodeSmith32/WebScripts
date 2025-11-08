@@ -1,7 +1,7 @@
-import { ImportIcon, XIcon } from "lucide-preact";
+import { DownloadIcon, ImportIcon, XIcon } from "lucide-preact";
 import { IconButton } from "../core/IconButton";
 import { SettingRow } from "../SettingRow";
-import { LanguageDropdown } from "../LanguageDropdown";
+import { LanguageDropdown } from "../dropdowns/LanguageDropdown";
 import { Checkbox } from "../core/Checkbox";
 import { SavingIndicator } from "../SavingIndicator";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
@@ -22,6 +22,8 @@ import { usePopupManager } from "../popupCore/ClassPopupManager";
 import { PopupImport, type PopupImportCloseData } from "../popups/PopupImport";
 import { PopupExport } from "../popups/PopupExport";
 import type { StoredScript, StoredSettings } from "../../includes/types";
+import { WhenTimeDropdown } from "../dropdowns/WhenTimeDropdown";
+import { ExecutionWorldDropdown } from "../dropdowns/ExecutionWorldDropdown";
 
 export interface SettingsPanelProps {
   onClose?: () => void;
@@ -121,7 +123,7 @@ export const SettingsPanel = ({
 
   return (
     <div className="absolute inset-0 flex flex-col bg-background-dark">
-      <div className="h-12 flex flex-row justify-between items-center gap-2 mb-2">
+      <div className="h-12 flex flex-row justify-between items-center gap-2 mb-1">
         <h2 className="text-2xl font-medium ml-4">Settings</h2>
 
         <div className="grow" />
@@ -156,24 +158,44 @@ export const SettingsPanel = ({
             />
           </SettingRow>
 
-          <SettingRow label="Import Scripts From JSON">
-            <Button
-              variant="secondary"
-              className="flex flex-row gap-2 justify-center items-center px-0 w-32"
-              onClick={handleImport}
-            >
-              <ImportIcon size={20} /> Import
-            </Button>
+          <SettingRow label="Default Execution Time">
+            <WhenTimeDropdown
+              value={settings.defaultWhen}
+              onValueChange={(value) => {
+                settings.defaultWhen = value;
+                handleChange();
+              }}
+            />
           </SettingRow>
 
-          <SettingRow label="Export Scripts To JSON">
-            <Button
-              variant="secondary"
-              className="flex flex-row gap-2 justify-center items-center px-0 w-32"
-              onClick={handleExport}
-            >
-              <ImportIcon className="rotate-180" size={20} /> Export
-            </Button>
+          <SettingRow label="Default Execution World">
+            <ExecutionWorldDropdown
+              value={settings.defaultWorld}
+              onValueChange={(value) => {
+                settings.defaultWorld = value;
+                handleChange();
+              }}
+            />
+          </SettingRow>
+
+          <SettingRow label="Import / Export Scripts as JSON">
+            <div className="flex flex-row gap-4">
+              <Button
+                variant="primary"
+                className="flex flex-row gap-2 justify-center items-center px-0 py-1.5 w-32"
+                onClick={handleImport}
+              >
+                <ImportIcon size={20} /> Import
+              </Button>
+
+              <Button
+                variant="primary"
+                className="flex flex-row gap-2 justify-center items-center px-0 py-1.5 w-32"
+                onClick={handleExport}
+              >
+                <DownloadIcon size={20} /> Export
+              </Button>
+            </div>
           </SettingRow>
 
           <SettingRow

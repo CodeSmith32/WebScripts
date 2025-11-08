@@ -1,5 +1,5 @@
-import type { CSPAction } from "../includes/types";
-import { Dropdown, Option, type DropdownProps } from "./core/Dropdown";
+import type { CSPAction } from "../../includes/types";
+import { Dropdown, Option, type DropdownProps } from "../core/Dropdown";
 
 export interface CSPActionDropdownProps
   extends Omit<DropdownProps, "onValueChange"> {

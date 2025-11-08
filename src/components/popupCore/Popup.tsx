@@ -91,7 +91,12 @@ export const Popup = ({
             )}
           </div>
         )}
-        <div className={cn("p-4 bg-background-dark", contentClassName)}>
+        <div
+          className={cn(
+            "p-4 bg-background-dark max-h-[calc(100vh_-_100px)] overflow-y-auto",
+            contentClassName
+          )}
+        >
           {children}
         </div>
       </div>

@@ -1,122 +1,16 @@
 import { useEffect, useState } from "preact/hooks";
-import { webScripts } from "../../includes/services/webScriptService";
 import { usePopup } from "../popupCore/ClassPopup";
 import { Popup } from "../popupCore/Popup";
-import {
-  array,
-  boolean,
-  object,
-  optional,
-  prettifyError,
-  string,
-  enum as zenum,
-  ZodMiniType,
-} from "zod/mini";
 import { FileUpload } from "../core/FileUpload";
 import { Button } from "../core/Button";
 import { Spinner } from "../core/Spinner";
 import { ErrorList } from "../ErrorList";
-import { CodePack } from "../../includes/core/codepack";
-import type { OnlyRequire } from "../../includes/core/types/utility";
 import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { cn } from "../../includes/core/classes";
 import { MultiSelect, Option } from "../core/Dropdown";
 import { ImportIcon } from "lucide-preact";
 import type { StoredScript } from "../../includes/types";
-
-const importedScriptsSchema: ZodMiniType<{
-  compressed?: boolean;
-  scripts: OnlyRequire<StoredScript, "code">[];
-}> = object({
-  compressed: optional(boolean()),
-  scripts: array(
-    object({
-      // id: optional(string()),
-      name: optional(string()),
-      patterns: optional(array(string())),
-      language: optional(zenum(["typescript", "javascript"])),
-      prettify: optional(boolean()),
-      code: string(),
-      // compiled: nullish(string()),
-    })
-  ),
-});
-
-const importInitialError = "Error occurred trying to import scripts.";
-
-type ParseResult =
-  | {
-      success: true;
-      scripts: StoredScript[];
-    }
-  | {
-      success: false;
-      errors: string[];
-    };
-
-const parseScriptsFromFile = async (file: Blob): Promise<ParseResult> => {
-  // try parsing json
-  let jsonData: unknown;
-  try {
-    jsonData = JSON.parse(await file.text());
-  } catch (err) {
-    return {
-      success: false,
-      errors: [
-        importInitialError,
-        "Failed to parse JSON:",
-        (err as Error).message,
-      ],
-    };
-  }
-
-  // try validating as script type
-  const parsed = importedScriptsSchema.safeParse(jsonData);
-  if (!parsed.success) {
-    return {
-      success: false,
-      errors: [
-        importInitialError,
-        "Failed to interpret object as scripts:",
-        ...prettifyError(parsed.error).split("\n"),
-      ],
-    };
-  }
-  const { scripts, compressed } = parsed.data;
-
-  // if compressed, validate compression; otherwise apply compression
-  if (compressed) {
-    const errors = [importInitialError, "Some compressed scripts are corrupt:"];
-    let failed = false;
-
-    for (const script of scripts) {
-      try {
-        CodePack.validate(script.code);
-      } catch (err) {
-        failed = true;
-        errors.push(`${script.name} (${script.id}): `, (err as Error).message);
-      }
-    }
-
-    if (failed) {
-      return { success: false, errors };
-    }
-  } else {
-    for (const script of scripts) {
-      script.code = CodePack.pack(script.code);
-    }
-  }
-
-  // normalize scripts
-  return {
-    success: true,
-    scripts: scripts.map((script) => {
-      const normalized = webScripts.normalizeScript(script);
-      normalized.id = webScripts.generateId();
-      return normalized;
-    }),
-  };
-};
+import { importService } from "../../includes/services/importService";
 
 export interface PopupImportCloseData {
   importedScripts: StoredScript[] | null;
@@ -174,7 +68,7 @@ export const PopupImport = ({ onSubmit }: PopupImportProps) => {
       setLoading(true);
 
       try {
-        const result = await parseScriptsFromFile(file);
+        const result = await importService.parseScriptsFromFile(file);
         if (cancel) return;
 
         if (!result.success) {
@@ -198,13 +92,15 @@ export const PopupImport = ({ onSubmit }: PopupImportProps) => {
 
   return (
     <Popup
-      title="Import Scripts"
+      title="Import Scripts as JSON"
       onEnter={handleAccept}
       onEscape={handleCancel}
       onClickOut={handleCancel}
       onClickX={handleCancel}
     >
-      <p className="mb-4">Import scripts as JSON:</p>
+      <p className="mb-4">
+        Select <code>*.json</code> file to import:
+      </p>
 
       <FileUpload
         error={!!errors.length}

@@ -2,15 +2,23 @@ import { randAlphaNum } from "../utils";
 import { CodePack } from "../core/codepack";
 import { storageService } from "./storageService";
 import {
+  executionWorlds,
   scriptLanguages,
+  whenTimes,
+  type ExecutionWorld,
   type ScriptLanguage,
   type StoredScript,
+  type WhenTime,
 } from "../types";
 import { arraysEqual } from "../core/arrayFns";
 import { pick } from "../core/pick";
+import { mergeDefined } from "../core/mergeDefined";
 
 export type HeaderData = Partial<
-  Pick<StoredScript, "name" | "language" | "patterns" | "prettify" | "csp">
+  Pick<
+    StoredScript,
+    "name" | "language" | "patterns" | "prettify" | "when" | "world" | "csp"
+  >
 >;
 
 export class WebScripts {
@@ -22,6 +30,8 @@ export class WebScripts {
       language: "javascript",
       patterns: [],
       prettify: false,
+      when: "start",
+      world: "main",
       csp: "leave",
       code: "",
     };
@@ -34,6 +44,8 @@ export class WebScripts {
       "language",
       "patterns",
       "prettify",
+      "when",
+      "world",
       "csp",
     ]);
   }
@@ -54,37 +66,24 @@ export class WebScripts {
     let code = CodePack.unpack(sourceScript.code ?? "");
 
     // extract details from script code header
-    let { name, patterns, language, prettify, csp } = this.parseHeader(code);
+    const header = this.parseHeader(code);
 
+    // get defaults for script
     const defaults = this.getScriptDefaults();
 
-    // fallback to details from script object, or otherwise global defaults
-    name ||= sourceScript.name ?? defaults.name;
-    if (!patterns?.length)
-      patterns = sourceScript.patterns ?? defaults.patterns;
-    language ??= sourceScript.language ?? defaults.language;
-    prettify ??= sourceScript.prettify ?? defaults.prettify;
-    csp ??= sourceScript.csp ?? defaults.csp;
+    // merge results: prioritize code header, fallback to source script, fallback to defaults
+    const script: StoredScript = mergeDefined(defaults, sourceScript, header);
 
-    // update header
-    code = this.updateHeaderInCode(code, {
-      name,
-      patterns,
-      language,
-      prettify,
-      csp,
-    });
-
-    // generate new script
-    const script: StoredScript = {
-      id: sourceScript.id ?? this.generateId(),
-      name,
-      patterns,
-      language,
-      prettify,
-      csp,
-      code: CodePack.pack(code),
-    };
+    // fill in missing values
+    script.id ||= this.generateId();
+    script.name ||= defaults.name;
+    if (!script.patterns.length) {
+      // if code header gave array with no matches, fallback to source script, or defaults
+      script.patterns = sourceScript.patterns ?? defaults.patterns;
+    }
+    // update code header, then update script code
+    code = this.updateHeaderInCode(code, script);
+    script.code = CodePack.pack(code);
 
     return script;
   }
@@ -92,12 +91,9 @@ export class WebScripts {
   /** Parse the header comment of a script. */
   parseHeader(code: string): HeaderData {
     const header = this.extractHeader(code).replace(/^s*/, "");
+    const defaults = this.getHeaderDefaults();
 
-    let name: string = "";
-    let patterns: string[] = [];
-    let language: ScriptLanguage | undefined = undefined;
-    let prettify: boolean | undefined = undefined;
-    let csp: HeaderData["csp"] = undefined;
+    const data: HeaderData = {};
 
     const parseBool = (value: string) => {
       return ["true", "yes", "on"].includes(value.toLowerCase());
@@ -119,28 +115,44 @@ export class WebScripts {
       }
 
       if (params.has("name")) {
-        name = params.get("name")![0];
+        data.name = params.get("name")![0] || defaults.name;
+      }
+      if (params.has("match")) {
+        data.patterns = params.get("match")!;
       }
       if (params.has("language")) {
-        const lang = params.get("language")![0].toLowerCase();
-        language = (scriptLanguages as Record<string, boolean>)[lang]
-          ? (lang as ScriptLanguage)
-          : "javascript";
+        const language = params.get("language")![0].toLowerCase();
+        data.language = (scriptLanguages as Record<string, boolean>)[language]
+          ? (language as ScriptLanguage)
+          : defaults.language;
       }
       if (params.has("prettify")) {
-        prettify = parseBool(params.get("prettify")![0]);
+        data.prettify = parseBool(params.get("prettify")![0]);
+      }
+      if (params.has("when")) {
+        const when = params.get("when")![0].toLowerCase();
+        data.when = (whenTimes as Record<string, boolean>)[when]
+          ? (when as WhenTime)
+          : defaults.when;
+      }
+      if (params.has("world")) {
+        const world = params.get("world")![0].toLowerCase();
+        data.world = (executionWorlds as Record<string, boolean>)[world]
+          ? (world as ExecutionWorld)
+          : defaults.world;
       }
       if (params.has("csp")) {
         const policy = params.get("csp")![0].toLowerCase();
-        csp = ["disable", "disabled", "off", "false", "no"].includes(policy)
+        data.csp = ["disable", "disabled", "off", "false", "no"].includes(
+          policy
+        )
           ? "disable"
-          : "leave";
-      }
-      if (params.has("match")) {
-        patterns = params.get("match")!;
+          : ["leave", "on", "true", "yes"].includes(policy)
+            ? "leave"
+            : defaults.csp;
       }
     }
-    return { name, patterns, language, prettify, csp };
+    return data;
   }
 
   /** Checks to see if two header data objects contain equivalent values. */
@@ -150,6 +162,8 @@ export class WebScripts {
       a.language === b.language &&
       arraysEqual(a.patterns ?? [], b.patterns ?? []) &&
       a.prettify === b.prettify &&
+      a.when === b.when &&
+      a.world === b.world &&
       a.csp === b.csp
     );
   }
@@ -178,10 +192,18 @@ export class WebScripts {
     return "";
   }
 
+  /** Helper to generate header key-value pair tuple, or null if not set. */
+  private makeHeaderKey(
+    key: string,
+    value: string | number | boolean | undefined
+  ): [string, string] | null {
+    return value == null ? null : [key, "" + value];
+  }
+
   /** Update the given header data in the header comment, and return a new header comment. */
   updateHeader(
     header: string,
-    { name, patterns, language, prettify, csp }: HeaderData
+    { name, patterns, language, prettify, when, world, csp }: HeaderData
   ): string {
     // trim off leading white-space
     header = header.replace(/^\s*/, "");
@@ -198,23 +220,20 @@ export class WebScripts {
     const removeKeys = (...keys: string[]) => {
       lines = lines.filter((line) => !keys.includes(line[0]));
     };
-    const makeKey = (
-      key: string,
-      value: string | number | boolean | undefined
-    ): [string, string] | null => {
-      if (value == null) return null;
-      return [key, "" + value];
-    };
 
     // regenerate header lines
-    removeKeys("name", "language", "prettify", "csp", "match");
+    removeKeys("name", "language", "prettify", "when", "world", "csp", "match");
     lines = [
-      makeKey("name", name),
-      makeKey("language", language),
-      makeKey("prettify", prettify),
-      makeKey("csp", csp === "leave" ? undefined : csp),
+      this.makeHeaderKey("name", name),
+      this.makeHeaderKey("language", language),
+      this.makeHeaderKey("prettify", prettify),
+      this.makeHeaderKey("when", when === "start" ? undefined : when),
+      this.makeHeaderKey("world", world === "main" ? undefined : world),
+      this.makeHeaderKey("csp", csp === "leave" ? undefined : csp),
       ...lines,
-      ...(patterns ?? []).map((pattern) => makeKey("match", pattern)),
+      ...(patterns ?? []).map((pattern) =>
+        this.makeHeaderKey("match", pattern)
+      ),
     ].filter((v) => !!v);
 
     // build header
@@ -234,21 +253,27 @@ export class WebScripts {
   }
 
   /** Generate a header from header details. */
-  generateHeader({ name, patterns, language, prettify, csp }: HeaderData) {
-    // exclude csp line if not disabled
-    const cspLine: [string, string][] =
-      csp === "disable" ? [["csp", "disable"]] : [];
-
+  generateHeader({
+    name,
+    patterns,
+    language,
+    prettify,
+    when,
+    world,
+    csp,
+  }: HeaderData) {
     // generate header lines
     const lines: [string, string][] = [
-      ["name", name ?? ""],
-      ["language", language ?? "javascript"],
-      ["prettify", prettify ? "true" : "false"],
-      ...cspLine,
+      this.makeHeaderKey("name", name ?? ""),
+      this.makeHeaderKey("language", language ?? "javascript"),
+      this.makeHeaderKey("prettify", prettify ? "true" : "false"),
+      this.makeHeaderKey("when", when === "start" ? undefined : when),
+      this.makeHeaderKey("world", world === "main" ? undefined : world),
+      this.makeHeaderKey("csp", csp === "disable" ? "disable" : undefined),
       ...(patterns ?? []).map(
         (pattern) => ["match", pattern] as [string, string]
       ),
-    ];
+    ].filter((v) => !!v);
 
     return this.buildHeaderLines(lines);
   }

@@ -4,7 +4,7 @@ import { IconButton } from "../core/IconButton";
 import { XIcon } from "lucide-preact";
 import type { EditorModelData } from "../../hooks/useEditorModels";
 import { Checkbox } from "../core/Checkbox";
-import { LanguageDropdown } from "../LanguageDropdown";
+import { LanguageDropdown } from "../dropdowns/LanguageDropdown";
 import { useSavingStatus } from "../../hooks/useSavingStatus";
 import { SavingIndicator } from "../SavingIndicator";
 import { useEffect, useMemo, useState } from "preact/hooks";

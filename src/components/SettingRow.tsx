@@ -12,9 +12,9 @@ export const SettingRow = ({
   children,
 }: SettingRowProps) => {
   return (
-    <div className="flex flex-row gap-4 py-3 px-4 border-b-2 first:border-t-2 border-background">
+    <div className="flex flex-row gap-4 py-3 px-4 min-h-14 border-b-2 first:border-t-2 border-background">
       <div className="w-0 grow" title={label}>
-        <p className="w-full truncate">{label}</p>
+        <p className="w-full truncate mt-0.5">{label}</p>
         {subHeading}
       </div>
       <div className="w-0 grow-[2]">{children}</div>
