@@ -19,6 +19,11 @@ export const hostnameFromURL = (url: string) => {
   return host?.[1] ?? null;
 };
 
+/** Test if the given url is a file url. */
+export const isFileURL = (url: string) => {
+  return /^file:\/\/\//i.test(url);
+};
+
 /** Return a promise that resolves after the given number of milliseconds. */
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));

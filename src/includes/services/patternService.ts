@@ -213,7 +213,7 @@ export class PatternService {
     domain = domain.toLowerCase();
 
     // if domain is not valid, bail with no changes
-    if (!/^[\da-z]+(\.[\da-z]+)+$/.test(domain)) return patterns;
+    if (!/^[\da-z]+(\.[\da-z]+)*$/.test(domain)) return patterns;
 
     // remove any existing patterns that match this domain
     patterns = patterns.filter((pattern) => {

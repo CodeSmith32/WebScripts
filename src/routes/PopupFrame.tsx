@@ -5,11 +5,19 @@ import { useFutureCallback } from "../hooks/core/useFutureCallback";
 import { usePopupData } from "../hooks/usePopupData";
 import { messageService } from "../includes/services/messageService";
 import type { StoredScript } from "../includes/types";
-import { hostnameFromURL } from "../includes/utils";
+import { hostnameFromURL, isFileURL } from "../includes/utils";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { patternService } from "../includes/services/patternService";
 import type { ComponentChildren } from "preact";
 import { useCarried } from "../hooks/core/useCarried";
+
+const noTabMessage = (
+  <p>
+    Please open a tab to
+    <br />
+    allow toggling scripts.
+  </p>
+);
 
 const noDomainMessage = (
   <p>
@@ -19,17 +27,39 @@ const noDomainMessage = (
   </p>
 );
 
+const fileUrlMessage = (
+  <p>
+    This tab is a file url. It can only
+    <br />
+    be matched with a regex, e.g.
+    <br />
+    <code>/^file:\/\/\//i</code>
+  </p>
+);
+
+const commonMessages = new Set<ComponentChildren>([
+  noTabMessage,
+  noDomainMessage,
+  fileUrlMessage,
+]);
+
+type URLType = "notab" | "normal" | "file" | "internal";
+
 export const PopupFrame = () => {
   const { data, available, refresh } = usePopupData();
   const [message, setMessage] = useState<ComponentChildren>(null);
   const messageRef = useRef<HTMLDivElement>(null);
 
   // detect if page has a domain
-  const hasDomain = useMemo(() => {
-    if (!data?.tab) return true;
+  const urlType = useMemo((): URLType => {
+    if (!data?.tab?.url) return "notab";
 
-    return data.tab.url ? !!hostnameFromURL(data.tab.url) : false;
+    if (isFileURL(data.tab.url)) return "file";
+    if (hostnameFromURL(data.tab.url)) return "normal";
+    return "internal";
   }, [data]);
+
+  const cannotMatch = urlType === "internal" || urlType === "notab";
 
   // get table mapping script id to if it's executing on the tab
   const matchingScripts = useMemo(() => {
@@ -45,12 +75,23 @@ export const PopupFrame = () => {
   // if page has no domain, show notification message
   const carried = useCarried({ message });
   useEffect(() => {
-    if (!hasDomain) {
-      setMessage(noDomainMessage);
-    } else if (carried.message === noDomainMessage) {
-      setMessage(null);
+    switch (urlType) {
+      case "notab":
+        setMessage(noTabMessage);
+        break;
+      case "internal":
+        setMessage(noDomainMessage);
+        break;
+      case "file":
+        setMessage(fileUrlMessage);
+        break;
+      default:
+        if (commonMessages.has(carried.message)) {
+          setMessage(null);
+        }
+        break;
     }
-  }, [hasDomain]);
+  }, [urlType]);
 
   // refresh scripts / active scripts when page reloads while popup is open
   useEffect(() => {
@@ -61,7 +102,9 @@ export const PopupFrame = () => {
 
   const handleToggle = useFutureCallback(
     (script: StoredScript, running: boolean) => {
-      if (!available || !data.tab?.url) return;
+      if (!data?.tab?.url || urlType !== "normal") {
+        return;
+      }
 
       const domain = hostnameFromURL(data.tab.url);
       if (!domain) return;
@@ -89,10 +132,10 @@ export const PopupFrame = () => {
       ) : data.allScripts.length ? (
         data.allScripts.map((script) => (
           <PopupScriptRow
-            disabled={!hasDomain}
+            disabled={urlType !== "normal"}
             script={script}
             running={data.runningScripts?.includes(script.id) ?? false}
-            initialValue={!!matchingScripts[script.id]}
+            initialValue={cannotMatch ? false : !!matchingScripts[script.id]}
             onChange={(running) => handleToggle(script, running)}
             onEdit={() => handleOpenScripts(script.id)}
             onWarn={(message) => {
