@@ -41,14 +41,17 @@ export const PopupScriptRow = ({
         active={!disabled && value === running}
         onClick={onClickLocked}
       />
-      <p className="text-text cursor-default">{script.name}</p>
-
-      <div className="grow" />
+      <p
+        title={script.name}
+        className="w-0 grow text-text cursor-default truncate"
+      >
+        {script.name}
+      </p>
 
       {script.csp === "disable" && (
         <IconButton
           title="This script disables the page's Content Security Policy."
-          className="w-7 h-7 opacity-50 hover:opacity-100 cursor-help"
+          className="w-7 h-7 shrink-0 opacity-50 hover:opacity-100 cursor-help"
           onClick={() => {
             onWarn?.("csp");
           }}
@@ -57,7 +60,11 @@ export const PopupScriptRow = ({
         </IconButton>
       )}
 
-      <IconButton title="Edit Script" className="w-7 h-7" onClick={onEdit}>
+      <IconButton
+        title="Edit Script"
+        className="w-7 h-7 shrink-0"
+        onClick={onEdit}
+      >
         <PencilIcon className="text-white" size={16} />
       </IconButton>
     </div>

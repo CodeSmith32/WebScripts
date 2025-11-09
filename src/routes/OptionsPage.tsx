@@ -26,6 +26,7 @@ import { userScriptService } from "../includes/services/userScriptService";
 import type { StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";
 import { useCarried } from "../hooks/core/useCarried";
+import { useWindowFocus } from "../hooks/core/useWindowFocus";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -98,8 +99,8 @@ export const OptionsPage = () => {
   // make sure listener gets latest version of optionsData
   const carried = useCarried({ optionsData });
 
+  // listen for domain toggles from popup, and update affected scripts
   useEffect(() => {
-    // listen for domain toggles from popup, and update affected scripts
     const unsubscribe = messageService.listen(
       "scriptUpdated",
       async (message) => {
@@ -138,6 +139,11 @@ export const OptionsPage = () => {
       if (script) setActive(script);
     }
   }, [optionsData?.refer]);
+
+  // jump to referred script, even while options page is open
+  useWindowFocus(() => {
+    optionsData?.reloadRefer();
+  });
 
   // show error if userScripts is disabled
   useEffect(() => {

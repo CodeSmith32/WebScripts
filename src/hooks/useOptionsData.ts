@@ -24,15 +24,9 @@ export class OptionsData {
   async initialize() {
     try {
       this.scripts = (await storageService.loadScripts()) ?? [];
-    } catch (_err) {}
-
-    try {
       this.settings = (await storageService.loadSettings()) ?? {
         ...storageService.defaultSettings,
       };
-    } catch (_err) {}
-
-    try {
       this.refer = (await storageService.getReferred()) ?? null;
     } catch (_err) {}
 
@@ -140,6 +134,13 @@ export class OptionsData {
     }
 
     return oldScript;
+  }
+
+  /** Recheck the stored refer value. */
+  async reloadRefer() {
+    this.refer = (await storageService.getReferred()) ?? null;
+
+    this.refresh();
   }
 }
 
