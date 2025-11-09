@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
-import { usePopup } from "../popupCore/ClassPopup";
-import { Popup } from "../popupCore/Popup";
+import { usePopup } from "../core/popups/ClassPopup";
+import { Popup } from "../core/popups/Popup";
 import { FileUpload } from "../core/FileUpload";
 import { Button } from "../core/Button";
 import { Spinner } from "../core/Spinner";

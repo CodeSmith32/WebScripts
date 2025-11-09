@@ -1,7 +1,7 @@
 import { createContext, type ComponentChildren } from "preact";
 import type { PopupManager } from "./ClassPopupManager";
 import { useContext } from "preact/hooks";
-import { promiseGuts } from "../../includes/core/promiseGuts";
+import { promiseGuts } from "../../../includes/core/promiseGuts";
 
 export class Popup<T = void> {
   manager: PopupManager;

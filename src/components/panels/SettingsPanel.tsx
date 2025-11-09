@@ -18,7 +18,7 @@ import { prettierConfigManager } from "../../includes/managers/prettierConfigMan
 import { prettifyJson } from "../../includes/core/prettifyJson";
 import { Button } from "../core/Button";
 import { useFutureCallback } from "../../hooks/core/useFutureCallback";
-import { usePopupManager } from "../popupCore/ClassPopupManager";
+import { usePopupManager } from "../core/popups/ClassPopupManager";
 import { PopupImport, type PopupImportCloseData } from "../popups/PopupImport";
 import { PopupExport } from "../popups/PopupExport";
 import type { StoredScript, StoredSettings } from "../../includes/types";

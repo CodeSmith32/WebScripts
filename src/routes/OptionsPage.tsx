@@ -9,7 +9,7 @@ import { BlankPanel } from "../components/panels/BlankPanel";
 import { SettingsPanel } from "../components/panels/SettingsPanel";
 import { EditorPanel } from "../components/panels/EditorPanel";
 import { EditorModelData, useEditorModels } from "../hooks/useEditorModels";
-import { usePopupManager } from "../components/popupCore/ClassPopupManager";
+import { usePopupManager } from "../components/core/popups/ClassPopupManager";
 import {
   PopupCreateNew,
   type PopupCreateNewCloseData,
@@ -21,7 +21,7 @@ import {
 import { ScriptIcon } from "../components/ScriptIcon";
 import { usePreventDefaultSave } from "../hooks/core/usePreventDefaultSave";
 import { PopupUserScriptsWarning } from "../components/popups/PopupUserScriptsWarning";
-import type { Popup } from "../components/popupCore/ClassPopup";
+import type { Popup } from "../components/core/popups/ClassPopup";
 import { userScriptService } from "../includes/services/userScriptService";
 import type { StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";

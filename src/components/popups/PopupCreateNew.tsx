@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks";
-import { usePopup } from "../popupCore/ClassPopup";
-import { Popup } from "../popupCore/Popup";
+import { usePopup } from "../core/popups/ClassPopup";
+import { Popup } from "../core/popups/Popup";
 import { TextBox } from "../core/TextBox";
 import { Checkbox } from "../core/Checkbox";
 import { Button } from "../core/Button";

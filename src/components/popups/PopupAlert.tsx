@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
-import { usePopup } from "../popupCore/ClassPopup";
-import { Popup, type PopupProps } from "../popupCore/Popup";
+import { usePopup } from "../core/popups/ClassPopup";
+import { Popup, type PopupProps } from "../core/popups/Popup";
 import { Button, type ButtonVariantType } from "../core/Button";
 import { cn } from "../../includes/core/classes";
 
