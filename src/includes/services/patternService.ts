@@ -1,10 +1,14 @@
 import { isDomainSupersetOf } from "../core/isDomainSupersetOf";
 import { hostnameFromURL } from "../utils";
+import { regexService } from "./regexService";
+
+export type PatternType = "regex" | "domain";
+export type PatternTarget = "url" | "host";
 
 export interface PatternParts {
   /** The type of pattern, if it's a regex (`/pattern/`), or a domain with wildcards
    * (`*.domain.com`). */
-  type: "regex" | "domain";
+  type: PatternType;
   /** The original pattern, without the negation `-` flag. */
   original: string;
   /** A regex pattern string to use for this match pattern. */
@@ -12,7 +16,7 @@ export interface PatternParts {
   /** A regex flags string to use for this match pattern. */
   flags: string;
   /** What the pattern should be tested on: The full url, or just the hostname. */
-  target: "url" | "host";
+  target: PatternTarget;
   /** If the match is negated. If `true`, when this pattern matches, the script should *not*
    * load. */
   negated: boolean;
@@ -35,11 +39,15 @@ export class PatternService {
       // pattern is a regex: m[] 1: negated, 2: pattern, 3: flags
       const [, negated, pattern, flags] = m;
 
+      const filteredFlags = flags.replace(/[^ugimsy]/g, "");
+
+      if (!regexService.validateRegex(pattern, filteredFlags)) return null;
+
       return {
         type: "regex",
         original: original.replace(/^-\s*/, ""),
         pattern,
-        flags: flags.replace(/[^ugimsy]/g, ""),
+        flags: filteredFlags,
         negated: !!negated,
         target: "url",
       };
@@ -57,11 +65,14 @@ export class PatternService {
         if (m === "*") return ".+";
         return "\\.(.+\\.)?";
       });
+      const fullPattern = `^${pattern}$`;
+
+      if (!regexService.validateRegex(fullPattern, "i")) return null;
 
       return {
         type: "domain",
         original: original.replace(/^-\s*/, ""),
-        pattern: `^${pattern}$`,
+        pattern: fullPattern,
         flags: "i",
         negated: !!negated,
         target: "host",
@@ -83,7 +94,12 @@ export class PatternService {
 
       // build regex
       const { pattern, flags, negated, target } = parts;
-      const regex = new RegExp(pattern, flags);
+      let regex: RegExp;
+      try {
+        regex = new RegExp(pattern, flags);
+      } catch (_err) {
+        continue;
+      }
       const urlHost = target === "host" ? hostname : url;
       if (!urlHost) continue;
 

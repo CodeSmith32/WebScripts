@@ -150,7 +150,7 @@ export const SettingsPanel = ({
 
           <SettingRow label="Prettify by Default">
             <Checkbox
-              label="Format code with prettier on save"
+              label="Format code with Prettier on save"
               checked={settings.defaultPrettify}
               onValueChange={(checked) => {
                 settings.defaultPrettify = checked;
@@ -161,7 +161,7 @@ export const SettingsPanel = ({
 
           <SettingRow label="Lock Scripts by Default">
             <Checkbox
-              label="Lock toggles for scripts in popup"
+              label="Lock the script's toggle switch"
               checked={settings.defaultLocked}
               onValueChange={(checked) => {
                 settings.defaultLocked = checked;

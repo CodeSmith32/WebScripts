@@ -1,7 +1,7 @@
 import { Monaco } from "../Monaco";
 import { TextBox } from "../core/TextBox";
 import { IconButton } from "../core/IconButton";
-import { XIcon } from "lucide-preact";
+import { SettingsIcon, XIcon } from "lucide-preact";
 import type { EditorModelData } from "../../hooks/useEditorModels";
 import { Checkbox } from "../core/Checkbox";
 import { LanguageDropdown } from "../dropdowns/LanguageDropdown";
@@ -10,6 +10,12 @@ import { SavingIndicator } from "../SavingIndicator";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { debounce } from "../../includes/core/debounce";
 import { PrettierStatus } from "../PrettierStatus";
+import { Button } from "../core/Button";
+import { usePopupManager } from "../core/popups/ClassPopupManager";
+import {
+  PopupScriptSettings,
+  type PopupScriptSettingsCloseData,
+} from "../popups/PopupScriptSettings";
 
 export interface EditorPanelProps {
   model: EditorModelData;
@@ -25,6 +31,22 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
   const saveAfter = useMemo(() => debounce(triggerSave, 2000), []);
   const [prettierStatus, setPrettierStatus] =
     useState<PrettierStatus>("waiting");
+
+  const popupManager = usePopupManager();
+
+  // open full settings manager
+  const handleAllSettings = async () => {
+    const result = await popupManager.open<PopupScriptSettingsCloseData>(
+      <PopupScriptSettings script={script} />
+    ).waitClose;
+    if (!result) return;
+
+    const { id: _id, code: _code, ...newScript } = result;
+
+    Object.assign(script, newScript);
+    model.rebuildHeader();
+    triggerSave();
+  };
 
   useEffect(() => {
     const subscription = model.model.onDidChangeContent(() => {
@@ -83,6 +105,10 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
 
           {script.prettify && <PrettierStatus status={prettierStatus} />}
         </div>
+
+        <Button className="px-3 py-1" onClick={handleAllSettings}>
+          <SettingsIcon size={20} className="-ml-1" /> All Settings
+        </Button>
 
         <div className="grow" />
 

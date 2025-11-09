@@ -81,7 +81,7 @@ export const PopupCreateNew = () => {
         <div className="flex flex-col gap-2">
           <span>Prettify</span>
           <Checkbox
-            label="Enable code Prettify on save"
+            label="Format code with Prettier on save"
             checked={prettify}
             onValueChange={setPrettify}
           />
