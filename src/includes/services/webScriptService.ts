@@ -51,8 +51,8 @@ const headerDataKeys: (keyof HeaderData)[] = [
   "world",
   "csp",
 ];
-const codeHeaderKeys = headerDataKeys.map((key) =>
-  key === "patterns" ? "match" : key
+const headerDataKeysNoPatterns = headerDataKeys.filter(
+  (key) => key !== "patterns"
 );
 
 export class WebScripts {
@@ -217,7 +217,7 @@ export class WebScripts {
   /** Extract header comment from start of code. */
   extractHeader(code: string): string {
     const headerMatch = code.match(
-      /^\s*(\/\/\/[^\r\n]*(?:\r?\n\/\/\/[^\r\n]*)*)/
+      /^\s*(\/\/\/[^\r\n]*(?:(?:\r?\n)+\/\/\/[^\r\n]*)*)/
     );
     if (headerMatch) return headerMatch[0];
     return "";
@@ -232,20 +232,23 @@ export class WebScripts {
   }
 
   /** Update the given header data in the header comment, and return a new header comment. */
-  updateHeader(
-    header: string,
-    { name, patterns, language, prettify, locked, when, world, csp }: HeaderData
-  ): string {
+  updateHeader(header: string, headerData: HeaderData): string {
     // trim off leading white-space
     header = header.replace(/^\s*/, "");
 
+    const defaults = this.getHeaderDefaults();
+
     // parse old lines
-    let lines: [string, string][] = (header ? header.split(/\r?\n/) : []).map(
-      (line) => {
+    let lines: [string, string][] = (header ? header.split(/\r?\n/) : [])
+      .map((line): [string, string] | null => {
         let [, key, value] = line.match(/^\/+([\w\s]+):\s*(.*)$/) ?? [];
+        if (key == null || value == null) return null;
         return [key.trim().toLowerCase(), value];
-      }
-    );
+      })
+      .filter((v) => !!v);
+
+    // get current set of field names
+    const setFields = new Set(lines.map((line) => line[0]));
 
     // line mutation utilities
     const removeKeys = (...keys: string[]) => {
@@ -253,17 +256,24 @@ export class WebScripts {
     };
 
     // regenerate header lines
-    removeKeys(...codeHeaderKeys);
+
+    // remove core headers
+    removeKeys(...headerDataKeysNoPatterns, "match");
+
+    // update and re-order headers
     lines = [
-      this.makeHeaderKey("name", name),
-      this.makeHeaderKey("language", language),
-      this.makeHeaderKey("prettify", prettify),
-      this.makeHeaderKey("locked", locked ? "true" : undefined),
-      this.makeHeaderKey("when", when === "start" ? undefined : when),
-      this.makeHeaderKey("world", world === "main" ? undefined : world),
-      this.makeHeaderKey("csp", csp === "leave" ? undefined : csp),
+      ...headerDataKeysNoPatterns.map((key) =>
+        this.makeHeaderKey(
+          key,
+          headerData[key] !== defaults[key]
+            ? headerData[key]
+            : setFields.has(key)
+              ? defaults[key]
+              : undefined
+        )
+      ),
       ...lines,
-      ...(patterns ?? []).map((pattern) =>
+      ...(headerData.patterns ?? []).map((pattern) =>
         this.makeHeaderKey("match", pattern)
       ),
     ].filter((v) => !!v);
