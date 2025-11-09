@@ -5,6 +5,7 @@ import {
   executionWorlds,
   scriptLanguages,
   whenTimes,
+  type CSPAction,
   type ExecutionWorld,
   type ScriptLanguage,
   type StoredScript,
@@ -14,12 +15,45 @@ import { arraysEqual } from "../core/arrayFns";
 import { pick } from "../core/pick";
 import { mergeDefined } from "../core/mergeDefined";
 
-export type HeaderData = Partial<
-  Pick<
-    StoredScript,
-    "name" | "language" | "patterns" | "prettify" | "when" | "world" | "csp"
-  >
->;
+export type HeaderData = Partial<Omit<StoredScript, "id" | "code">>;
+
+const boolValues: Record<string, boolean | undefined> = {
+  // true
+  true: true,
+  yes: true,
+  on: true,
+  // false
+  false: false,
+  no: false,
+  off: false,
+};
+const cspValues: Record<string, CSPAction | undefined> = {
+  // disable
+  disable: "disable",
+  disabled: "disable",
+  off: "disable",
+  false: "disable",
+  no: "disable",
+  // leave
+  leave: "leave",
+  on: "leave",
+  true: "leave",
+  yes: "leave",
+};
+
+const headerDataKeys: (keyof HeaderData)[] = [
+  "name",
+  "language",
+  "patterns",
+  "prettify",
+  "locked",
+  "when",
+  "world",
+  "csp",
+];
+const codeHeaderKeys = headerDataKeys.map((key) =>
+  key === "patterns" ? "match" : key
+);
 
 export class WebScripts {
   /** Generate default property values for an empty script. */
@@ -30,6 +64,7 @@ export class WebScripts {
       language: "javascript",
       patterns: [],
       prettify: false,
+      locked: false,
       when: "start",
       world: "main",
       csp: "leave",
@@ -39,15 +74,7 @@ export class WebScripts {
 
   /** Generate default property values for an empty header data object. */
   getHeaderDefaults(): Required<HeaderData> {
-    return pick(this.getScriptDefaults(), [
-      "name",
-      "language",
-      "patterns",
-      "prettify",
-      "when",
-      "world",
-      "csp",
-    ]);
+    return pick(this.getScriptDefaults(), headerDataKeys);
   }
 
   /** Generate an id for a script. */
@@ -95,10 +122,6 @@ export class WebScripts {
 
     const data: HeaderData = {};
 
-    const parseBool = (value: string) => {
-      return ["true", "yes", "on"].includes(value.toLowerCase());
-    };
-
     if (header) {
       const params = new Map<string, string[]>();
       const lines = header.split(/\r?\n/);
@@ -114,42 +137,49 @@ export class WebScripts {
         arr.push(value);
       }
 
+      // name
       if (params.has("name")) {
         data.name = params.get("name")![0] || defaults.name;
       }
-      if (params.has("match")) {
-        data.patterns = params.get("match")!;
-      }
+      // language
       if (params.has("language")) {
         const language = params.get("language")![0].toLowerCase();
         data.language = (scriptLanguages as Record<string, boolean>)[language]
           ? (language as ScriptLanguage)
           : defaults.language;
       }
-      if (params.has("prettify")) {
-        data.prettify = parseBool(params.get("prettify")![0]);
+      // patterns
+      if (params.has("match")) {
+        data.patterns = params.get("match")!;
       }
+      // prettify
+      if (params.has("prettify")) {
+        const prettify = params.get("prettify")![0].toLowerCase();
+        data.prettify = boolValues[prettify] ?? defaults.prettify;
+      }
+      // locked
+      if (params.has("locked")) {
+        const locked = params.get("locked")![0].toLowerCase();
+        data.locked = boolValues[locked] ?? defaults.locked;
+      }
+      // when
       if (params.has("when")) {
         const when = params.get("when")![0].toLowerCase();
         data.when = (whenTimes as Record<string, boolean>)[when]
           ? (when as WhenTime)
           : defaults.when;
       }
+      // world
       if (params.has("world")) {
         const world = params.get("world")![0].toLowerCase();
         data.world = (executionWorlds as Record<string, boolean>)[world]
           ? (world as ExecutionWorld)
           : defaults.world;
       }
+      // csp
       if (params.has("csp")) {
         const policy = params.get("csp")![0].toLowerCase();
-        data.csp = ["disable", "disabled", "off", "false", "no"].includes(
-          policy
-        )
-          ? "disable"
-          : ["leave", "on", "true", "yes"].includes(policy)
-            ? "leave"
-            : defaults.csp;
+        data.csp = cspValues[policy] ?? defaults.csp;
       }
     }
     return data;
@@ -162,6 +192,7 @@ export class WebScripts {
       a.language === b.language &&
       arraysEqual(a.patterns ?? [], b.patterns ?? []) &&
       a.prettify === b.prettify &&
+      a.locked === b.locked &&
       a.when === b.when &&
       a.world === b.world &&
       a.csp === b.csp
@@ -203,7 +234,7 @@ export class WebScripts {
   /** Update the given header data in the header comment, and return a new header comment. */
   updateHeader(
     header: string,
-    { name, patterns, language, prettify, when, world, csp }: HeaderData
+    { name, patterns, language, prettify, locked, when, world, csp }: HeaderData
   ): string {
     // trim off leading white-space
     header = header.replace(/^\s*/, "");
@@ -222,11 +253,12 @@ export class WebScripts {
     };
 
     // regenerate header lines
-    removeKeys("name", "language", "prettify", "when", "world", "csp", "match");
+    removeKeys(...codeHeaderKeys);
     lines = [
       this.makeHeaderKey("name", name),
       this.makeHeaderKey("language", language),
       this.makeHeaderKey("prettify", prettify),
+      this.makeHeaderKey("locked", locked ? "true" : undefined),
       this.makeHeaderKey("when", when === "start" ? undefined : when),
       this.makeHeaderKey("world", world === "main" ? undefined : world),
       this.makeHeaderKey("csp", csp === "leave" ? undefined : csp),
@@ -258,6 +290,7 @@ export class WebScripts {
     patterns,
     language,
     prettify,
+    locked,
     when,
     world,
     csp,
@@ -267,6 +300,7 @@ export class WebScripts {
       this.makeHeaderKey("name", name ?? ""),
       this.makeHeaderKey("language", language ?? "javascript"),
       this.makeHeaderKey("prettify", prettify ? "true" : "false"),
+      this.makeHeaderKey("locked", locked ? "true" : undefined),
       this.makeHeaderKey("when", when === "start" ? undefined : when),
       this.makeHeaderKey("world", world === "main" ? undefined : world),
       this.makeHeaderKey("csp", csp === "disable" ? "disable" : undefined),

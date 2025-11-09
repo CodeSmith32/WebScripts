@@ -33,6 +33,7 @@ export interface MessageTable {
     void
   >;
   scriptUpdated: MessageTableEntry<{ id: string }, void>;
+  testScriptable: MessageTableEntry<{ tabId?: number | null }, boolean>;
 }
 
 export type MessageCmd = keyof MessageTable;

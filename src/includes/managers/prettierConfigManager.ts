@@ -55,8 +55,6 @@ export class PrettierConfigManager {
   #lastErrors: string[] = [];
   #config: PrettierConfig = { ...defaultPrettierConfig };
 
-  readonly helpUrl: string = "https://prettier.io/docs/options";
-
   private updatePrettierConfig(config: PrettierConfig) {
     this.#config = mergeDefined(defaultPrettierConfig, config);
   }

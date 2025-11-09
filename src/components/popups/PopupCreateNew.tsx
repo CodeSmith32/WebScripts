@@ -12,30 +12,32 @@ import type {
   ScriptLanguage,
 } from "../../includes/types";
 import { CSPActionDropdown } from "../dropdowns/CSPActionDropdown";
-import { ChevronDownIcon } from "lucide-preact";
+import { ChevronDownIcon, CirclePlusIcon } from "lucide-preact";
 import { cn } from "../../includes/core/classes";
 import { storageService } from "../../includes/services/storageService";
 import { WhenTimeDropdown } from "../dropdowns/WhenTimeDropdown";
 import { ExecutionWorldDropdown } from "../dropdowns/ExecutionWorldDropdown";
+import { Anchor } from "../core/Anchor";
+import { helpLinks } from "../../includes/constants";
+import type { HeaderData } from "../../includes/services/webScriptService";
 
-export type PopupCreateNewCloseData = {
-  name: string;
-  language: ScriptLanguage;
-  prettify: boolean;
-  when: WhenTime;
-  world: ExecutionWorld;
-  csp: CSPAction;
-} | null;
+export type PopupCreateNewCloseData = HeaderData | null;
 
 export const PopupCreateNew = () => {
   const popup = usePopup<PopupCreateNewCloseData>();
 
-  const { defaultLanguage, defaultPrettify, defaultWhen, defaultWorld } =
-    storageService.latestSettings;
+  const {
+    defaultLanguage,
+    defaultPrettify,
+    defaultLocked,
+    defaultWhen,
+    defaultWorld,
+  } = storageService.latestSettings;
 
   const [name, setName] = useState<string>("");
   const [language, setLanguage] = useState<ScriptLanguage>(defaultLanguage);
   const [prettify, setPrettify] = useState<boolean>(defaultPrettify);
+  const [locked, setLocked] = useState<boolean>(defaultLocked);
   const [when, setWhen] = useState<WhenTime>(defaultWhen);
   const [world, setWorld] = useState<ExecutionWorld>(defaultWorld);
   const [csp, setCsp] = useState<CSPAction>("leave");
@@ -49,13 +51,12 @@ export const PopupCreateNew = () => {
   };
   const onCreate = () => {
     if (!isValid) return;
-    popup.close({ name, language, prettify, when, world, csp });
+    popup.close({ name, language, prettify, locked, when, world, csp });
   };
 
   return (
     <Popup
       title="Create New Script"
-      onClickOut={onCancel}
       onClickX={onCancel}
       onEnter={onCreate}
       onEscape={onCancel}
@@ -99,6 +100,15 @@ export const PopupCreateNew = () => {
 
           <div className={cn("flex flex-col gap-4", advanced || "hidden")}>
             <div className="flex flex-col gap-2">
+              <span>Locked</span>
+              <Checkbox
+                label="Lock the script's toggle switch"
+                checked={locked}
+                onValueChange={setLocked}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
               <span>Execution Time</span>
               <WhenTimeDropdown value={when} onValueChange={setWhen} />
             </div>
@@ -109,7 +119,12 @@ export const PopupCreateNew = () => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <span>Content-Security-Policy Action</span>
+              <span>
+                <Anchor href={helpLinks.contentSecurityPolicy}>
+                  Content-Security-Policy
+                </Anchor>{" "}
+                Action
+              </span>
               <CSPActionDropdown value={csp} onValueChange={setCsp} />
             </div>
           </div>
@@ -118,7 +133,7 @@ export const PopupCreateNew = () => {
 
       <div className="p-4 flex flex-row justify-between shrink-0">
         <Button variant="primary" onClick={onCreate} disabled={!isValid}>
-          Create
+          <CirclePlusIcon size={20} className="-ml-1" /> Create
         </Button>
 
         <Button variant="secondary" onClick={onCancel}>

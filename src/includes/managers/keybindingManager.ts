@@ -162,9 +162,6 @@ export class KeybindingManager {
   #bindingsSubscription: IDisposable | null = null;
   #lastErrors: string[] = [];
 
-  readonly helpUrl: string =
-    "https://code.visualstudio.com/docs/configure/keybindings#_keyboard-rules";
-
   private parseKeyCode(key: string): number | null {
     // split chord
     const chords = key.toLowerCase().trim().split(/\s+/);

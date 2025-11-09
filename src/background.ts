@@ -54,6 +54,11 @@ messageService.listen("toggleDomain", async (message) => {
   ]);
 });
 
+// listen for a scriptable tab test request
+messageService.listen("testScriptable", async (message) => {
+  return await userScriptService.testScriptableTab(message.tabId);
+});
+
 // on install, resynchronize userScripts with stored scripts
 Chrome.runtime?.onInstalled.addListener(async () => {
   await userScriptService.resynchronizeUserScripts();

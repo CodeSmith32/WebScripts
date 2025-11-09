@@ -133,7 +133,6 @@ export const PopupImport = ({ onSubmit }: PopupImportProps) => {
         <Button
           disabled={loading || !selection.length}
           variant="primary"
-          className="flex flex-row items-center gap-2"
           onClick={handleAccept}
         >
           {loading ? <Spinner size={20} /> : <ImportIcon size={20} />} Import

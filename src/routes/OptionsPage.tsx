@@ -3,7 +3,7 @@ import { ScriptList } from "../components/ScriptList";
 import { useOptionsData } from "../hooks/useOptionsData";
 import { webScripts } from "../includes/services/webScriptService";
 import { IconButton } from "../components/core/IconButton";
-import { SettingsIcon } from "lucide-preact";
+import { SettingsIcon, Trash2Icon } from "lucide-preact";
 import { cn } from "../includes/core/classes";
 import { BlankPanel } from "../components/panels/BlankPanel";
 import { SettingsPanel } from "../components/panels/SettingsPanel";
@@ -75,7 +75,11 @@ export const OptionsPage = () => {
             </div>
           </>
         }
-        yesLabel="Delete"
+        yesLabel={
+          <>
+            <Trash2Icon size={20} className="-ml-1" /> Delete
+          </>
+        }
         yesVariant="destructive"
       />
     ).waitClose;

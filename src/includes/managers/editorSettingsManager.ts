@@ -629,9 +629,6 @@ export class EditorSettingsManager {
   #lastErrors: string[] = [];
   #config: EditorSettings = { ...defaultEditorSettings };
 
-  readonly helpUrl: string =
-    "https://code.visualstudio.com/docs/configure/settings#_settings-json-file";
-
   private updateEditorSettings(config: EditorSettings) {
     this.#config = mergeDefined(defaultEditorSettings, config);
   }

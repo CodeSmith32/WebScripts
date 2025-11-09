@@ -12,6 +12,8 @@ export interface StoredScript {
   patterns: string[];
   /** If the code will be prettified on save. */
   prettify: boolean;
+  /** If the script's popup toggle should be disabled, to help prevent accidental changes.. */
+  locked: boolean;
   /** A point during the page load when the script will be executed. */
   when: WhenTime;
   /** The world that the script should be executed within. */
@@ -27,6 +29,8 @@ export interface StoredSettings {
   defaultLanguage: ScriptLanguage;
   /** If prettifying code should be checked by default for newly created scripts. */
   defaultPrettify: boolean;
+  /** If script locking should be checked by default for new scripts. */
+  defaultLocked: boolean;
   /** The default time to execute scripts. */
   defaultWhen: WhenTime;
   /** The default world to execute scripts in. */

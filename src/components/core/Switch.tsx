@@ -5,6 +5,7 @@ export interface SwitchProps {
   value?: boolean;
   active?: boolean;
   onChange?: (value: boolean) => void;
+  onClick?: () => void;
   className?: string;
 }
 
@@ -12,13 +13,13 @@ export const Switch = ({
   disabled = false,
   value,
   active,
-  onChange: onChange,
+  onChange,
+  onClick,
   className,
 }: SwitchProps) => {
   const handleToggle = () => {
-    if (!disabled) {
-      onChange?.(!value);
-    }
+    onClick?.();
+    if (!disabled) onChange?.(!value);
   };
 
   return (

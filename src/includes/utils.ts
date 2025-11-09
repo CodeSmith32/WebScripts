@@ -24,6 +24,16 @@ export const isFileURL = (url: string) => {
   return /^file:\/\/\//i.test(url);
 };
 
+export type URLType = "notab" | "normal" | "file" | "internal" | "unscriptable";
+
+/** Get the type of url passed. */
+export const getUrlType = (url: string | null | undefined): URLType => {
+  if (!url) return "notab";
+  if (isFileURL(url)) return "file";
+  if (hostnameFromURL(url)) return "normal";
+  return "internal";
+};
+
 /** Return a promise that resolves after the given number of milliseconds. */
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));

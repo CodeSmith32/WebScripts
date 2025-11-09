@@ -47,6 +47,7 @@ export const PopupConfirm = ({
       onClickX={handleCancel}
       onEnter={handleYes}
       onEscape={handleNo}
+      onClickOut={handleCancel}
       contentClassName={cn("flex flex-col gap-2", contentClassName)}
       {...props}
     >

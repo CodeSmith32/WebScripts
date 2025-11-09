@@ -29,11 +29,12 @@ const importedScriptsSchema: ZodMiniType<{
       patterns: optional(array(string())),
       language: optional(zenum(["typescript", "javascript"])),
       prettify: optional(boolean()),
+      locked: optional(boolean()),
       when: optional(zenum(["start", "end", "idle"])),
       world: optional(zenum(["main", "isolated"])),
       csp: optional(zenum(["disable", "leave"])),
       code: string(),
-    })
+    } satisfies Record<Exclude<keyof StoredScript, "id">, ZodMiniType>)
   ),
 });
 

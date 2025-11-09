@@ -167,6 +167,33 @@ export class UserScriptService {
 
     await userScripts.unregister({ ids: [script.id] });
   }
+
+  /** Test if a tab is scriptable, by attempting to execute a no-op script. */
+  async testScriptableTab(tabId?: number | null): Promise<boolean> {
+    if (tabId == null) return false;
+
+    // try getting userscripts
+    const userScripts = await this.getUserScripts();
+
+    // try injecting a noop script
+    try {
+      const results = await userScripts?.execute?.({
+        injectImmediately: true,
+        target: { tabId },
+        js: [{ code: "(function(){})();" }],
+      });
+      if (results?.[0].error) {
+        throw results?.[0].error;
+      }
+    } catch (err) {
+      // if injection fails, page probably isn't scriptable
+      console.warn(err);
+      return false;
+    }
+
+    // otherwise, it can be scripted
+    return true;
+  }
 }
 
 export const userScriptService = new UserScriptService();

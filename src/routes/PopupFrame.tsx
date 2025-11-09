@@ -1,65 +1,91 @@
 import { Button } from "../components/core/Button";
-import { PopupScriptRow } from "../components/PopupScriptRow";
+import {
+  PopupScriptRow,
+  type WarningTypes,
+} from "../components/PopupScriptRow";
 import { Spinner } from "../components/core/Spinner";
 import { useFutureCallback } from "../hooks/core/useFutureCallback";
 import { usePopupData } from "../hooks/usePopupData";
 import { messageService } from "../includes/services/messageService";
 import type { StoredScript } from "../includes/types";
-import { hostnameFromURL, isFileURL } from "../includes/utils";
+import { hostnameFromURL, type URLType } from "../includes/utils";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { patternService } from "../includes/services/patternService";
 import type { ComponentChildren } from "preact";
 import { useCarried } from "../hooks/core/useCarried";
+import { LockIcon, ShieldAlertIcon } from "lucide-preact";
+import { Anchor } from "../components/core/Anchor";
+import { helpLinks } from "../includes/constants";
 
-const noTabMessage = (
-  <p>
-    Please open a tab to
-    <br />
-    allow toggling scripts.
-  </p>
+const urlTypeMessages: Partial<Record<URLType, ComponentChildren>> = {
+  notab: (
+    <p>
+      Please open a tab to
+      <br />
+      allow toggling scripts.
+    </p>
+  ),
+  internal: (
+    <p>
+      This is an internal browser page.
+      <br />
+      Scripts cannot be injected into it.
+    </p>
+  ),
+  file: (
+    <p>
+      This tab is a file url. It can only
+      <br />
+      be matched with a regex, e.g.
+      <br />
+      <code>/^file:\/\/\//i</code>
+    </p>
+  ),
+  unscriptable: (
+    <p>
+      This page is specially protected.
+      <br />
+      It does not allow executing scripts.
+    </p>
+  ),
+};
+
+const scriptWarningMessages: Record<WarningTypes, ComponentChildren> = {
+  csp: (
+    <div className="flex flex-row justify-center items-center gap-2">
+      <ShieldAlertIcon className="text-secondary shrink-0" size={24} />
+      <p className="text-left">
+        Scripts with this icon disable the
+        <br />
+        page's{" "}
+        <Anchor href={helpLinks.contentSecurityPolicy}>
+          Content Security Policy.
+        </Anchor>
+      </p>
+    </div>
+  ),
+};
+
+const refreshMessage = <p>Refresh page to apply changes.</p>;
+const lockedScriptMessage = (
+  <div className="flex flex-row justify-center items-center gap-2">
+    <LockIcon className="text-destructive shrink-0" size={24} />
+    <p className="text-left">
+      This script explicitly sets <code>locked</code> to <code>true</code>.
+      <br />
+      Edit it to change what sites it matches.
+    </p>
+  </div>
 );
 
-const noDomainMessage = (
-  <p>
-    This tab does not have a domain.
-    <br />
-    Scripts cannot be injected into it.
-  </p>
+const commonMessages = new Set<ComponentChildren>(
+  (Object.keys(urlTypeMessages) as URLType[]).map((key) => urlTypeMessages[key])
 );
-
-const fileUrlMessage = (
-  <p>
-    This tab is a file url. It can only
-    <br />
-    be matched with a regex, e.g.
-    <br />
-    <code>/^file:\/\/\//i</code>
-  </p>
-);
-
-const commonMessages = new Set<ComponentChildren>([
-  noTabMessage,
-  noDomainMessage,
-  fileUrlMessage,
-]);
-
-type URLType = "notab" | "normal" | "file" | "internal";
 
 export const PopupFrame = () => {
   const { data, available, refresh } = usePopupData();
   const [message, setMessage] = useState<ComponentChildren>(null);
   const messageRef = useRef<HTMLDivElement>(null);
-
-  // detect if page has a domain
-  const urlType = useMemo((): URLType => {
-    if (!data?.tab?.url) return "notab";
-
-    if (isFileURL(data.tab.url)) return "file";
-    if (hostnameFromURL(data.tab.url)) return "normal";
-    return "internal";
-  }, [data]);
-
-  const cannotMatch = urlType === "internal" || urlType === "notab";
 
   // get table mapping script id to if it's executing on the tab
   const matchingScripts = useMemo(() => {
@@ -70,28 +96,31 @@ export const PopupFrame = () => {
       matching[script.id] = patternService.match(data.tab.url, script.patterns);
     }
     return matching;
-  }, [data]);
+  }, [data?.allScripts, data?.tab?.url]);
 
   // if page has no domain, show notification message
   const carried = useCarried({ message });
   useEffect(() => {
-    switch (urlType) {
-      case "notab":
-        setMessage(noTabMessage);
-        break;
-      case "internal":
-        setMessage(noDomainMessage);
-        break;
-      case "file":
-        setMessage(fileUrlMessage);
-        break;
-      default:
-        if (commonMessages.has(carried.message)) {
-          setMessage(null);
-        }
-        break;
+    // get message for url type
+    const newMessage = (
+      urlTypeMessages as Record<string, ComponentChildren | undefined>
+    )[data?.urlType ?? ""];
+
+    if (newMessage) {
+      setMessage(newMessage);
+    } else if (commonMessages.has(carried.message)) {
+      setMessage(null);
+    } else {
+      if (data?.allScripts) {
+        const mismatching = data.allScripts.some((script) => {
+          const matching = !!matchingScripts[script.id];
+          const running = !!data.runningScripts[script.id];
+          return matching !== running;
+        });
+        if (mismatching) setMessage(refreshMessage);
+      }
     }
-  }, [urlType]);
+  }, [data?.urlType]);
 
   // refresh scripts / active scripts when page reloads while popup is open
   useEffect(() => {
@@ -102,7 +131,7 @@ export const PopupFrame = () => {
 
   const handleToggle = useFutureCallback(
     (script: StoredScript, running: boolean) => {
-      if (!data?.tab?.url || urlType !== "normal") {
+      if (!data?.tab?.url || data?.urlType !== "normal") {
         return;
       }
 
@@ -115,11 +144,16 @@ export const PopupFrame = () => {
         enabled: running,
       });
 
-      setMessage(<p>Refresh page to apply changes.</p>);
+      setMessage(refreshMessage);
     }
   );
   const handleOpenScripts = useFutureCallback(async (refer: string = "") => {
     await messageService.openEditor(refer);
+  });
+  const scrollToMessage = useFutureCallback(() => {
+    setTimeout(() => {
+      messageRef.current?.scrollIntoView();
+    }, 100);
   });
 
   return (
@@ -132,24 +166,30 @@ export const PopupFrame = () => {
       ) : data.allScripts.length ? (
         data.allScripts.map((script) => (
           <PopupScriptRow
-            disabled={urlType !== "normal"}
+            disabled={!data.scriptable || data.urlType !== "normal"}
             script={script}
-            running={data.runningScripts?.includes(script.id) ?? false}
-            initialValue={cannotMatch ? false : !!matchingScripts[script.id]}
+            running={!!data.runningScripts[script.id]}
+            initialValue={data.scriptable && !!matchingScripts[script.id]}
             onChange={(running) => handleToggle(script, running)}
             onEdit={() => handleOpenScripts(script.id)}
-            onWarn={(message) => {
-              setMessage(message);
-              setTimeout(() => {
-                messageRef.current?.scrollIntoView();
-              }, 100);
+            onClickLocked={
+              script.locked
+                ? () => {
+                    setMessage(lockedScriptMessage);
+                    scrollToMessage();
+                  }
+                : undefined
+            }
+            onWarn={(type) => {
+              setMessage(scriptWarningMessages[type]);
+              scrollToMessage();
             }}
           />
         ))
       ) : (
         <p className="text-center py-4">No Scripts</p>
       )}
-      <Button className="block w-full" onClick={() => handleOpenScripts()}>
+      <Button className="block w-full mt-2" onClick={() => handleOpenScripts()}>
         Open Scripts &raquo;
       </Button>
 

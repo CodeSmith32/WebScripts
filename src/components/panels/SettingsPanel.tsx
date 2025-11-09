@@ -24,6 +24,7 @@ import { PopupExport } from "../popups/PopupExport";
 import type { StoredScript, StoredSettings } from "../../includes/types";
 import { WhenTimeDropdown } from "../dropdowns/WhenTimeDropdown";
 import { ExecutionWorldDropdown } from "../dropdowns/ExecutionWorldDropdown";
+import { helpLinks } from "../../includes/constants";
 
 export interface SettingsPanelProps {
   onClose?: () => void;
@@ -149,10 +150,21 @@ export const SettingsPanel = ({
 
           <SettingRow label="Prettify by Default">
             <Checkbox
-              label="Prettify"
+              label="Format code with prettier on save"
               checked={settings.defaultPrettify}
               onValueChange={(checked) => {
                 settings.defaultPrettify = checked;
+                handleChange();
+              }}
+            />
+          </SettingRow>
+
+          <SettingRow label="Lock Scripts by Default">
+            <Checkbox
+              label="Lock toggles for scripts in popup"
+              checked={settings.defaultLocked}
+              onValueChange={(checked) => {
+                settings.defaultLocked = checked;
                 handleChange();
               }}
             />
@@ -182,7 +194,7 @@ export const SettingsPanel = ({
             <div className="flex flex-row gap-4">
               <Button
                 variant="primary"
-                className="flex flex-row gap-2 justify-center items-center px-0 py-1.5 w-32"
+                className="px-0 py-1.5 w-32"
                 onClick={handleImport}
               >
                 <ImportIcon size={20} /> Import
@@ -190,7 +202,7 @@ export const SettingsPanel = ({
 
               <Button
                 variant="primary"
-                className="flex flex-row gap-2 justify-center items-center px-0 py-1.5 w-32"
+                className="px-0 py-1.5 w-32"
                 onClick={handleExport}
               >
                 <DownloadIcon size={20} /> Export
@@ -200,7 +212,7 @@ export const SettingsPanel = ({
 
           <SettingRow
             label="Editor Settings (JSON)"
-            subHeading={<HelpUrl url={editorSettingsManager.helpUrl} />}
+            subHeading={<HelpUrl url={helpLinks.editorConfig} />}
           >
             <TextArea
               value={settings.editorSettingsJson}
@@ -223,7 +235,7 @@ export const SettingsPanel = ({
 
           <SettingRow
             label="Editor Keybindings (JSON)"
-            subHeading={<HelpUrl url={keybindingManager.helpUrl} />}
+            subHeading={<HelpUrl url={helpLinks.keybindingConfig} />}
           >
             <TextArea
               value={settings.editorKeybindingsJson}
@@ -246,7 +258,7 @@ export const SettingsPanel = ({
 
           <SettingRow
             label="TypeScript Compiler Options Config (JSON)"
-            subHeading={<HelpUrl url={typescriptConfigManager.helpUrl} />}
+            subHeading={<HelpUrl url={helpLinks.typescriptConfig} />}
           >
             <TextArea
               value={settings.typescriptConfigJson}
@@ -269,7 +281,7 @@ export const SettingsPanel = ({
 
           <SettingRow
             label="Prettier Config (JSON)"
-            subHeading={<HelpUrl url={prettierConfigManager.helpUrl} />}
+            subHeading={<HelpUrl url={helpLinks.prettierConfig} />}
           >
             <TextArea
               value={settings.prettierConfigJson}

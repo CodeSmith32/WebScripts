@@ -11,6 +11,7 @@ export class StorageService {
   defaultSettings: StoredSettings = {
     defaultLanguage: "javascript",
     defaultPrettify: false,
+    defaultLocked: false,
     defaultWhen: "start",
     defaultWorld: "main",
     editorSettingsJson: "{}",

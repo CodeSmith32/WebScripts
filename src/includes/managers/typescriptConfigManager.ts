@@ -176,9 +176,6 @@ type TSConfigEnumKey = keyof typeof enumTables;
 export class TypeScriptConfigManager {
   #lastErrors: string[] = [];
 
-  readonly helpUrl: string =
-    "https://www.typescriptlang.org/tsconfig/#compilerOptions";
-
   private updateTypeScriptConfig(config: TSConfig) {
     MonacoLanguages.typescript.typescriptDefaults.setCompilerOptions(
       mergeDefined(defaultTypeScriptConfig, config)

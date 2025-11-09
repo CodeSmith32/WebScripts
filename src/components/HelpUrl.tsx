@@ -1,4 +1,5 @@
 import { ExternalLinkIcon } from "lucide-preact";
+import { Anchor } from "./core/Anchor";
 
 export interface HelpUrlProps {
   url: string;
@@ -6,12 +7,8 @@ export interface HelpUrlProps {
 
 export const HelpUrl = ({ url }: HelpUrlProps) => {
   return (
-    <a
-      target="_blank"
-      href={url}
-      className="text-blue-500 hover:text-blue-400 active:text-blue-600"
-    >
+    <Anchor href={url}>
       Help documentation <ExternalLinkIcon className="inline-block" size={10} />
-    </a>
+    </Anchor>
   );
 };
