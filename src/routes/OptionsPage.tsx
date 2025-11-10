@@ -157,7 +157,7 @@ export const OptionsPage = () => {
       if (userScripts) {
         // Make sure scripts are up-to-data:
         // Run resync task in background when options page is opened.
-        await userScriptService.resynchronizeUserScripts();
+        messageService.send("resyncAll", {});
       } else {
         popup = popupManager.open(
           <PopupUserScriptsWarning

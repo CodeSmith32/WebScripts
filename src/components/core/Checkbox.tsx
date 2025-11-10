@@ -22,7 +22,12 @@ export const Checkbox = ({
   const fallbackName = useId();
 
   return (
-    <label className={cn("flex flex-row items-center gap-2", wrapperStyles)}>
+    <label
+      className={cn(
+        "flex flex-row items-center gap-2 cursor-pointer",
+        wrapperStyles
+      )}
+    >
       <input
         name={name ?? fallbackName}
         type="checkbox"

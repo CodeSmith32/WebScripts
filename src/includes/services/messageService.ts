@@ -34,6 +34,7 @@ export interface MessageTable {
   >;
   scriptUpdated: MessageTableEntry<{ id: string }, void>;
   testScriptable: MessageTableEntry<{ tabId?: number | null }, boolean>;
+  resyncAll: MessageTableEntry<EmptyObject, void>;
 }
 
 export type MessageCmd = keyof MessageTable;

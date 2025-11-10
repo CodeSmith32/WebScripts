@@ -134,6 +134,9 @@ export class EditorModelData {
     // update stored script
     this.recompressScript();
 
+    // re-sync code header with script data
+    this.delayUpdateFromCode.immediate();
+
     // save
     await this.saveScripts();
     await userScriptService.resynchronizeUserScript(this.script);

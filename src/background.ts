@@ -8,7 +8,7 @@ import { CodePack } from "./includes/core/codepack";
 import { webScripts } from "./includes/services/webScriptService";
 
 // background script handles CSP-disabling, and re-compiles / re-syncs scripts after applying
-// domain toggle requests from the popup.
+// domain toggle requests from the popup, and other misc background tasks.
 
 // keep track of most recent scripts
 let scripts: StoredScript[] = [];
@@ -57,6 +57,11 @@ messageService.listen("toggleDomain", async (message) => {
 // listen for a scriptable tab test request
 messageService.listen("testScriptable", async (message) => {
   return await userScriptService.testScriptableTab(message.tabId);
+});
+
+// listen for a request to resync all userscripts
+messageService.listen("resyncAll", async () => {
+  await userScriptService.resynchronizeUserScripts();
 });
 
 // on install, resynchronize userScripts with stored scripts

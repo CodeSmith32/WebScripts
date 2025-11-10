@@ -135,11 +135,11 @@ export class UserScriptService {
     // apply updates
 
     // remove old scripts
-    await userScripts.unregister({ ids: removeList });
+    if (removeList.length) await userScripts.unregister({ ids: removeList });
     // update existing scripts
-    await userScripts.update(updateList);
+    if (updateList.length) await userScripts.update(updateList);
     // add new scripts
-    await userScripts.register(addList);
+    if (addList.length) await userScripts.register(addList);
   });
 
   /** Resynchronize a single user script associated with the given stored script. If the script
