@@ -10,18 +10,20 @@ import { Spinner } from "../core/Spinner";
 import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { wait } from "../../includes/utils";
 import { downloadBlob } from "../../includes/core/download";
-import type { StoredScript } from "../../includes/types";
+import type { StoredScript, StoredSettings } from "../../includes/types";
 import { exportService } from "../../includes/services/exportService";
 
 export interface PopupExportProps {
+  settings: StoredSettings;
   scripts: StoredScript[];
 }
 
-export const PopupExport = ({ scripts }: PopupExportProps) => {
+export const PopupExport = ({ settings, scripts }: PopupExportProps) => {
   const popup = usePopup<void>();
 
   const [compress, setCompress] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [includeSettings, setIncludeSettings] = useState(false);
   const [selected, setSelected] = useState<string[]>(
     scripts.map(({ id }) => id)
   );
@@ -45,6 +47,7 @@ export const PopupExport = ({ scripts }: PopupExportProps) => {
 
     // generate json
     const exportData = await exportService.exportScriptsToBlob({
+      settings: includeSettings ? settings : undefined,
       scripts: selection,
       compress,
     });
@@ -86,14 +89,21 @@ export const PopupExport = ({ scripts }: PopupExportProps) => {
 
       <Checkbox
         wrapperStyles="mt-4"
+        checked={includeSettings}
+        onValueChange={(value) => setIncludeSettings(value)}
+        label="Include Settings In Export"
+      />
+
+      <Checkbox
+        wrapperStyles="mt-3"
         checked={compress}
         onValueChange={(value) => setCompress(value)}
         label="Compressed / Minified"
       />
 
-      <div className="flex flex-row justify-between mt-4">
+      <div className="flex flex-row justify-between mt-6">
         <Button
-          disabled={loading || !selected.length}
+          disabled={loading || (!selected.length && !includeSettings)}
           variant="primary"
           className="flex flex-row items-center gap-2"
           onClick={handleExport}

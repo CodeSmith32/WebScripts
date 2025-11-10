@@ -1,4 +1,5 @@
 import {
+  any,
   array,
   boolean,
   object,
@@ -9,32 +10,54 @@ import {
   ZodMiniType,
 } from "zod/mini";
 import type { OnlyRequire } from "../../includes/core/types/utility";
-import type { StoredScript } from "../types";
+import type { StoredScript, StoredSettings } from "../types";
 import { CodePack } from "../core/codepack";
 import { webScripts } from "./webScriptService";
+import { stringifyValidJson } from "../core/prettifyJson";
 
 export type ParseResult =
-  | { success: true; scripts: StoredScript[] }
+  | {
+      success: true;
+      settings: Partial<StoredSettings>;
+      scripts: StoredScript[];
+    }
   | { success: false; errors: string[] };
 
-const importedScriptsSchema: ZodMiniType<{
+const importSchema: ZodMiniType<{
   compressed?: boolean;
-  scripts: OnlyRequire<StoredScript, "code">[];
+  settings?: Partial<StoredSettings>;
+  scripts?: OnlyRequire<StoredScript, "code">[];
 }> = object({
+  timestamp: optional(string()),
   compressed: optional(boolean()),
-  scripts: array(
+  settings: optional(
     object({
-      // id: optional(string()),
-      name: optional(string()),
-      patterns: optional(array(string())),
-      language: optional(zenum(["typescript", "javascript"])),
-      prettify: optional(boolean()),
-      locked: optional(boolean()),
-      when: optional(zenum(["start", "end", "idle"])),
-      world: optional(zenum(["main", "isolated"])),
-      csp: optional(zenum(["disable", "leave"])),
-      code: string(),
-    } satisfies Record<Exclude<keyof StoredScript, "id">, ZodMiniType>)
+      defaultLanguage: optional(zenum(["typescript", "javascript"])),
+      defaultLocked: optional(boolean()),
+      defaultPrettify: optional(boolean()),
+      defaultWhen: optional(zenum(["start", "end", "idle"])),
+      defaultWorld: optional(zenum(["main", "isolated"])),
+      editorKeybindingsJson: optional(any()),
+      editorSettingsJson: optional(any()),
+      prettierConfigJson: optional(any()),
+      typescriptConfigJson: optional(any()),
+    } satisfies Record<keyof StoredSettings, ZodMiniType>)
+  ),
+  scripts: optional(
+    array(
+      object({
+        // id: optional(string()),
+        name: optional(string()),
+        patterns: optional(array(string())),
+        language: optional(zenum(["typescript", "javascript"])),
+        prettify: optional(boolean()),
+        locked: optional(boolean()),
+        when: optional(zenum(["start", "end", "idle"])),
+        world: optional(zenum(["main", "isolated"])),
+        csp: optional(zenum(["disable", "leave"])),
+        code: string(),
+      } satisfies Record<Exclude<keyof StoredScript, "id">, ZodMiniType>)
+    )
   ),
 });
 
@@ -60,7 +83,7 @@ export class ImportService {
     }
 
     // try validating as script type
-    const parsed = importedScriptsSchema.safeParse(jsonData);
+    const parsed = importSchema.safeParse(jsonData);
     if (!parsed.success) {
       return {
         success: false,
@@ -71,45 +94,73 @@ export class ImportService {
         ],
       };
     }
-    const { scripts, compressed } = parsed.data;
+    const { compressed, settings, scripts } = parsed.data;
+
+    // reconstitute settings: convert json objects back to strings
+    if (settings) {
+      if (settings.editorKeybindingsJson !== undefined) {
+        settings.editorKeybindingsJson = stringifyValidJson(
+          settings.editorKeybindingsJson
+        );
+      }
+      if (settings.editorSettingsJson !== undefined) {
+        settings.editorSettingsJson = stringifyValidJson(
+          settings.editorSettingsJson
+        );
+      }
+      if (settings.prettierConfigJson !== undefined) {
+        settings.prettierConfigJson = stringifyValidJson(
+          settings.prettierConfigJson
+        );
+      }
+      if (settings.typescriptConfigJson !== undefined) {
+        settings.typescriptConfigJson = stringifyValidJson(
+          settings.typescriptConfigJson
+        );
+      }
+    }
 
     // if compressed, validate compression; otherwise apply compression
-    if (compressed) {
-      const errors = [
-        importInitialError,
-        "Some compressed scripts are corrupt:",
-      ];
-      let failed = false;
+    if (scripts) {
+      if (compressed) {
+        const errors = [
+          importInitialError,
+          "Some compressed scripts are corrupt:",
+        ];
+        let failed = false;
 
-      for (const script of scripts) {
-        try {
-          CodePack.validate(script.code);
-        } catch (err) {
-          failed = true;
-          errors.push(
-            `${script.name} (${script.id}): `,
-            (err as Error).message
-          );
+        for (const script of scripts) {
+          try {
+            CodePack.validate(script.code);
+          } catch (err) {
+            failed = true;
+            errors.push(
+              `${script.name} (${script.id}): `,
+              (err as Error).message
+            );
+          }
         }
-      }
 
-      if (failed) {
-        return { success: false, errors };
-      }
-    } else {
-      for (const script of scripts) {
-        script.code = CodePack.pack(script.code);
+        if (failed) {
+          return { success: false, errors };
+        }
+      } else {
+        for (const script of scripts) {
+          script.code = CodePack.pack(script.code);
+        }
       }
     }
 
     // normalize scripts
     return {
       success: true,
-      scripts: scripts.map((script) => {
-        const normalized = webScripts.normalizeScript(script);
-        normalized.id = webScripts.generateId();
-        return normalized;
-      }),
+      settings: settings ?? {},
+      scripts:
+        scripts?.map((script) => {
+          const normalized = webScripts.normalizeScript(script);
+          normalized.id = webScripts.generateId();
+          return normalized;
+        }) ?? [],
     };
   }
 }

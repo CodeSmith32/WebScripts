@@ -9,15 +9,19 @@ import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { cn } from "../../includes/core/classes";
 import { MultiSelect, Option } from "../core/Dropdown";
 import { ImportIcon } from "lucide-preact";
-import type { StoredScript } from "../../includes/types";
+import type { StoredScript, StoredSettings } from "../../includes/types";
 import { importService } from "../../includes/services/importService";
+import { Checkbox } from "../core/Checkbox";
 
-export interface PopupImportCloseData {
-  importedScripts: StoredScript[] | null;
+export interface ImportData {
+  settings: Partial<StoredSettings>;
+  scripts: StoredScript[];
 }
 
+export type PopupImportCloseData = ImportData | null;
+
 export interface PopupImportProps {
-  onSubmit?: (scripts: StoredScript[]) => void | Promise<void>;
+  onSubmit?: (data: ImportData) => void | Promise<void>;
 }
 
 export const PopupImport = ({ onSubmit }: PopupImportProps) => {
@@ -26,11 +30,19 @@ export const PopupImport = ({ onSubmit }: PopupImportProps) => {
   const [file, setFile] = useState<Blob | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+
+  const [hasSettings, setHasSettings] = useState(false);
+
+  const [settings, setSettings] = useState<Partial<StoredSettings> | null>(
+    null
+  );
   const [scripts, setScripts] = useState<StoredScript[] | null>(null);
+
+  const [includeSettings, setIncludeSettings] = useState(false);
   const [selection, setSelection] = useState<string[]>([]);
 
   const handleCancel = () => {
-    popup.close({ importedScripts: null });
+    popup.close(null);
   };
 
   const handleAccept = useFutureCallback(async () => {
@@ -39,16 +51,20 @@ export const PopupImport = ({ onSubmit }: PopupImportProps) => {
     setLoading(true);
 
     try {
-      // filter to selected scripts
+      // filter to selected settings / scripts
+      const importedSettings = includeSettings && settings ? settings : {};
       const importedScripts = scripts.filter((script) =>
         selection.includes(script.id)
       );
 
       // trigger onSubmit
-      await onSubmit?.(importedScripts);
+      await onSubmit?.({
+        settings: importedSettings,
+        scripts: importedScripts,
+      });
 
       // close and send response
-      popup.close({ importedScripts });
+      popup.close(null);
     } finally {
       setLoading(false);
     }
@@ -76,10 +92,14 @@ export const PopupImport = ({ onSubmit }: PopupImportProps) => {
           return;
         }
 
-        console.log(result.scripts);
+        // if no settings are in the import, disable "include settings" option
+        const hasSettings = Object.keys(result.settings).length > 0;
+        setHasSettings(hasSettings);
 
         setScripts(result.scripts);
+        setSettings(result.settings);
         setSelection(result.scripts.map((script) => script.id));
+        setIncludeSettings(false);
       } finally {
         setLoading(false);
       }
@@ -126,12 +146,23 @@ export const PopupImport = ({ onSubmit }: PopupImportProps) => {
               </Option>
             ))}
           </MultiSelect>
+
+          <Checkbox
+            disabled={!hasSettings}
+            wrapperStyles="mt-4"
+            checked={includeSettings}
+            onValueChange={(value) => setIncludeSettings(value)}
+            label={
+              "Import Settings From File" +
+              (!hasSettings ? " (No Settings Available)" : "")
+            }
+          />
         </>
       ) : null}
 
       <div className="flex flex-row justify-between mt-4">
         <Button
-          disabled={loading || !selection.length}
+          disabled={loading || (!selection.length && !includeSettings)}
           variant="primary"
           onClick={handleAccept}
         >

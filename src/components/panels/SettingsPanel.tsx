@@ -19,7 +19,11 @@ import { prettifyJson } from "../../includes/core/prettifyJson";
 import { Button } from "../core/Button";
 import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { usePopupManager } from "../core/popups/ClassPopupManager";
-import { PopupImport, type PopupImportCloseData } from "../popups/PopupImport";
+import {
+  PopupImport,
+  type ImportData,
+  type PopupImportCloseData,
+} from "../popups/PopupImport";
 import { PopupExport } from "../popups/PopupExport";
 import type { StoredScript, StoredSettings } from "../../includes/types";
 import { WhenTimeDropdown } from "../dropdowns/WhenTimeDropdown";
@@ -30,7 +34,7 @@ export interface SettingsPanelProps {
   onClose?: () => void;
   settings: StoredSettings;
   onSave?: () => Promise<void>;
-  onImportScripts?: (scripts: StoredScript[]) => void | Promise<void>;
+  onImportScripts?: (data: ImportData) => void | Promise<void>;
   getScripts?: () => StoredScript[];
 }
 
@@ -62,11 +66,14 @@ export const SettingsPanel = ({
     await popupManager.open<PopupImportCloseData>(
       <PopupImport onSubmit={onImportScripts} />
     ).waitClose;
+
+    handleChange();
+    debounceUpdateConfigs.immediate();
   });
 
   const handleExport = useFutureCallback(async () => {
     await popupManager.open<void>(
-      <PopupExport scripts={getScripts?.() ?? []} />
+      <PopupExport settings={settings} scripts={getScripts?.() ?? []} />
     ).waitClose;
   });
 
@@ -190,7 +197,7 @@ export const SettingsPanel = ({
             />
           </SettingRow>
 
-          <SettingRow label="Import / Export Scripts as JSON">
+          <SettingRow label="JSON Import / Export">
             <div className="flex flex-row gap-4">
               <Button
                 variant="primary"

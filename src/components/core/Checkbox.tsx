@@ -17,6 +17,7 @@ export const Checkbox = ({
   onChange,
   className,
   name,
+  disabled,
   ...props
 }: CheckboxProps) => {
   const fallbackName = useId();
@@ -36,9 +37,12 @@ export const Checkbox = ({
           onChange?.(evt);
           onValueChange?.((evt.target as HTMLInputElement).checked);
         }}
+        disabled={disabled}
         {...props}
       />
-      <span className={cn("mr-1", labelStyles)}>{label}</span>
+      <span className={cn("mr-1", disabled && "opacity-50", labelStyles)}>
+        {label}
+      </span>
     </label>
   );
 };

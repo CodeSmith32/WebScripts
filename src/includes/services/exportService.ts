@@ -1,17 +1,39 @@
 import { CodePack } from "../core/codepack";
-import type { StoredScript } from "../types";
+import { parseValidJson } from "../core/prettifyJson";
+import type { StoredScript, StoredSettings } from "../types";
 
 export class ExportService {
   async exportScriptsToBlob({
     scripts = [],
+    settings,
     compress = true,
-  }: { scripts?: StoredScript[]; compress?: boolean } = {}) {
+  }: {
+    scripts?: StoredScript[];
+    settings?: StoredSettings;
+    compress?: boolean;
+  } = {}) {
     let json: string = "";
+
+    const timestamp = new Date().toISOString();
+
+    // try parsing and merging settings json in with export data
+    if (settings) {
+      settings = {
+        ...settings,
+        editorKeybindingsJson: parseValidJson(settings.editorKeybindingsJson),
+        editorSettingsJson: parseValidJson(settings.editorSettingsJson),
+        prettierConfigJson: parseValidJson(settings.prettierConfigJson),
+        typescriptConfigJson: parseValidJson(settings.typescriptConfigJson),
+      };
+    }
 
     if (compress) {
       // compression:
-      const contents = {
+      const contents: Record<string, unknown> = {
+        timestamp,
         compress: true,
+        // settings
+        settings,
         // extract only code; leave compressed
         scripts: scripts.map(({ code }) => ({ code })),
       };
@@ -20,6 +42,9 @@ export class ExportService {
     } else {
       // no compression:
       const contents = {
+        timestamp,
+        // settings
+        settings,
         // extract all script properties; decompress code
         scripts: scripts.map(({ id: _id, code, ...script }) => ({
           ...script,

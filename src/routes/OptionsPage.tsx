@@ -27,6 +27,7 @@ import type { StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";
 import { useCarried } from "../hooks/core/useCarried";
 import { useWindowFocus } from "../hooks/core/useWindowFocus";
+import type { ImportData } from "../components/popups/PopupImport";
 
 const settingsIdentifier = Symbol("SETTINGS");
 
@@ -90,9 +91,10 @@ export const OptionsPage = () => {
     await optionsData.deleteScript(script);
     await userScriptService.removeUserScript(script);
   };
-  const onImportScripts = async (scripts: StoredScript[]) => {
+  const onImportScripts = async ({ settings, scripts }: ImportData) => {
     if (!optionsData) return;
 
+    Object.assign(optionsData.settings, settings);
     await optionsData.addScripts(scripts);
   };
 
