@@ -1,8 +1,12 @@
-import type { ComponentChildren, MouseEventHandler } from "preact";
+import type {
+  ButtonHTMLAttributes,
+  ComponentChildren,
+  MouseEventHandler,
+} from "preact";
 import { cn } from "../../includes/core/classes";
 import { buttonVariants, type ButtonVariantType } from "./Button";
 
-export interface IconButtonProps {
+export interface IconButtonProps extends ButtonHTMLAttributes {
   disabled?: boolean;
   variant?: ButtonVariantType;
   children?: ComponentChildren;
@@ -18,6 +22,7 @@ export const IconButton = ({
   onClick,
   className,
   title,
+  ...props
 }: IconButtonProps) => {
   return (
     <button
@@ -30,6 +35,7 @@ export const IconButton = ({
       )}
       onClick={onClick}
       title={title}
+      {...props}
     >
       {children}
     </button>

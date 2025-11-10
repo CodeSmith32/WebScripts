@@ -13,8 +13,8 @@ export interface PopupProps {
   title?: ComponentChildren;
   onClickOut?: (evt: TargetedMouseEvent<HTMLDialogElement>) => void;
   onClickX?: () => void;
-  onEnter?: () => void;
-  onEscape?: () => void;
+  onEnter?: (evt: KeyboardEvent) => void;
+  onEscape?: (evt: KeyboardEvent) => void;
 }
 
 export const Popup = ({
@@ -67,10 +67,10 @@ export const Popup = ({
         switch (evt.key) {
           case "Enter":
             if (tag === "textarea") break;
-            onEnter?.();
+            onEnter?.(evt);
             break;
           case "Escape":
-            onEscape?.();
+            onEscape?.(evt);
             break;
         }
       }}

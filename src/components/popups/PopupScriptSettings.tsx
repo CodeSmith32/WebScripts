@@ -31,6 +31,9 @@ import { PopupConfirm, type PopupConfirmCloseData } from "./PopupConfirm";
 import { useRefresh } from "../../hooks/core/useRefresh";
 import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { debounce } from "../../includes/core/debounce";
+import { dragDrop } from "../../includes/dragDrop";
+
+const { min, max } = Math;
 
 export type PopupScriptSettingsCloseData = StoredScript | null;
 
@@ -44,6 +47,7 @@ interface PatternMatchRowProps {
   first: boolean;
   onRemove?: () => void;
   onAddBelow?: () => void;
+  onDragDrop?: (offset: number) => void;
   refresh?: () => void;
 }
 
@@ -52,6 +56,7 @@ const PatternMatchRow = ({
   first,
   onRemove,
   onAddBelow,
+  onDragDrop,
   refresh: parentRefresh,
 }: PatternMatchRowProps) => {
   const parts = patternService.parse(pattern.pattern);
@@ -104,9 +109,70 @@ const PatternMatchRow = ({
               ? "No-op (exclusions at the start have no effect)"
               : `Then, exclude by ${patternType}`}
       </p>
-      <div className="flex flex-row gap-px my-1">
+      <div className="pattern-match-input-row flex flex-row gap-px my-1">
         <IconButton
-          className={cn("w-10 h-10 rounded-l-md rounded-r-none", background)}
+          className={cn(
+            "pattern-grip w-10 h-10 rounded-l-md rounded-r-none",
+            background
+          )}
+          onKeyDown={(evt) => {
+            if (evt.key === "ArrowUp") {
+              onDragDrop?.(-1);
+            } else if (evt.key === "ArrowDown") {
+              onDragDrop?.(1);
+            }
+          }}
+          draggable
+          onDragStart={async (evt) => {
+            const target = evt.target as HTMLButtonElement;
+            const imageRow = target.closest?.(".pattern-match-input-row");
+            const item = target.closest?.(".pattern-match-row");
+            if (
+              !(imageRow instanceof HTMLElement) ||
+              !(item instanceof HTMLElement)
+            ) {
+              return;
+            }
+
+            const container = item.parentElement;
+            if (!(container instanceof HTMLElement)) {
+              evt.preventDefault();
+              return;
+            }
+
+            const box = imageRow.getBoundingClientRect();
+            evt.dataTransfer?.setDragImage?.(
+              imageRow,
+              evt.clientX - box.left,
+              evt.clientY - box.top
+            );
+
+            // run drag-drop operation
+            const offset = await dragDrop({
+              item,
+              container,
+              onEnter: (elem, side) => {
+                elem.classList.remove(
+                  "border-t-2",
+                  "border-b-2",
+                  "border-white"
+                );
+                elem.classList.add(
+                  side < 0 ? "border-t-2" : "border-b-2",
+                  "border-white"
+                );
+              },
+              onLeave: (elem) => {
+                elem.classList.remove(
+                  "border-t-2",
+                  "border-b-2",
+                  "border-white"
+                );
+              },
+            });
+
+            onDragDrop?.(offset);
+          }}
         >
           <GripVerticalIcon />
         </IconButton>
@@ -183,7 +249,7 @@ const PatternMatchRow = ({
                 title="Delete Pattern"
                 yesLabel={
                   <>
-                    <Trash2Icon size={20} className="-ml-1" /> Delete
+                    <Trash2Icon size={20} /> Delete
                   </>
                 }
                 yesVariant="destructive"
@@ -284,18 +350,53 @@ export const PopupScriptSettings = ({
       }
     }, 10);
   };
-  // TODO: implement drag-drop
+  const movePattern = (id: number, offset: number) => {
+    if (!offset) return;
+
+    setPatterns((patterns) => {
+      patterns = [...patterns];
+      const index = patterns.findIndex((pattern) => pattern.id === id);
+      const pattern = patterns[index];
+      patterns.splice(index, 1);
+      patterns.splice(min(max(index + offset, 0), patterns.length), 0, pattern);
+      return patterns;
+    });
+    setTimeout(() => {
+      const targetInput = patternListRef.current?.querySelector(
+        `.pattern-match-row[data-id='${id}'] .pattern-grip`
+      );
+      if (targetInput instanceof HTMLButtonElement) {
+        targetInput.focus();
+      }
+    }, 10);
+  };
 
   return (
     <Popup
       title="Script Settings"
       popupClassName="w-4xl"
       contentClassName="flex flex-col p-0"
+      onEscape={handleCancel}
+      onEnter={(evt) => {
+        if (
+          evt.target instanceof HTMLElement &&
+          evt.target.closest?.(".pattern-match-row")
+        ) {
+          return;
+        }
+        handleSave();
+      }}
     >
       <div className="flex flex-col gap-4 p-4 overflow-y-auto">
         <div className="flex flex-col gap-2 p-2">
           <p>Script Title</p>
-          <TextBox className="w-full text-2xl py-3 font-bold rounded-xl" />
+          <TextBox
+            className="w-full text-2xl py-3 font-bold rounded-xl"
+            value={script.name}
+            onValueChange={(name) =>
+              setScript((script) => ({ ...script, name }))
+            }
+          />
         </div>
         <div className="flex flex-row p-2 gap-8">
           {/* Left column */}
@@ -381,6 +482,7 @@ export const PopupScriptSettings = ({
                       pattern={pattern}
                       onRemove={() => removePattern(pattern.id)}
                       onAddBelow={() => addPattern("", pattern.id)}
+                      onDragDrop={(offset) => movePattern(pattern.id, offset)}
                       refresh={refresh}
                     />
                   );
@@ -407,7 +509,7 @@ export const PopupScriptSettings = ({
       </div>
       <div className="flex flex-row justify-between p-6">
         <Button variant="primary" onClick={handleSave}>
-          <SaveIcon size={20} className="-ml-1" /> Save
+          <SaveIcon size={20} /> Save
         </Button>
 
         <div className="w-20" />

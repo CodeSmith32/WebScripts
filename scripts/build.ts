@@ -49,7 +49,7 @@ const postBuild = async () => {
     join(distDir, "assets/monaco.js")
   );
 
-  const languages = ["editor", "ts", "json"];
+  const languages = ["editor", "ts"];
   const languageWorkerMap = await getWorkerFiles();
 
   for (const lang of languages) {

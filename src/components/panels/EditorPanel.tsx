@@ -94,20 +94,25 @@ export const EditorPanel = ({ model, onClose }: EditorPanelProps) => {
         />
 
         <div className="flex flex-row items-center gap-1">
-          <Checkbox
-            label="Prettify"
-            checked={script.prettify}
-            onValueChange={(checked) => {
-              script.prettify = checked;
-              model.rebuildHeader();
-            }}
+          <PrettierStatus
+            status={script.prettify ? prettierStatus : null}
+            iconSide="right"
+            className="text-base"
+            label={
+              <Checkbox
+                label="Prettify"
+                checked={script.prettify}
+                onValueChange={(checked) => {
+                  script.prettify = checked;
+                  model.rebuildHeader();
+                }}
+              />
+            }
           />
-
-          {script.prettify && <PrettierStatus status={prettierStatus} />}
         </div>
 
-        <Button className="px-3 py-1" onClick={handleAllSettings}>
-          <SettingsIcon size={20} className="-ml-1" /> All Settings
+        <Button className="ml-3 px-3.5 py-1" onClick={handleAllSettings}>
+          <SettingsIcon size={20} /> All Settings
         </Button>
 
         <div className="grow" />

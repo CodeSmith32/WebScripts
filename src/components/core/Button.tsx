@@ -31,7 +31,8 @@ export const Button = ({
     <button
       className={cn(
         "flex flex-row justify-center items-center gap-2 min-w-20 rounded-md bg-transparent cursor-pointer px-5 py-2 text-center relative z-0 overflow-hidden" +
-          " after:absolute after:-z-10 after:inset-0 after:pointer-events-none hover:after:bg-white/10 active:after:bg-black/50",
+          " after:absolute after:-z-10 after:inset-0 after:pointer-events-none hover:after:bg-white/10 active:after:bg-black/50" +
+          " [&_svg:first-child]:-ml-1",
         variant && buttonVariants[variant],
         disabled && "opacity-50 after:hidden cursor-default",
         className

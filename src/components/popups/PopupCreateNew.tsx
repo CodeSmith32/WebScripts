@@ -133,7 +133,7 @@ export const PopupCreateNew = () => {
 
       <div className="p-4 flex flex-row justify-between shrink-0">
         <Button variant="primary" onClick={onCreate} disabled={!isValid}>
-          <CirclePlusIcon size={20} className="-ml-1" /> Create
+          <CirclePlusIcon size={20} /> Create
         </Button>
 
         <Button variant="secondary" onClick={onCancel}>

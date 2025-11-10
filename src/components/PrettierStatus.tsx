@@ -1,11 +1,15 @@
 import type { ComponentChildren } from "preact";
-import { StatusIndicator } from "./core/StatusIndicator";
+import {
+  StatusIndicator,
+  type StatusIndicatorProps,
+} from "./core/StatusIndicator";
 import {
   CheckCheckIcon,
   EllipsisIcon,
   XIcon,
   type LucideProps,
 } from "lucide-preact";
+import { cn } from "../includes/core/classes";
 
 export type PrettierStatus = "failed" | "waiting" | "formatted";
 
@@ -25,15 +29,20 @@ const statusClasses: Record<PrettierStatus, string> = {
   formatted: /* @tw */ "bg-success/40",
 };
 
-export interface PrettierStatusProps {
-  status: PrettierStatus;
+export interface PrettierStatusProps extends StatusIndicatorProps {
+  status: PrettierStatus | null;
 }
 
-export const PrettierStatus = ({ status }: PrettierStatusProps) => {
+export const PrettierStatus = ({
+  status,
+  className,
+  ...props
+}: PrettierStatusProps) => {
   return (
     <StatusIndicator
-      className={statusClasses[status]}
-      icon={statusIcon[status]}
+      className={cn(status ? statusClasses[status] : "", className)}
+      icon={status ? statusIcon[status] : null}
+      {...props}
     />
   );
 };

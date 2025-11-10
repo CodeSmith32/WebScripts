@@ -5,12 +5,14 @@ export interface StatusIndicatorProps {
   className?: string;
   icon?: ComponentChildren;
   label?: ComponentChildren;
+  iconSide?: "left" | "right";
 }
 
 export const StatusIndicator = ({
   className,
   icon,
   label,
+  iconSide = "left",
 }: StatusIndicatorProps) => {
   return (
     <div
@@ -20,7 +22,8 @@ export const StatusIndicator = ({
         className
       )}
     >
-      {icon} {label && <span>{label}</span>}
+      {iconSide === "left" ? icon : null} {label && <span>{label}</span>}{" "}
+      {iconSide === "right" ? icon : null}
     </div>
   );
 };

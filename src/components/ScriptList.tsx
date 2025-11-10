@@ -73,7 +73,7 @@ export const ScriptList = ({
       <div className="flex flex-row gap-1 mb-5">
         <Button
           onClick={onAdd}
-          className="justify-start px-2 py-1.5 w-full text-sm text-white/30 hover:text-white"
+          className="justify-start pl-3 py-1.5 w-full text-sm text-white/30 hover:text-white"
           title="Add New"
         >
           <FilePlus2Icon size={16} className="mx-0.5" />

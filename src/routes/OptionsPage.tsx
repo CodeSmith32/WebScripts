@@ -78,7 +78,7 @@ export const OptionsPage = () => {
         }
         yesLabel={
           <>
-            <Trash2Icon size={20} className="-ml-1" /> Delete
+            <Trash2Icon size={20} /> Delete
           </>
         }
         yesVariant="destructive"

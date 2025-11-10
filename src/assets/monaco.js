@@ -7,13 +7,12 @@ const getWorker = (_, label) => {
     return createWorker("ts");
   }
 
-  // json
-  if (label === "json") {
-    return createWorker("json");
+  // editorWorkerService
+  if (label === "editorWorkerService") {
+    return createWorker("editor");
   }
 
-  // editorWorkerService
-  return createWorker("editor");
+  throw new Error(`Failed to load worker for '${label}'`);
 };
 
 self.MonacoEnvironment = { getWorker };
