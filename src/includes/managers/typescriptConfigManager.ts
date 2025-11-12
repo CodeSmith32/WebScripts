@@ -13,18 +13,9 @@ import {
   null as znull,
   ZodMiniEnum,
 } from "zod/mini";
-import { MonacoLanguages } from "../services/monacoService";
-import { mergeDefined } from "../core/mergeDefined";
+import { MonacoLanguages, monacoService } from "../services/monacoService";
 
 type TSConfig = MonacoLanguages.typescript.CompilerOptions;
-
-const defaultTypeScriptConfig: TSConfig = {
-  ...MonacoLanguages.typescript.typescriptDefaults.getCompilerOptions(),
-  strict: true,
-  noUnusedLocals: true,
-  noUnusedParameters: true,
-  noFallthroughCasesInSwitch: true,
-};
 
 const typescriptConfigRaw = object({
   allowJs: boolean(),
@@ -177,12 +168,12 @@ export class TypeScriptConfigManager {
   #lastErrors: string[] = [];
 
   private updateTypeScriptConfig(config: TSConfig) {
-    MonacoLanguages.typescript.typescriptDefaults.setCompilerOptions(
-      mergeDefined(defaultTypeScriptConfig, config)
-    );
+    monacoService.configureTypeScript(config);
   }
 
   private parseTypeScriptConfig(json: string): TSConfig | null {
+    this.#lastErrors = [];
+
     let jsonData: unknown;
     try {
       jsonData = JSON.parse(json);

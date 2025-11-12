@@ -59,7 +59,7 @@ export const CodePack = {
     const dict = dictStr.split(",");
 
     return (code || "")
-      .replace(/#(#|[\w+][ \t])/g, (_, m) => {
+      .replace(/#(#|[0-9a-z]+[ \t])/g, (_, m) => {
         if (m === "#") return "#";
         return m[m.length - 1].repeat(parseInt(m.slice(0, -1), 36));
       })

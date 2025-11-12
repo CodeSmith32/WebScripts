@@ -24,6 +24,10 @@ import { mergeDefined } from "../core/mergeDefined";
 
 const monacoTS = MonacoLanguages.typescript;
 type TSConfig = MonacoLanguages.typescript.CompilerOptions;
+type TSWorker = MonacoLanguages.typescript.TypeScriptWorker;
+type ITextModel = MonacoEditor.ITextModel;
+// helper type for found definition / reference entries
+type TSReferenceEntry = ts.DefinitionInfo | ts.ReferenceEntry;
 
 export class MonacoService {
   constructor() {
@@ -32,8 +36,12 @@ export class MonacoService {
     this.isolateReferences();
   }
 
+  // cached lib models
+  private libModels = new Map<string, Promise<ITextModel | null>>();
+
   private builtInTSDefaults: TSConfig =
     monacoTS.typescriptDefaults.getCompilerOptions();
+
   private internalTSDefaults: TSConfig = {
     strict: true,
     noUnusedLocals: true,
@@ -49,81 +57,168 @@ export class MonacoService {
     );
   }
 
+  /** Get the model for a given URI.
+   *
+   * If the URI represents a built-in TypeScript lib.*.d.ts file, this method will try to fetch
+   * the library contents and build and return a new model for it. */
+  async getModel(
+    worker: TSWorker,
+    fileName: string
+  ): Promise<ITextModel | null> {
+    const uri = MonacoUri.parse(fileName);
+
+    // try to find and return model from local cached models
+    const model = MonacoEditor.getModel(uri);
+    if (model) return model;
+
+    // if the uri has a protocol (e.g., script://) bail
+    if (/^\w+:\/\//.test(fileName)) return null;
+
+    // otherwise, it might be a lib.*.d.ts file: attempt lookup
+    let promise = this.libModels.get(fileName);
+    if (!promise) {
+      promise = new Promise<ITextModel | null>(async (resolve) => {
+        const source = await worker.getScriptText(fileName);
+
+        if (source == null) return resolve(null);
+        resolve(MonacoEditor.createModel(source, "typescript", uri));
+      });
+      this.libModels.set(fileName, promise);
+    }
+    return promise;
+  }
+
+  /** Get language worker for a model. */
+  private async getWorker(model: ITextModel): Promise<TSWorker> {
+    const lang = model.getLanguageId();
+    const getter =
+      lang === "typescript"
+        ? await monacoTS.getTypeScriptWorker()
+        : await monacoTS.getJavaScriptWorker();
+    return await getter(model.uri);
+  }
+
+  /** Convert model start / end offsets to a Monaco Range. */
+  private spanToRange(model: ITextModel, start: number, length: number) {
+    const s = model.getPositionAt(start);
+    const e = model.getPositionAt(start + length);
+    return new Range(s.lineNumber, s.column, e.lineNumber, e.column);
+  }
+
+  /** Convert a reference or definition lookup to a location. Returns null on failure. */
+  private async convertReferenceToLocation(
+    worker: TSWorker,
+    match: TSReferenceEntry
+  ): Promise<MonacoLanguages.Location | null> {
+    const model = await this.getModel(worker, match.fileName);
+    if (!model) return null;
+
+    // convert typescript definition / reference to monaco location
+    return {
+      uri: MonacoUri.parse(match.fileName),
+      range: this.spanToRange(
+        model,
+        match.textSpan.start,
+        match.textSpan.length
+      ),
+    };
+  }
+
   /** Prevent cross-file references. */
   private isolateReferences() {
     // disable built-in definition / references behavior
-    const modeConfig = { references: false, definitions: false };
+    const modeConfig: MonacoLanguages.typescript.ModeConfiguration = {
+      // disable
+      references: false,
+      definitions: false,
+      // keep enabled
+      codeActions: true,
+      completionItems: true,
+      diagnostics: true,
+      documentHighlights: true,
+      documentRangeFormattingEdits: true,
+      documentSymbols: true,
+      hovers: true,
+      inlayHints: true,
+      onTypeFormattingEdits: true,
+      rename: true,
+      signatureHelp: true,
+    };
     monacoTS.typescriptDefaults.setModeConfiguration(modeConfig);
     monacoTS.javascriptDefaults.setModeConfiguration(modeConfig);
-
-    // helper to get worker for model
-    const getWorker = async (model: MonacoEditor.ITextModel) => {
-      const lang = model.getLanguageId();
-      const getter =
-        lang === "typescript"
-          ? await monacoTS.getTypeScriptWorker()
-          : await monacoTS.getJavaScriptWorker();
-      return await getter(model.uri);
-    };
-
-    // helper to create range from numeric start / end
-    const spanToRange = (
-      model: MonacoEditor.ITextModel,
-      start: number,
-      length: number
-    ) => {
-      const s = model.getPositionAt(start);
-      const e = model.getPositionAt(start + length);
-      return new Range(s.lineNumber, s.column, e.lineNumber, e.column);
-    };
 
     // list of affected languages
     const languages = ["javascript", "typescript"];
 
-    // helper type for found definition / reference entries
-    type ReferenceEntry = ts.DefinitionInfo | ts.ReferenceEntry;
-
     // helper for filtering definitions / references by model path
-    const makeFilter = (model: MonacoEditor.ITextModel) => {
+    const makeFilter = (model: ITextModel) => {
       // different schemes / authorities means different lookup contexts:
       const prefix = `${model.uri.scheme}://${model.uri.authority}/`;
 
-      // return a filter function
-      return (match: ReferenceEntry) => match.fileName.startsWith(prefix);
-    };
-
-    // helper for converting definitions / references to monaco locations
-    const makeConverter = (model: MonacoEditor.ITextModel) => {
-      // return a converter to convert from typescript definition / reference to monaco location
-      return (match: ReferenceEntry): MonacoLanguages.Location => ({
-        uri: model.uri,
-        range: spanToRange(model, match.textSpan.start, match.textSpan.length),
-      });
+      // return filter function
+      return (match: TSReferenceEntry) => {
+        // allow built-in lib.*.d.ts files and same-authority references
+        return (
+          !/^\w+:\/\//.test(match.fileName) || match.fileName.startsWith(prefix)
+        );
+      };
     };
 
     // register replacement definition / reference providers
 
     MonacoLanguages.registerDefinitionProvider(languages, {
-      async provideDefinition(model, position) {
-        const worker = await getWorker(model);
+      provideDefinition: async (model, position) => {
+        const worker = await this.getWorker(model);
         const offset = model.getOffsetAt(position);
-        const defs = (await worker.getDefinitionAtPosition(
+
+        // get definitions
+        const defs = ((await worker.getDefinitionAtPosition(
           model.uri.toString(),
           offset
-        )) as ts.DefinitionInfo[] | undefined;
-        return defs?.filter(makeFilter(model)).map(makeConverter(model)) ?? [];
+        )) ?? []) as TSReferenceEntry[];
+
+        const filter = makeFilter(model);
+
+        // convert to locations
+        const locs = (
+          await Promise.all(
+            defs.map(
+              (def) =>
+                filter(def) && this.convertReferenceToLocation(worker, def)
+            )
+          )
+        ).filter((v) => !!v);
+
+        // return locations
+        return locs;
       },
     });
 
     MonacoLanguages.registerReferenceProvider(languages, {
-      async provideReferences(model, position, _context) {
-        const worker = await getWorker(model);
+      provideReferences: async (model, position, _context) => {
+        const worker = await monacoService.getWorker(model);
         const offset = model.getOffsetAt(position);
-        let refs = (await worker.getReferencesAtPosition(
+
+        // get references
+        const refs = ((await worker.getReferencesAtPosition(
           model.uri.toString(),
           offset
-        )) as ts.ReferenceEntry[] | undefined;
-        return refs?.filter(makeFilter(model)).map(makeConverter(model)) ?? [];
+        )) ?? []) as TSReferenceEntry[];
+
+        const filter = makeFilter(model);
+
+        // convert to locations
+        const locs = (
+          await Promise.all(
+            refs.map(
+              (ref) =>
+                filter(ref) && this.convertReferenceToLocation(worker, ref)
+            )
+          )
+        ).filter((v) => !!v);
+
+        // return locations
+        return locs;
       },
     });
   }
@@ -159,13 +254,7 @@ export class MonacoService {
   }
 
   /** Create and return a new editor embedded in the given element, for the given model. */
-  createEditor({
-    node,
-    model,
-  }: {
-    node: HTMLElement;
-    model?: MonacoEditor.ITextModel;
-  }) {
+  createEditor({ node, model }: { node: HTMLElement; model?: ITextModel }) {
     return MonacoEditor.create(node, {
       ...editorSettingsManager.getEditorSettings(),
       theme: "theme",
@@ -175,7 +264,7 @@ export class MonacoService {
   }
 
   /** Gets the code from the given model. */
-  getModelCode(model: MonacoEditor.ITextModel) {
+  getModelCode(model: ITextModel) {
     return model.getValue(MonacoEditor.EndOfLinePreference.LF, false);
   }
 }
@@ -183,7 +272,7 @@ export class MonacoService {
 export const monacoService = new MonacoService();
 
 // monaco TextModel has methods not visible on ITextModel
-export type TextModel = MonacoEditor.ITextModel & {
+export type TextModel = ITextModel & {
   setLanguage(languageIdOrSelection: string, source?: string): void;
 };
 

@@ -509,7 +509,7 @@ export const PopupScriptSettings = ({
       </div>
       <div className="flex flex-row justify-between p-6">
         <Button variant="primary" onClick={handleSave}>
-          <SaveIcon size={20} /> Save
+          <SaveIcon size={20} /> Save Changes
         </Button>
 
         <div className="w-20" />
@@ -545,7 +545,7 @@ export const PopupScriptSettings = ({
         <div className="w-20" />
 
         <Button variant="secondary" onClick={handleCancel}>
-          Cancel
+          Discard Changes
         </Button>
       </div>
     </Popup>

@@ -53,12 +53,6 @@ export interface StoredSettings {
   prettierConfigJson: string;
 }
 
-/** Type of an HTTP header in an intercepted request. */
-export type HttpHeader = Omit<
-  browser.webRequest._HttpHeaders & chrome.webRequest.HttpHeader,
-  "binaryValue"
->;
-
 export type ScriptLanguage = "typescript" | "javascript";
 
 export type WhenTime = "start" | "end" | "idle";

@@ -39,7 +39,7 @@ export type MergeDefinedArray<T extends ObjectList> = T extends [
 export const mergeDefined = <T extends ObjectList>(
   ...args: T
 ): MergeDefinedArray<T> => {
-  const target = {};
+  const target = Object.create(null);
 
   for (const object of args) {
     if (!object) continue;
@@ -49,5 +49,8 @@ export const mergeDefined = <T extends ObjectList>(
     }
   }
 
-  return target as MergeDefinedArray<T>;
+  return Object.setPrototypeOf(
+    target,
+    Object.prototype
+  ) as MergeDefinedArray<T>;
 };
