@@ -1,3 +1,5 @@
+import { nullObject } from "./core/nullObject";
+
 export interface StoredScript {
   /** Random alphanumeric id. */
   id: string;
@@ -29,6 +31,12 @@ export interface StoredSettings {
   defaultLanguage: ScriptLanguage;
   /** If prettifying code should be checked by default for newly created scripts. */
   defaultPrettify: boolean;
+  /** The default version to apply for new scripts. */
+  defaultVersion: string;
+  /** The default author to apply for new scripts. */
+  defaultAuthor: string;
+  /** The default description to apply for new scripts. */
+  defaultDescription: string;
   /** If script locking should be checked by default for new scripts. */
   defaultLocked: boolean;
   /** The default time to execute scripts. */
@@ -61,21 +69,18 @@ export type ExecutionWorld = "main" | "isolated";
 
 export type CSPAction = "disable" | "leave";
 
-export const scriptLanguages: Record<ScriptLanguage, true> = {
+export const scriptLanguages: Record<ScriptLanguage, true> = nullObject({
   javascript: true,
   typescript: true,
-};
-Object.setPrototypeOf(scriptLanguages, null);
+});
 
-export const whenTimes: Record<WhenTime, true> = {
+export const whenTimes: Record<WhenTime, true> = nullObject({
   start: true,
   end: true,
   idle: true,
-};
-Object.setPrototypeOf(whenTimes, null);
+});
 
-export const executionWorlds: Record<ExecutionWorld, true> = {
+export const executionWorlds: Record<ExecutionWorld, true> = nullObject({
   main: true,
   isolated: true,
-};
-Object.setPrototypeOf(executionWorlds, null);
+});

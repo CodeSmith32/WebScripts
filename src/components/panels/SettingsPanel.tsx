@@ -29,6 +29,7 @@ import type { StoredScript, StoredSettings } from "../../includes/types";
 import { WhenTimeDropdown } from "../dropdowns/WhenTimeDropdown";
 import { ExecutionWorldDropdown } from "../dropdowns/ExecutionWorldDropdown";
 import { helpLinks } from "../../includes/constants";
+import { TextBox } from "../core/TextBox";
 
 export interface SettingsPanelProps {
   onClose?: () => void;
@@ -157,7 +158,7 @@ export const SettingsPanel = ({
 
           <SettingRow label="Prettify by Default">
             <Checkbox
-              label="Format code with Prettier on save"
+              label="Format code with Prettier for new scripts"
               checked={settings.defaultPrettify}
               onValueChange={(checked) => {
                 settings.defaultPrettify = checked;
@@ -166,9 +167,39 @@ export const SettingsPanel = ({
             />
           </SettingRow>
 
+          <SettingRow label="New Script Version">
+            <TextBox
+              value={settings.defaultVersion}
+              onValueChange={(value) => {
+                settings.defaultVersion = value;
+                handleChange();
+              }}
+            />
+          </SettingRow>
+
+          <SettingRow label="New Script Author">
+            <TextBox
+              value={settings.defaultAuthor}
+              onValueChange={(value) => {
+                settings.defaultAuthor = value;
+                handleChange();
+              }}
+            />
+          </SettingRow>
+
+          <SettingRow label="New Script Description">
+            <TextBox
+              value={settings.defaultDescription}
+              onValueChange={(value) => {
+                settings.defaultDescription = value;
+                handleChange();
+              }}
+            />
+          </SettingRow>
+
           <SettingRow label="Lock Scripts by Default">
             <Checkbox
-              label="Lock the script's toggle switch"
+              label="Lock script toggle switches for new scripts"
               checked={settings.defaultLocked}
               onValueChange={(checked) => {
                 settings.defaultLocked = checked;

@@ -14,10 +14,18 @@ import {
 import { arraysEqual } from "../core/arrayFns";
 import { pick } from "../core/pick";
 import { mergeDefined } from "../core/mergeDefined";
+import { arrayify, stringify } from "../core/cast";
+import { nullObject } from "../core/nullObject";
+
+export type HeaderValue =
+  | (string | number | boolean | undefined)
+  | (string | number | boolean | undefined)[];
+export type KeyValue = [string, string];
 
 export type HeaderData = Partial<Omit<StoredScript, "id" | "code">>;
+export type AugmentedHeaderData = Record<string, HeaderValue>;
 
-const boolValues: Record<string, boolean | undefined> = {
+const boolValues: Record<string, boolean | undefined> = nullObject({
   // true
   true: true,
   yes: true,
@@ -26,8 +34,9 @@ const boolValues: Record<string, boolean | undefined> = {
   false: false,
   no: false,
   off: false,
-};
-const cspValues: Record<string, CSPAction | undefined> = {
+});
+
+const cspValues: Record<string, CSPAction | undefined> = nullObject({
   // disable
   disable: "disable",
   disabled: "disable",
@@ -39,23 +48,39 @@ const cspValues: Record<string, CSPAction | undefined> = {
   on: "leave",
   true: "leave",
   yes: "leave",
-};
+});
 
-const headerDataKeys: (keyof HeaderData)[] = [
-  "name",
-  "language",
-  "prettify",
-  "locked",
-  "when",
-  "world",
-  "csp",
-  "match",
-];
-const headerDataKeysNoPatterns = headerDataKeys.filter(
-  (key) => key !== "match"
-);
+const headerDataKeyMap: Record<keyof HeaderData, true> = nullObject({
+  name: true,
+  language: true,
+  prettify: true,
+  locked: true,
+  when: true,
+  world: true,
+  csp: true,
+  match: true,
+});
+const headerDataKeys = Object.keys(headerDataKeyMap) as (keyof HeaderData)[];
 
-type KeyValue = [string, string];
+// A list of code header fieldnames, in the order they should appear in.
+// * indicates the insertion point for any other fields
+const codeHeaderMap = nullObject({
+  name: true,
+  version: true,
+  author: true,
+  description: true,
+  "*": true,
+  language: true,
+  prettify: true,
+  locked: true,
+  when: true,
+  world: true,
+  csp: true,
+  match: true,
+} as const satisfies Record<keyof HeaderData | (string & {}), true>);
+const codeHeaderFields = Object.keys(
+  codeHeaderMap
+) as (keyof typeof codeHeaderMap)[];
 
 export class WebScripts {
   /** Generate default property values for an empty script. */
@@ -132,6 +157,14 @@ export class WebScripts {
     }
 
     return script;
+  }
+
+  /** Generate a new script with details from the given header data. */
+  prepareNewScript(header: AugmentedHeaderData) {
+    header = this.removeDefaultedFields(header);
+
+    const code = this.generateHeader(header) + "\n\n";
+    return this.normalizeScript({ code: CodePack.pack(code) }, true);
   }
 
   /** Parse the header comment of a script. */
@@ -228,9 +261,48 @@ export class WebScripts {
     return lines
       .map(
         ([key, value]) =>
-          `/// ${key}:${" ".repeat(nameLen - key.length)} ${value}`
+          `/// ${key}:${" ".repeat(nameLen - key.length)}  ${value}`
       )
       .join("\n");
+  }
+
+  /** Remove fields from header data that are already set to default. Optionally supply an array
+   * of fieldnames that will forcibly be included. */
+  removeDefaultedFields(
+    headerData: HeaderData,
+    forceInclude?: string[]
+  ): HeaderData;
+  removeDefaultedFields(
+    headerData: AugmentedHeaderData,
+    forceInclude?: string[]
+  ): AugmentedHeaderData;
+  removeDefaultedFields(
+    headerData: AugmentedHeaderData,
+    forceInclude: string[] = []
+  ): AugmentedHeaderData {
+    const defaults = this.getHeaderDefaults();
+    const include = new Set(forceInclude);
+
+    // remove defaulted fields
+    const header = headerDataKeys.reduce((data, key) => {
+      // don't include headers if they're set to default and not present in the code:
+      data[key] = include?.has(key)
+        ? (headerData[key] ?? defaults[key]) // field is force-included: keep value
+        : headerData[key] !== defaults[key]
+          ? headerData[key] // field is not default: keep value (or leave out if unset)
+          : undefined; // field is default: leave out
+      return data;
+    }, nullObject() as AugmentedHeaderData);
+
+    // add augmented fields back in
+    for (const key of Object.keys(headerData)) {
+      if (!(key in headerDataKeyMap)) {
+        header[key] = headerData[key];
+      }
+    }
+
+    // return header data with defaulted fields removed
+    return header;
   }
 
   /** Extract header comment from start of code. */
@@ -242,23 +314,22 @@ export class WebScripts {
     return "";
   }
 
-  /** Helper to generate header key-value pair tuple, or null if not set. */
-  private makeHeaderKey(
-    key: string,
-    value: string | number | boolean | undefined
-  ): KeyValue | null {
-    return value == null ? null : [key, "" + value];
+  /** Helper to convert header value(s) to key-value pair tuples. */
+  private makeHeaderFields(key: string, value: HeaderValue): KeyValue[] {
+    return arrayify(value)
+      .map((value) =>
+        value == null ? null : ([key, stringify(value)] as KeyValue)
+      )
+      .filter((v) => !!v);
   }
 
   /** Update the given header data in the header comment, and return a new header comment. */
-  updateHeader(header: string, headerData: HeaderData): string {
+  updateHeader(headerCode: string, headerData: HeaderData): string {
     // trim off leading white-space
-    header = header.replace(/^\s*/, "");
-
-    const defaults = this.getHeaderDefaults();
+    headerCode = headerCode.replace(/^\s*/, "");
 
     // parse old lines
-    let lines: KeyValue[] = (header ? header.split(/\r?\n/) : [])
+    let lines: KeyValue[] = (headerCode ? headerCode.split(/\r?\n/) : [])
       .map((line): KeyValue | null => {
         let [, key, value] = line.match(/^\/+([\w\s]+):\s*(.*)$/) ?? [];
         if (key == null || value == null) return null;
@@ -267,38 +338,37 @@ export class WebScripts {
       .filter((v) => !!v);
 
     // get current set of field names
-    const setFields = new Set(lines.map((line) => line[0]));
+    const present = lines.map((line) => line[0]);
 
     // line mutation utilities
     const removeKeys = (...keys: string[]) => {
       lines = lines.filter((line) => !keys.includes(line[0]));
     };
-
-    // regenerate header lines
+    const pullKey = (key: string): string[] => {
+      const value: string[] = [];
+      lines = lines.filter((line) => {
+        if (line[0] === key) value.push(line[1]);
+        return line[0] !== key;
+      });
+      return value;
+    };
 
     // remove core headers
-    removeKeys(...headerDataKeysNoPatterns, "match");
+    removeKeys(...headerDataKeys);
 
-    // update and re-order headers
-    lines = [
-      ...headerDataKeysNoPatterns.map((key) =>
-        this.makeHeaderKey(
-          key,
-          headerData[key] !== defaults[key]
-            ? headerData[key]
-            : setFields.has(key)
-              ? defaults[key]
-              : undefined
-        )
-      ),
-      ...lines,
-      ...(headerData.match ?? []).map((pattern) =>
-        this.makeHeaderKey("match", pattern)
-      ),
-    ].filter((v) => !!v);
+    // prepare header values for insertion
+    const header = this.removeDefaultedFields(
+      headerData as AugmentedHeaderData,
+      present
+    );
 
-    // build header
-    return this.buildHeaderLines(lines);
+    // add in extra fields
+    header.version = pullKey("version");
+    header.author = pullKey("author");
+    header.description = pullKey("description");
+
+    // regenerate header
+    return this.generateHeader(header, lines);
   }
 
   /** Safely update the header in the code to use the newly provided field values. */
@@ -314,29 +384,18 @@ export class WebScripts {
   }
 
   /** Generate a header from header details. */
-  generateHeader({
-    name,
-    language,
-    prettify,
-    locked,
-    when,
-    world,
-    csp,
-    match,
-  }: HeaderData) {
-    // generate header lines
-    const lines: KeyValue[] = [
-      this.makeHeaderKey("name", name ?? ""),
-      this.makeHeaderKey("language", language ?? "javascript"),
-      this.makeHeaderKey("prettify", prettify ? "true" : "false"),
-      this.makeHeaderKey("locked", locked ? "true" : undefined),
-      this.makeHeaderKey("when", when === "start" ? undefined : when),
-      this.makeHeaderKey("world", world === "main" ? undefined : world),
-      this.makeHeaderKey("csp", csp === "disable" ? "disable" : undefined),
-      ...(match ?? []).map((pattern) => ["match", pattern] as KeyValue),
-    ].filter((v) => !!v);
+  generateHeader(
+    augmentedHeaderData: AugmentedHeaderData,
+    otherLines?: KeyValue[]
+  ) {
+    const newLines = ([] as KeyValue[]).concat(
+      ...codeHeaderFields.map((key) => {
+        if (key === "*") return otherLines ?? [];
+        return this.makeHeaderFields(key, augmentedHeaderData[key]);
+      })
+    );
 
-    return this.buildHeaderLines(lines);
+    return this.buildHeaderLines(newLines);
   }
 }
 

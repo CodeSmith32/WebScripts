@@ -57,7 +57,12 @@ export const OptionsPage = () => {
     ).waitClose;
     if (!newData) return;
 
-    const script = webScripts.normalizeScript(newData);
+    const script = webScripts.prepareNewScript({
+      ...newData,
+      version: optionsData.settings.defaultVersion || undefined,
+      author: optionsData.settings.defaultAuthor || undefined,
+      description: optionsData.settings.defaultDescription || undefined,
+    });
     await optionsData.saveScript(script);
 
     setActive(script);

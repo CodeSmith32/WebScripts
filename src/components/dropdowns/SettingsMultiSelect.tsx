@@ -4,6 +4,9 @@ import { MultiSelect, Option, type MultiSelectProps } from "../core/Dropdown";
 const settingsTable: Record<keyof StoredSettings, string> = {
   defaultLanguage: "Default Language",
   defaultPrettify: "Prettify by Default",
+  defaultVersion: "New Script Version",
+  defaultAuthor: "New Script Author",
+  defaultDescription: "New Script Description",
   defaultLocked: "Lock Scripts by Default",
   defaultWhen: "Default Execution Time",
   defaultWorld: "Default Execution World",
