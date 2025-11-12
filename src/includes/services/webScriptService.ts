@@ -55,6 +55,8 @@ const headerDataKeysNoPatterns = headerDataKeys.filter(
   (key) => key !== "match"
 );
 
+type KeyValue = [string, string];
+
 export class WebScripts {
   /** Generate default property values for an empty script. */
   getScriptDefaults(): StoredScript {
@@ -218,7 +220,7 @@ export class WebScripts {
 
   /** Take a list of [ string, string ] pairs, and generate new header string.
    * Use pair[0] as property key, and pair[1] as property value. */
-  private buildHeaderLines(lines: [string, string][]) {
+  private buildHeaderLines(lines: KeyValue[]) {
     // get longest line key (for padding alignment)
     const nameLen = lines.reduce((max, [key]) => Math.max(max, key.length), 0);
 
@@ -244,7 +246,7 @@ export class WebScripts {
   private makeHeaderKey(
     key: string,
     value: string | number | boolean | undefined
-  ): [string, string] | null {
+  ): KeyValue | null {
     return value == null ? null : [key, "" + value];
   }
 
@@ -256,8 +258,8 @@ export class WebScripts {
     const defaults = this.getHeaderDefaults();
 
     // parse old lines
-    let lines: [string, string][] = (header ? header.split(/\r?\n/) : [])
-      .map((line): [string, string] | null => {
+    let lines: KeyValue[] = (header ? header.split(/\r?\n/) : [])
+      .map((line): KeyValue | null => {
         let [, key, value] = line.match(/^\/+([\w\s]+):\s*(.*)$/) ?? [];
         if (key == null || value == null) return null;
         return [key.trim().toLowerCase(), value];
@@ -323,7 +325,7 @@ export class WebScripts {
     match,
   }: HeaderData) {
     // generate header lines
-    const lines: [string, string][] = [
+    const lines: KeyValue[] = [
       this.makeHeaderKey("name", name ?? ""),
       this.makeHeaderKey("language", language ?? "javascript"),
       this.makeHeaderKey("prettify", prettify ? "true" : "false"),
@@ -331,7 +333,7 @@ export class WebScripts {
       this.makeHeaderKey("when", when === "start" ? undefined : when),
       this.makeHeaderKey("world", world === "main" ? undefined : world),
       this.makeHeaderKey("csp", csp === "disable" ? "disable" : undefined),
-      ...(match ?? []).map((pattern) => ["match", pattern] as [string, string]),
+      ...(match ?? []).map((pattern) => ["match", pattern] as KeyValue),
     ].filter((v) => !!v);
 
     return this.buildHeaderLines(lines);
