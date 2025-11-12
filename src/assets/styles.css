@@ -20,3 +20,8 @@ body {
   scrollbar-width: thin;
   scrollbar-color: var(--color-background) var(--color-background-dark);
 }
+
+.monaco-editor {
+  /* Fix overflowing "No suggestions" box. */
+  font-size: 13px;
+}

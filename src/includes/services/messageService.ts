@@ -27,7 +27,6 @@ export type MessageTableEntry<Send extends object, Reply> = {
 export interface MessageTable {
   /** List all scripts running on a tab. */
   listRunning: MessageTableEntry<EmptyObject, string[]>;
-  updateBackgroundScripts: MessageTableEntry<EmptyObject, void>;
   reloaded: MessageTableEntry<EmptyObject, void>;
   toggleDomain: MessageTableEntry<
     { id: string; domain: string; enabled: boolean },
@@ -53,14 +52,18 @@ export class MessageService {
     message: MessageSend<T>,
     options: SendMessageOptions = {}
   ): Promise<MessageReply<T> | undefined> {
-    return await (
-      Chrome.runtime?.sendMessage as
-        | ((
-            message: unknown,
-            options?: SendMessageOptions
-          ) => Promise<MessageReply<T>>)
-        | undefined
-    )?.({ ...message, cmd }, options);
+    try {
+      return await (
+        Chrome.runtime?.sendMessage as
+          | ((
+              message: unknown,
+              options?: SendMessageOptions
+            ) => Promise<MessageReply<T>>)
+          | undefined
+      )?.({ ...message, cmd }, options);
+    } catch (_err) {
+      return undefined;
+    }
   }
 
   /** Send a message to the content script registered in the given tab. */
@@ -72,13 +75,17 @@ export class MessageService {
   ): Promise<MessageReply<T> | undefined> {
     if (!tab?.id) return undefined;
 
-    return await (
-      Chrome.tabs?.sendMessage as (
-        tabId: number,
-        message: unknown,
-        options: SendTabMessageOptions
-      ) => Promise<MessageReply<T>>
-    )(tab.id, { ...message, cmd }, options);
+    try {
+      return await (
+        Chrome.tabs?.sendMessage as (
+          tabId: number,
+          message: unknown,
+          options: SendTabMessageOptions
+        ) => Promise<MessageReply<T>>
+      )(tab.id, { ...message, cmd }, options);
+    } catch (_err) {
+      return undefined;
+    }
   }
 
   /** Register a listener for a given event. */

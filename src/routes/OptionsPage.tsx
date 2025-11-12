@@ -66,6 +66,7 @@ export const OptionsPage = () => {
     await optionsData.saveScript(script);
 
     setActive(script);
+    await messageService.send("resyncAll", {});
   };
   const onDelete = async (script: StoredScript) => {
     if (!optionsData) return;
@@ -94,13 +95,14 @@ export const OptionsPage = () => {
 
     if (active === script) setActive(null);
     await optionsData.deleteScript(script);
-    await userScriptService.removeUserScript(script);
+    await messageService.send("resyncAll", {});
   };
   const onImportScripts = async ({ settings, scripts }: ImportData) => {
     if (!optionsData) return;
 
     Object.assign(optionsData.settings, settings);
     await optionsData.addScripts(scripts);
+    await messageService.send("resyncAll", {});
   };
 
   // make sure listener gets latest version of optionsData
@@ -132,11 +134,7 @@ export const OptionsPage = () => {
         }
         // re-save any missing editor updates over background-saved scripts
         await optionsData.saveAllScripts();
-        if (resyncScripts.length === 1) {
-          await userScriptService.resynchronizeUserScript(resyncScripts[0]);
-        } else if (resyncScripts.length > 0) {
-          await userScriptService.resynchronizeUserScripts();
-        }
+        await messageService.send("resyncAll", {});
       }
     );
 

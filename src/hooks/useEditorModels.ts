@@ -9,7 +9,6 @@ import { useCarried } from "./core/useCarried";
 import { useFutureCallback } from "./core/useFutureCallback";
 import { debounce } from "../includes/core/debounce";
 import { prettierService } from "../includes/services/prettierService";
-import { userScriptService } from "../includes/services/userScriptService";
 import type { ScriptLanguage, StoredScript } from "../includes/types";
 import { messageService } from "../includes/services/messageService";
 import { webScripts } from "../includes/services/webScriptService";
@@ -139,10 +138,7 @@ export class EditorModelData {
 
     // save
     await this.saveScripts();
-    await userScriptService.resynchronizeUserScript(this.script);
-
-    // trigger update in background script
-    await messageService.send("updateBackgroundScripts", {});
+    await messageService.send("resyncAll", {});
   }
 }
 

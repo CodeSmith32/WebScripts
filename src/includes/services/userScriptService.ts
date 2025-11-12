@@ -64,7 +64,7 @@ export class UserScriptService {
       CodePack.unpack(script.code),
       script.language
     );
-    const code = `(async()=>{\n// apply precise pattern match test:\n${codePrefix}\n${source}\n})();`;
+    const code = `(async()=>{\n// precise url match test:\n${codePrefix}\n${source}\n})();`;
     const matches = patternService.toDomainPatterns(script.match);
     const runAt: UserScriptRunAt =
       whenTimeToRunAt[script.when] ?? "document_start";

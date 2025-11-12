@@ -7,8 +7,8 @@ import type { StoredScript } from "./includes/types";
 import { CodePack } from "./includes/core/codepack";
 import { webScripts } from "./includes/services/webScriptService";
 
-// background script handles CSP-disabling, and re-compiles / re-syncs scripts after applying
-// domain toggle requests from the popup, and other misc background tasks.
+// Background script handles CSP-disabling, re-compiles / re-syncs scripts after applying domain
+// toggle requests from the popup, and other misc background tasks.
 
 // keep track of most recent scripts
 let scripts: StoredScript[] = [];
@@ -16,11 +16,6 @@ const reloadScripts = async () => {
   scripts = await storageService.loadScripts();
 };
 reloadScripts();
-
-// listen for script updates and reload when changes occur
-messageService.listen("updateBackgroundScripts", async () => {
-  await reloadScripts();
-});
 
 // listen for a switch toggle from the popup
 messageService.listen("toggleDomain", async (message) => {
@@ -60,6 +55,9 @@ messageService.listen("testScriptable", async (message) => {
 // listen for a request to resync all userscripts
 messageService.listen("resyncAll", async () => {
   await userScriptService.resynchronizeUserScripts();
+
+  // resynchronizeUserScripts reloads scripts; copy updated list:
+  scripts = storageService.latestScripts;
 });
 
 // on install, re-normalize script, and resynchronize userScripts with stored scripts
@@ -70,6 +68,8 @@ Chrome.runtime?.onInstalled.addListener(async () => {
     webScripts.normalizeScript(script, true)
   );
   await storageService.saveScripts(normalized);
+
+  // try notifying options page
   await messageService.send("scriptsUpdated", {
     ids: normalized.map(({ id }) => id),
   });
