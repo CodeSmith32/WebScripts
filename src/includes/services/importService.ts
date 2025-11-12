@@ -49,7 +49,6 @@ const importSchema: ZodMiniType<{
       object({
         // id: optional(string()),
         name: optional(string()),
-        patterns: optional(array(string())),
         language: optional(zenum(["typescript", "javascript"])),
         prettify: optional(boolean()),
         locked: optional(boolean()),
@@ -57,6 +56,7 @@ const importSchema: ZodMiniType<{
         world: optional(zenum(["main", "isolated"])),
         csp: optional(zenum(["disable", "leave"])),
         code: string(),
+        match: optional(array(string())),
       } satisfies Record<Exclude<keyof StoredScript, "id">, ZodMiniType>)
     )
   ),

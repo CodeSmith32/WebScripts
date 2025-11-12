@@ -35,8 +35,8 @@ messageService.listen("toggleDomain", async (message) => {
   // update script header / re-normalize script
   const code = CodePack.unpack(script.code);
   const header = webScripts.parseHeader(code);
-  script.patterns = patternService.setDomainForPatterns(
-    header.patterns ?? [],
+  script.match = patternService.setDomainForPatterns(
+    header.match ?? [],
     message.domain,
     message.enabled
   );
@@ -80,10 +80,10 @@ Chrome.runtime?.onInstalled.addListener(async () => {
 
 // test if url matches against any script patterns
 const shouldDisableCSP = (url: string) => {
-  for (const { csp, patterns } of scripts) {
+  for (const { csp, match } of scripts) {
     if (csp !== "disable") continue;
 
-    if (patternService.match(url, patterns)) return true;
+    if (patternService.match(url, match)) return true;
   }
   return false;
 };

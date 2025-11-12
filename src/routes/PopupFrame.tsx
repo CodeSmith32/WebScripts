@@ -93,7 +93,7 @@ export const PopupFrame = () => {
 
     const matching: Record<string, boolean> = {};
     for (const script of data.allScripts) {
-      matching[script.id] = patternService.match(data.tab.url, script.patterns);
+      matching[script.id] = patternService.match(data.tab.url, script.match);
     }
     return matching;
   }, [data?.allScripts, data?.tab?.url]);

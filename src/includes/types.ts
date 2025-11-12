@@ -5,11 +5,6 @@ export interface StoredScript {
   name: string;
   /** The language of the script. `"javascript"` or `"typescript"`. */
   language: ScriptLanguage;
-  /** Pattern strings.
-   *
-   * `/pattern/i` indicates regex-type match.
-   * `*.domain.com` indicates domain-type match. */
-  patterns: string[];
   /** If the code will be prettified on save. */
   prettify: boolean;
   /** If the script's popup toggle should be disabled, to help prevent accidental changes.. */
@@ -20,6 +15,11 @@ export interface StoredScript {
   world: ExecutionWorld;
   /** If the content security policy header should be removed for pages this script runs on. */
   csp: CSPAction;
+  /** Pattern strings for matching urls.
+   *
+   * `/pattern/i` indicates regex-type match.
+   * `*.domain.com` indicates domain-type match. */
+  match: string[];
   /** The source code, compressed with CodePack. */
   code: string;
 }

@@ -59,13 +59,13 @@ export class UserScriptService {
 
   /** Convert a stored script to a user script. */
   storedScriptToUserScript(script: StoredScript): UserScript {
-    const codePrefix = patternService.toCode(script.patterns);
+    const codePrefix = patternService.toCode(script.match);
     const source = typescriptService.compile(
       CodePack.unpack(script.code),
       script.language
     );
     const code = `(async()=>{\n// apply precise pattern match test:\n${codePrefix}\n${source}\n})();`;
-    const matches = patternService.toDomainPatterns(script.patterns);
+    const matches = patternService.toDomainPatterns(script.match);
     const runAt: UserScriptRunAt =
       whenTimeToRunAt[script.when] ?? "document_start";
     const world: UserScriptWorld =

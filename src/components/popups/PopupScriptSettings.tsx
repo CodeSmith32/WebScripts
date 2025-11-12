@@ -296,8 +296,8 @@ export const PopupScriptSettings = ({
   const patternListRef = useRef<HTMLDivElement>(null);
 
   const originalPatterns: PatternWithId[] = useMemo(
-    () => originalScript.patterns.map((pattern, id) => ({ pattern, id })),
-    [originalScript.patterns]
+    () => originalScript.match.map((pattern, id) => ({ pattern, id })),
+    [originalScript.match]
   );
   const nextPatternId = useRef(originalPatterns.length);
   const getNextPatternId = () => nextPatternId.current++;
@@ -325,7 +325,7 @@ export const PopupScriptSettings = ({
   const handleSave = () => {
     popup.close({
       ...script,
-      patterns: patterns.map(({ pattern }) => pattern),
+      match: patterns.map(({ pattern }) => pattern),
     });
   };
 

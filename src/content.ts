@@ -15,8 +15,8 @@ const detectMatching = async () => {
   const scripts = await storageService.loadScripts();
   const url = location.href;
 
-  for (const { id, patterns } of scripts) {
-    if (patternService.match(url, patterns)) {
+  for (const { id, match } of scripts) {
+    if (patternService.match(url, match)) {
       running.push(id);
     }
   }

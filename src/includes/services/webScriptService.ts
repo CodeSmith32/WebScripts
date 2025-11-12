@@ -44,15 +44,15 @@ const cspValues: Record<string, CSPAction | undefined> = {
 const headerDataKeys: (keyof HeaderData)[] = [
   "name",
   "language",
-  "patterns",
   "prettify",
   "locked",
   "when",
   "world",
   "csp",
+  "match",
 ];
 const headerDataKeysNoPatterns = headerDataKeys.filter(
-  (key) => key !== "patterns"
+  (key) => key !== "match"
 );
 
 export class WebScripts {
@@ -62,12 +62,12 @@ export class WebScripts {
       id: "",
       name: "",
       language: "javascript",
-      patterns: [],
       prettify: false,
       locked: false,
       when: "start",
       world: "main",
       csp: "leave",
+      match: [],
       code: "",
     };
   }
@@ -117,11 +117,11 @@ export class WebScripts {
     const script: StoredScript = mergeDefined(defaults, sourceScript, header);
     script.id ||= this.generateId(); // fill in missing ids
     script.name = header.name || sourceScript.name || defaults.name; // merge name
-    script.patterns = header.patterns?.length // merge patterns
-      ? header.patterns
-      : sourceScript.patterns?.length
-        ? sourceScript.patterns
-        : defaults.patterns;
+    script.match = header.match?.length // merge patterns
+      ? header.match
+      : sourceScript.match?.length
+        ? sourceScript.match
+        : defaults.match;
 
     if (!preserveCode) {
       // update code header, then update script code
@@ -165,10 +165,6 @@ export class WebScripts {
           ? (language as ScriptLanguage)
           : defaults.language;
       }
-      // patterns
-      if (params.has("match")) {
-        data.patterns = params.get("match")!;
-      }
       // prettify
       if (params.has("prettify")) {
         const prettify = params.get("prettify")![0].toLowerCase();
@@ -198,6 +194,10 @@ export class WebScripts {
         const policy = params.get("csp")![0].toLowerCase();
         data.csp = cspValues[policy] ?? defaults.csp;
       }
+      // match
+      if (params.has("match")) {
+        data.match = params.get("match")!;
+      }
     }
     return data;
   }
@@ -207,12 +207,12 @@ export class WebScripts {
     return (
       a.name === b.name &&
       a.language === b.language &&
-      arraysEqual(a.patterns ?? [], b.patterns ?? []) &&
       a.prettify === b.prettify &&
       a.locked === b.locked &&
       a.when === b.when &&
       a.world === b.world &&
-      a.csp === b.csp
+      a.csp === b.csp &&
+      arraysEqual(a.match ?? [], b.match ?? [])
     );
   }
 
@@ -290,7 +290,7 @@ export class WebScripts {
         )
       ),
       ...lines,
-      ...(headerData.patterns ?? []).map((pattern) =>
+      ...(headerData.match ?? []).map((pattern) =>
         this.makeHeaderKey("match", pattern)
       ),
     ].filter((v) => !!v);
@@ -314,13 +314,13 @@ export class WebScripts {
   /** Generate a header from header details. */
   generateHeader({
     name,
-    patterns,
     language,
     prettify,
     locked,
     when,
     world,
     csp,
+    match,
   }: HeaderData) {
     // generate header lines
     const lines: [string, string][] = [
@@ -331,9 +331,7 @@ export class WebScripts {
       this.makeHeaderKey("when", when === "start" ? undefined : when),
       this.makeHeaderKey("world", world === "main" ? undefined : world),
       this.makeHeaderKey("csp", csp === "disable" ? "disable" : undefined),
-      ...(patterns ?? []).map(
-        (pattern) => ["match", pattern] as [string, string]
-      ),
+      ...(match ?? []).map((pattern) => ["match", pattern] as [string, string]),
     ].filter((v) => !!v);
 
     return this.buildHeaderLines(lines);
