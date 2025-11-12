@@ -7,10 +7,10 @@ export class TypeScriptService {
   };
 
   /** Compile source code from script. */
-  compile(code: string, language: ScriptLanguage = "javascript") {
+  compile(code: string, language: ScriptLanguage = "javascript"): string {
     return language === "typescript"
       ? ts.transpile(code, { ...this.tsCompileOptions })
-      : null;
+      : code;
   }
 }
 
