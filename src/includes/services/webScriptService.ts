@@ -87,10 +87,23 @@ export class WebScripts {
     return id;
   }
 
-  /** Take parts of a stored script, reconstitute it, and resynchronize parts with code
-   * header. */
-  normalizeScript(sourceScript: Readonly<Partial<StoredScript>>) {
+  /** Take parts of a stored script, reconstitute it, and resynchronize parts with the code
+   * header.
+   *
+   * If `preserveCode` is true, the code will not be modified. Only header values specified in
+   * the code header will be set accordingly. Other values will become their defaults.
+   *
+   * If `preserveCode` is false (default), the code's header fields will take precedence over
+   * the settings in the script, but the code will then be updated in case any script settings
+   * were present that were not in the code header. */
+  normalizeScript(
+    sourceScript: Readonly<Partial<StoredScript>>,
+    preserveCode: boolean = false
+  ) {
     let code = CodePack.unpack(sourceScript.code ?? "");
+
+    // if code must be preserved, then the script settings can only be derived from the code
+    if (preserveCode) sourceScript = {};
 
     // extract details from script code header
     const header = this.parseHeader(code);
@@ -108,9 +121,12 @@ export class WebScripts {
       // if code header gave array with no matches, fallback to source script, or defaults
       script.patterns = sourceScript.patterns ?? defaults.patterns;
     }
-    // update code header, then update script code
-    code = this.updateHeaderInCode(code, script);
-    script.code = CodePack.pack(code);
+
+    if (!preserveCode) {
+      // update code header, then update script code
+      code = this.updateHeaderInCode(code, script);
+      script.code = CodePack.pack(code);
+    }
 
     return script;
   }

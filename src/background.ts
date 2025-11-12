@@ -47,11 +47,9 @@ messageService.listen("toggleDomain", async (message) => {
   // update script in background / userScripts / options page
   scripts[ind] = script;
 
-  await Promise.all([
-    storageService.saveScripts(scripts),
-    userScriptService.resynchronizeUserScript(script),
-    messageService.send("scriptUpdated", { id: script.id }),
-  ]);
+  await storageService.saveScripts(scripts);
+  await messageService.send("scriptsUpdated", { ids: [script.id] });
+  await userScriptService.resynchronizeUserScript(script);
 });
 
 // listen for a scriptable tab test request
@@ -64,8 +62,19 @@ messageService.listen("resyncAll", async () => {
   await userScriptService.resynchronizeUserScripts();
 });
 
-// on install, resynchronize userScripts with stored scripts
+// on install, re-normalize script, and resynchronize userScripts with stored scripts
 Chrome.runtime?.onInstalled.addListener(async () => {
+  // re-normalize scripts, in case an update requires adjustments
+  const scripts = await storageService.loadScripts();
+  const normalized = scripts.map((script) =>
+    webScripts.normalizeScript(script, true)
+  );
+  await storageService.saveScripts(normalized);
+  await messageService.send("scriptsUpdated", {
+    ids: normalized.map(({ id }) => id),
+  });
+
+  // resynchronize all scripts
   await userScriptService.resynchronizeUserScripts();
 });
 

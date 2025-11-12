@@ -22,6 +22,7 @@ export type MessageTableEntry<Send extends object, Reply> = {
   reply: Reply;
 };
 
+/****************************************************** */
 /** Messages that can be sent, the sent and reply data. */
 export interface MessageTable {
   /** List all scripts running on a tab. */
@@ -32,10 +33,11 @@ export interface MessageTable {
     { id: string; domain: string; enabled: boolean },
     void
   >;
-  scriptUpdated: MessageTableEntry<{ id: string }, void>;
+  scriptsUpdated: MessageTableEntry<{ ids: string[] }, void>;
   testScriptable: MessageTableEntry<{ tabId?: number | null }, boolean>;
   resyncAll: MessageTableEntry<EmptyObject, void>;
 }
+/****************************************************** */
 
 export type MessageCmd = keyof MessageTable;
 export type MessageSend<T extends MessageCmd> = MessageTable[T]["send"];

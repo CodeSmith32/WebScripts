@@ -104,25 +104,34 @@ export const OptionsPage = () => {
   // listen for domain toggles from popup, and update affected scripts
   useEffect(() => {
     const unsubscribe = messageService.listen(
-      "scriptUpdated",
+      "scriptsUpdated",
       async (message) => {
         const { optionsData } = carried;
         if (!optionsData) return;
 
-        // get the editor model, and recompress the script to get the latest code
-        const model = models[message.id] as EditorModelData | undefined;
-        model?.recompressScript();
+        const resyncScripts: StoredScript[] = [];
 
-        // reload script from stored scripts, updating the header
-        const script = await optionsData.reloadScript(message.id, true);
-        if (!script) return;
+        for (const id of message.ids) {
+          // get the editor model, and recompress the script to get the latest code
+          const model = models[id] as EditorModelData | undefined;
+          model?.recompressScript();
 
-        // update code in editor
-        model?.reloadCompressedCode();
+          // reload script from stored scripts, updating the header
+          const script = await optionsData.reloadScript(id, true);
+          if (!script) return;
 
+          // update code in editor
+          model?.reloadCompressedCode();
+
+          resyncScripts.push(script);
+        }
         // re-save any missing editor updates over background-saved scripts
         await optionsData.saveAllScripts();
-        await userScriptService.resynchronizeUserScript(script);
+        if (resyncScripts.length === 1) {
+          await userScriptService.resynchronizeUserScript(resyncScripts[0]);
+        } else if (resyncScripts.length > 0) {
+          await userScriptService.resynchronizeUserScripts();
+        }
       }
     );
 
