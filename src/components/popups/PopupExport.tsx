@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useMemo, useState } from "preact/hooks";
 import { webScripts } from "../../includes/services/webScriptService";
 import { Checkbox } from "../core/Checkbox";
 import { MultiSelect, Option } from "../core/Dropdown";
@@ -12,6 +12,11 @@ import { wait } from "../../includes/utils";
 import { downloadBlob } from "../../includes/core/download";
 import type { StoredScript, StoredSettings } from "../../includes/types";
 import { exportService } from "../../includes/services/exportService";
+import {
+  allSettings,
+  SettingsMultiSelect,
+  type SettingsKey,
+} from "../dropdowns/SettingsMultiSelect";
 
 export interface PopupExportProps {
   settings: StoredSettings;
@@ -21,12 +26,13 @@ export interface PopupExportProps {
 export const PopupExport = ({ settings, scripts }: PopupExportProps) => {
   const popup = usePopup<void>();
 
+  const allScripts = useMemo(() => scripts.map(({ id }) => id), [scripts]);
+
   const [compress, setCompress] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [includeSettings, setIncludeSettings] = useState(false);
-  const [selected, setSelected] = useState<string[]>(
-    scripts.map(({ id }) => id)
-  );
+  const [selectedSettings, setSelectedSettings] =
+    useState<SettingsKey[]>(allSettings);
+  const [selectedScripts, setSelectedScripts] = useState<string[]>(allScripts);
 
   const handleClose = () => {
     popup.close();
@@ -40,15 +46,21 @@ export const PopupExport = ({ settings, scripts }: PopupExportProps) => {
     await wait(200);
 
     // filter / normalize selected scripts
-    const set = new Set(selected);
-    const selection = scripts
+    const set = new Set(selectedScripts);
+    const scriptsExport = scripts
       .filter((script) => set.has(script.id))
       .map((script) => webScripts.normalizeScript(script));
 
+    // filter settings
+    const settingsExport = selectedSettings.reduce(
+      (map, key) => ((map[key] = settings[key as never]), map),
+      {} as Partial<StoredSettings>
+    );
+
     // generate json
     const exportData = await exportService.exportScriptsToBlob({
-      settings: includeSettings ? settings : undefined,
-      scripts: selection,
+      settings: settingsExport,
+      scripts: scriptsExport,
       compress,
     });
 
@@ -64,38 +76,65 @@ export const PopupExport = ({ settings, scripts }: PopupExportProps) => {
 
   return (
     <Popup
-      title="Export Scripts as JSON"
+      title="Export Scripts &amp; Settings As JSON"
       onEnter={handleExport}
       onEscape={handleClose}
       onClickOut={handleClose}
       onClickX={handleClose}
+      popupClassName="w-xl"
     >
-      <p className="mb-4">Select scripts to export:</p>
+      <div className="flex flex-row gap-4">
+        <div className="w-0 grow flex flex-col gap-2">
+          <Checkbox
+            label="Export scripts"
+            onValueChange={(checked) =>
+              setSelectedScripts(checked ? [...allScripts] : [])
+            }
+            checked={selectedScripts.length > 0}
+            indeterminate={
+              selectedScripts.length > 0 &&
+              selectedScripts.length < allScripts.length
+            }
+          />
 
-      <MultiSelect
-        className="w-full min-h-56"
-        onValueChange={(value) => setSelected(value)}
-      >
-        {scripts.map((script) => (
-          <Option
-            key={script.id}
-            value={script.id}
-            selected={selected.includes(script.id)}
+          <MultiSelect
+            className="w-full h-60"
+            onValueChange={(value) => setSelectedScripts(value)}
           >
-            {script.name || "<Unnamed>"}
-          </Option>
-        ))}
-      </MultiSelect>
+            {scripts.map((script) => (
+              <Option
+                key={script.id}
+                value={script.id}
+                selected={selectedScripts.includes(script.id)}
+              >
+                {script.name || "<Unnamed>"}
+              </Option>
+            ))}
+          </MultiSelect>
+        </div>
+        <div className="w-0 grow flex flex-col gap-2">
+          <Checkbox
+            label="Export settings"
+            onValueChange={(checked) =>
+              setSelectedSettings(checked ? [...allSettings] : [])
+            }
+            checked={selectedSettings.length > 0}
+            indeterminate={
+              selectedSettings.length > 0 &&
+              selectedSettings.length < allSettings.length
+            }
+          />
+
+          <SettingsMultiSelect
+            className="w-full h-60"
+            selection={selectedSettings}
+            onValueChange={(value) => setSelectedSettings(value)}
+          />
+        </div>
+      </div>
 
       <Checkbox
-        wrapperStyles="mt-4"
-        checked={includeSettings}
-        onValueChange={(value) => setIncludeSettings(value)}
-        label="Include Settings In Export"
-      />
-
-      <Checkbox
-        wrapperStyles="mt-3"
+        wrapperStyles="mt-5 inline-flex"
         checked={compress}
         onValueChange={(value) => setCompress(value)}
         label="Compressed / Minified"
@@ -103,7 +142,9 @@ export const PopupExport = ({ settings, scripts }: PopupExportProps) => {
 
       <div className="flex flex-row justify-between mt-6">
         <Button
-          disabled={loading || (!selected.length && !includeSettings)}
+          disabled={
+            loading || (!selectedScripts.length && !selectedSettings.length)
+          }
           variant="primary"
           className="flex flex-row items-center gap-2"
           onClick={handleExport}

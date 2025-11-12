@@ -9,7 +9,7 @@ export class ExportService {
     compress = true,
   }: {
     scripts?: StoredScript[];
-    settings?: StoredSettings;
+    settings?: Partial<StoredSettings>;
     compress?: boolean;
   } = {}) {
     let json: string = "";
@@ -18,13 +18,19 @@ export class ExportService {
 
     // try parsing and merging settings json in with export data
     if (settings) {
-      settings = {
-        ...settings,
-        editorKeybindingsJson: parseValidJson(settings.editorKeybindingsJson),
-        editorSettingsJson: parseValidJson(settings.editorSettingsJson),
-        prettierConfigJson: parseValidJson(settings.prettierConfigJson),
-        typescriptConfigJson: parseValidJson(settings.typescriptConfigJson),
+      const expandJson = (key: keyof StoredSettings) => {
+        if (settings![key] !== undefined) {
+          settings![key] = parseValidJson(settings![key] as string);
+        }
       };
+      expandJson("editorKeybindingsJson");
+      expandJson("editorSettingsJson");
+      expandJson("prettierConfigJson");
+      expandJson("typescriptConfigJson");
+
+      if (!Object.keys(settings).length) {
+        settings = undefined;
+      }
     }
 
     if (compress) {

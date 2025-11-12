@@ -78,7 +78,7 @@ export const Option = ({ className, ...props }: OptionProps) => {
     <option
       className={cn(
         "bg-background text-white px-3 py-2 h-5 box-content checked:bg-white/10 " +
-          "first:rounded-t-md last:rounded-b-md mb-px",
+          "first:rounded-t-md last:rounded-b-md mb-px overflow-hidden",
         className
       )}
       {...props}

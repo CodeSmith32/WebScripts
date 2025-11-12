@@ -13,7 +13,8 @@ import type { OnlyRequire } from "../../includes/core/types/utility";
 import type { StoredScript, StoredSettings } from "../types";
 import { CodePack } from "../core/codepack";
 import { webScripts } from "./webScriptService";
-import { stringifyValidJson } from "../core/prettifyJson";
+import { prettifyJson, stringifyValidJson } from "../core/prettifyJson";
+import type { SettingsKey } from "../../components/dropdowns/SettingsMultiSelect";
 
 export type ParseResult =
   | {
@@ -24,12 +25,12 @@ export type ParseResult =
   | { success: false; errors: string[] };
 
 const importSchema: ZodMiniType<{
-  compressed?: boolean;
+  compress?: boolean;
   settings?: Partial<StoredSettings>;
   scripts?: OnlyRequire<StoredScript, "code">[];
 }> = object({
   timestamp: optional(string()),
-  compressed: optional(boolean()),
+  compress: optional(boolean()),
   settings: optional(
     object({
       defaultLanguage: optional(zenum(["typescript", "javascript"])),
@@ -94,35 +95,26 @@ export class ImportService {
         ],
       };
     }
-    const { compressed, settings, scripts } = parsed.data;
+    const { compress, settings, scripts } = parsed.data;
 
     // reconstitute settings: convert json objects back to strings
     if (settings) {
-      if (settings.editorKeybindingsJson !== undefined) {
-        settings.editorKeybindingsJson = stringifyValidJson(
-          settings.editorKeybindingsJson
-        );
-      }
-      if (settings.editorSettingsJson !== undefined) {
-        settings.editorSettingsJson = stringifyValidJson(
-          settings.editorSettingsJson
-        );
-      }
-      if (settings.prettierConfigJson !== undefined) {
-        settings.prettierConfigJson = stringifyValidJson(
-          settings.prettierConfigJson
-        );
-      }
-      if (settings.typescriptConfigJson !== undefined) {
-        settings.typescriptConfigJson = stringifyValidJson(
-          settings.typescriptConfigJson
-        );
-      }
+      const restoreJson = (key: SettingsKey) => {
+        if (settings[key] !== undefined) {
+          settings[key] = prettifyJson(
+            stringifyValidJson(settings[key])
+          ) as never;
+        }
+      };
+      restoreJson("editorKeybindingsJson");
+      restoreJson("editorSettingsJson");
+      restoreJson("prettierConfigJson");
+      restoreJson("typescriptConfigJson");
     }
 
     // if compressed, validate compression; otherwise apply compression
     if (scripts) {
-      if (compressed) {
+      if (compress) {
         const errors = [
           importInitialError,
           "Some compressed scripts are corrupt:",
@@ -149,18 +141,18 @@ export class ImportService {
           script.code = CodePack.pack(script.code);
         }
       }
+
+      for (let i = 0; i < scripts.length; i++) {
+        scripts[i] = webScripts.normalizeScript(scripts[i]);
+        scripts[i].id = webScripts.generateId(); // assign id (ids are not exported)
+      }
     }
 
     // normalize scripts
     return {
       success: true,
       settings: settings ?? {},
-      scripts:
-        scripts?.map((script) => {
-          const normalized = webScripts.normalizeScript(script);
-          normalized.id = webScripts.generateId();
-          return normalized;
-        }) ?? [],
+      scripts: (scripts as StoredScript[]) ?? [],
     };
   }
 }

@@ -672,6 +672,8 @@ export class CodeArea {
     if (pushUndo) this.pushUndo();
 
     evt.preventDefault();
+    this.textArea.blur();
+    this.textArea.focus();
 
     if (this.value !== prevValue) {
       this.emit("change", {

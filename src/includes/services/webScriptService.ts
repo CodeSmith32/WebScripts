@@ -103,7 +103,9 @@ export class WebScripts {
     let code = CodePack.unpack(sourceScript.code ?? "");
 
     // if code must be preserved, then the script settings can only be derived from the code
-    if (preserveCode) sourceScript = {};
+    if (preserveCode) {
+      sourceScript = { id: sourceScript.id, code: sourceScript.code };
+    }
 
     // extract details from script code header
     const header = this.parseHeader(code);
@@ -113,14 +115,13 @@ export class WebScripts {
 
     // merge results: prioritize code header, fallback to source script, fallback to defaults
     const script: StoredScript = mergeDefined(defaults, sourceScript, header);
-
-    // fill in missing values
-    script.id ||= this.generateId();
-    script.name ||= defaults.name;
-    if (!script.patterns.length) {
-      // if code header gave array with no matches, fallback to source script, or defaults
-      script.patterns = sourceScript.patterns ?? defaults.patterns;
-    }
+    script.id ||= this.generateId(); // fill in missing ids
+    script.name = header.name || sourceScript.name || defaults.name; // merge name
+    script.patterns = header.patterns?.length // merge patterns
+      ? header.patterns
+      : sourceScript.patterns?.length
+        ? sourceScript.patterns
+        : defaults.patterns;
 
     if (!preserveCode) {
       // update code header, then update script code
