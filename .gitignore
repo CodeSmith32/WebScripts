@@ -1,6 +1,7 @@
 # Files
 .env
 *.local
+*.zip
 
 # Folders
 .vscode
