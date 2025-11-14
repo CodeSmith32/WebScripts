@@ -19,7 +19,7 @@ import {
 import Monokai from "monaco-themes/themes/Monokai.json";
 import type ts from "typescript";
 import { editorSettingsManager } from "../managers/editorSettingsManager";
-import type { ScriptLanguage } from "../types";
+import { scriptLanguages, type ScriptLanguage } from "../types";
 import { mergeDefined } from "../core/mergeDefined";
 
 const monacoTS = MonacoLanguages.typescript;
@@ -34,6 +34,7 @@ export class MonacoService {
     this.setupTheme();
     this.configureTypeScript();
     this.isolateReferences();
+    MonacoEditor.onDidChangeMarkers(() => this.clearInvalidMarkers());
   }
 
   // cached lib models
@@ -48,6 +49,10 @@ export class MonacoService {
     noUnusedParameters: true,
     noFallthroughCasesInSwitch: true,
   };
+
+  /** A set of models to clear invalid markers from, in case any come in from a pending
+   * worker diagnostics scan request. */
+  private modelsToRescan = new Set<ITextModel>();
 
   /** Configure editor theme. */
   private setupTheme() {
@@ -96,6 +101,22 @@ export class MonacoService {
         ? await monacoTS.getTypeScriptWorker()
         : await monacoTS.getJavaScriptWorker();
     return await getter(model.uri);
+  }
+
+  /** Runs through the models requiring rescanning, and clears any markers from the incorrect
+   * language. */
+  private clearInvalidMarkers() {
+    // iterate models needing rescan
+    for (const model of this.modelsToRescan) {
+      const language = model.getLanguageId();
+
+      // iterate languages, and clear markers in wrong languages from model
+      for (const lang in scriptLanguages) {
+        if (lang !== language) MonacoEditor.setModelMarkers(model, lang, []);
+      }
+    }
+    // clear the set
+    this.modelsToRescan.clear();
   }
 
   /** Convert model start / end offsets to a Monaco Range. */
@@ -267,6 +288,13 @@ export class MonacoService {
   getModelCode(model: ITextModel) {
     return model.getValue(MonacoEditor.EndOfLinePreference.LF, false);
   }
+
+  /** Update the model's language. Also clears error markers from the other language if a
+   * pending request hasn't finished during the language switch. */
+  setModelLanguage(model: ITextModel, language: ScriptLanguage) {
+    (model as TextModel).setLanguage(language);
+    this.modelsToRescan.add(model);
+  }
 }
 
 export const monacoService = new MonacoService();
@@ -277,7 +305,7 @@ export type TextModel = ITextModel & {
 };
 
 export {
-  type MonacoEditor,
+  MonacoEditor,
   MonacoUri,
   MonacoLanguages,
   type IDisposable,

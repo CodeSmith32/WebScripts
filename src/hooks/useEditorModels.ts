@@ -1,9 +1,8 @@
 import { useMemo, useRef, useState } from "preact/hooks";
 import {
-  type MonacoEditor,
+  MonacoEditor,
   monacoService,
   MonacoUri,
-  type TextModel,
 } from "../includes/services/monacoService";
 import { useCarried } from "./core/useCarried";
 import { useFutureCallback } from "./core/useFutureCallback";
@@ -52,7 +51,7 @@ export class EditorModelData {
   /** Update the highlight language for the editor. */
   setEditorLanguage(language: ScriptLanguage) {
     if (this.model.getLanguageId() !== language) {
-      (this.model as TextModel).setLanguage(language);
+      monacoService.setModelLanguage(this.model, language);
     }
   }
 
