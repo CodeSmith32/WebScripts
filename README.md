@@ -68,7 +68,7 @@ The execution environment to run the script in.
 
 #### `csp`
 
-Allows disabling the Content-Security-Policy for matched pages. **This option is rarely necessary and should be avoided as much as possible for security purposes.** User scripts normally run without CSP constraints, and likely will run fine without requiring disabling the CSP.
+Allows disabling the Content-Security-Policy for matched pages. **For security purposes, avoid this option if possible.** User scripts execute regardless of CSP constraints, and disabling the CSP is only necessary if the script requires specific actions that the page's CSP prevents.
 
 #### `match`
 

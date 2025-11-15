@@ -1,41 +1,50 @@
-import { CSPHeader, CSPValue } from "../core/csp";
+import { Chrome } from "../utils";
+
+type HeaderOperation = chrome.declarativeNetRequest.ModifyHeaderInfo &
+  browser.declarativeNetRequest._RuleActionResponseHeaders;
+
+// build a list of csp-related headers to remove
+const cspHeaders = [
+  "content-security-policy",
+  "content-security-policy-report-only",
+  "reporting-endpoints",
+];
+const removeHeaders: HeaderOperation[] = [];
+
+for (const header of cspHeaders) {
+  removeHeaders.push(
+    { header, operation: "remove" },
+    { header: "x-" + header, operation: "remove" }
+  );
+}
 
 export class CspService {
-  /** Process content-security-policy header and add 'unsafe-inline' for scripts. */
-  allowUnsafeInline(header: string): string {
-    // parse csp header string
-    const csp = CSPHeader.fromString(header);
+  /** Remove content-security-policy headers from tab. */
+  disableCSPHeaders(tabId: number) {
+    Chrome.declarativeNetRequest?.updateSessionRules({
+      removeRuleIds: [1],
+      addRules: [
+        {
+          id: 1,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            responseHeaders: removeHeaders,
+          },
+          condition: {
+            resourceTypes: ["main_frame"],
+            tabIds: [tabId],
+          },
+        },
+      ],
+    });
+  }
 
-    // iterate and tweak policies
-    for (const policy of csp.policies) {
-      // remove reporting
-      policy.deleteDirective("report-to");
-      policy.deleteDirective("report-uri");
-
-      // find script policy
-      const scriptDirective = (
-        policy.getDirective("script-src-elem") ??
-        policy.getDirective("script-src") ??
-        policy.getDirective("object-src")
-      )?.clone();
-
-      // if some policy is in place for scripts...
-      if (scriptDirective) {
-        // clear nonce / hash allowances (not allowed when 'unsafe-inline' is set)
-        scriptDirective.values = scriptDirective.values.filter(
-          (value) => value.type !== "nonce" && value.type !== "hash"
-        );
-        // allow 'unsafe-inline'
-        scriptDirective.values.push(new CSPValue("'unsafe-inline'"));
-
-        // assign as the 'script-src-elem' directive
-        scriptDirective.type = "script-src-elem";
-        policy.setDirective(scriptDirective);
-      }
-    }
-
-    // re-serialize to csp header string
-    return csp.toString();
+  /** Disable rule for removing content-security-policy headers from tab. */
+  enableCSPHeaders() {
+    Chrome.declarativeNetRequest?.updateSessionRules({
+      removeRuleIds: [1],
+    });
   }
 }
 

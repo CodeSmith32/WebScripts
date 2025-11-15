@@ -6,14 +6,15 @@ import { patternService } from "./includes/services/patternService";
 import type { StoredScript } from "./includes/types";
 import { CodePack } from "./includes/core/codepack";
 import { webScripts } from "./includes/services/webScriptService";
+import { cspService } from "./includes/services/cspService";
 
 // Background script handles CSP-disabling, re-compiles / re-syncs scripts after applying domain
 // toggle requests from the popup, and other misc background tasks.
 
 // keep track of most recent scripts
-let scripts: StoredScript[] = [];
+let localScripts: StoredScript[] = [];
 const reloadScripts = async () => {
-  scripts = await storageService.loadScripts();
+  localScripts = await storageService.loadScripts();
 };
 reloadScripts();
 
@@ -23,8 +24,8 @@ messageService.listen("toggleDomain", async (message) => {
   await reloadScripts();
 
   // find script by id
-  const ind = scripts.findIndex((script) => message.id === script.id);
-  let script = scripts[ind];
+  const ind = localScripts.findIndex((script) => message.id === script.id);
+  let script = localScripts[ind];
   if (!script) return;
 
   // update script header / re-normalize script
@@ -40,9 +41,9 @@ messageService.listen("toggleDomain", async (message) => {
   script = webScripts.normalizeScript(script);
 
   // update script in background / userScripts / options page
-  scripts[ind] = script;
+  localScripts[ind] = script;
 
-  await storageService.saveScripts(scripts);
+  await storageService.saveScripts(localScripts);
   await messageService.send("scriptsUpdated", { ids: [script.id] });
   await userScriptService.resynchronizeUserScript(script);
 });
@@ -57,7 +58,7 @@ messageService.listen("resyncAll", async () => {
   await userScriptService.resynchronizeUserScripts();
 
   // resynchronizeUserScripts reloads scripts; copy updated list:
-  scripts = storageService.latestScripts;
+  localScripts = storageService.latestScripts;
 });
 
 // on install, re-normalize script, and resynchronize userScripts with stored scripts
@@ -76,40 +77,27 @@ Chrome.runtime?.onInstalled.addListener(async () => {
 
   // resynchronize all scripts
   await userScriptService.resynchronizeUserScripts();
+
+  localScripts = storageService.latestScripts;
 });
 
 // test if url matches against any script patterns
 const shouldDisableCSP = (url: string) => {
-  for (const { csp, match } of scripts) {
-    if (csp !== "disable") continue;
+  for (const script of localScripts) {
+    if (script.csp !== "disable") continue;
 
-    if (patternService.match(url, match)) return true;
+    if (patternService.match(url, script.match)) return true;
   }
   return false;
 };
 
 // remove CSP headers
 Chrome.webNavigation?.onBeforeNavigate.addListener((evt) => {
-  if (!shouldDisableCSP(evt.url)) return;
-
-  Chrome.declarativeNetRequest?.updateSessionRules({
-    removeRuleIds: [1],
-    addRules: [
-      {
-        id: 1,
-        priority: 1,
-        action: {
-          type: "modifyHeaders",
-          responseHeaders: [
-            { header: "content-security-policy", operation: "remove" },
-            { header: "x-content-security-policy", operation: "remove" },
-          ],
-        },
-        condition: {
-          resourceTypes: ["main_frame"],
-          tabIds: [evt.tabId],
-        },
-      },
-    ],
-  });
+  if (shouldDisableCSP(evt.url)) {
+    // csp is disabled: add 'remove csp' rule
+    cspService.disableCSPHeaders(evt.tabId);
+  } else {
+    // csp is not disabled: delete the 'remove csp' rule
+    cspService.enableCSPHeaders();
+  }
 });

@@ -84,9 +84,6 @@ export class UserScriptService {
     if (!userScript.matches!.length) {
       userScript.matches = ["*://bad.invalid/*"];
     }
-    if (!userScript.excludeMatches!.length) {
-      delete userScript.excludeMatches;
-    }
 
     return userScript;
   }
