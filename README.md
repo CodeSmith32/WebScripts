@@ -1,6 +1,6 @@
 # WebScripts
 
-WebScripts is an open source user scripts Chromium extension that integrates Microsoft's Monaco code editor, and allows writing user scripts in either JavaScript or TypeScript. An open-sourced, modern, zero-tracking alternative to [Tampermonkey](https://www.tampermonkey.net/).
+WebScripts is a [user scripts](https://en.wikipedia.org/wiki/Userscript) Chromium extension that integrates Microsoft's Monaco code editor, and allows writing scripts in either JavaScript or TypeScript. It's an open-sourced, simple but powerful, zero-tracking alternative to [Tampermonkey](https://www.tampermonkey.net/).
 
 ## Features:
 
@@ -15,10 +15,11 @@ WebScripts is an open source user scripts Chromium extension that integrates Mic
 - This is a very new extension. There may still be bugs. Please report any issues you experience, and **use at your own risk**.
 - This extension was currently only tested with Chromium browsers. It does not yet support Firefox, Safari, Opera, or mobile browsers.
 - There is no central repository for custom scripts from other users, nor is there any script update system. This extension is for developers, rather than everyday browser users, and expects the user to be the one writing scripts. If you're looking for an extension that lets you install scripts written by other developers, [Tampermonkey](https://www.tampermonkey.net/) may be a better choice.
+- Script headers deviate from the standard user script format. This extension uses triple-slash headers in the form, `/// key: value`. See the next section for basic documentation on supported headers. Aside from the headers listed below, any string can be used as a header, and will simply be ignored by the extension.
 
 ---
 
-## Script options:
+## Script Headers:
 
 ### `/// name: ...`
 
@@ -30,11 +31,11 @@ Script version.
 
 ### `/// author: ...`
 
-Author name.
+Author name. Multiple authors may be specified as multiple headers or a comma-separated list if needed.
 
 ### `/// description: ...`
 
-Description for the script.
+Description for the script. Long descriptions may appear on one line, or can be spread over multiple description headers if needed.
 
 ### `/// language: ...`
 
@@ -132,6 +133,10 @@ Or, alternatively:
 /// match:   /.*/
 /// match:   - /^file:///.*/i
 ```
+
+### `/// ...`
+
+Any other string can be used as a header in the form, `/// key: value`, and will simply be ignored by the extension.
 
 ## Build Instructions
 
