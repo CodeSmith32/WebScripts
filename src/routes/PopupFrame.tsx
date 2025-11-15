@@ -59,7 +59,7 @@ const scriptWarningMessages: Record<WarningTypes, ComponentChildren> = {
         <br />
         page's{" "}
         <Anchor href={helpLinks.contentSecurityPolicy}>
-          Content Security Policy.
+          Content Security Policy (CSP).
         </Anchor>
       </p>
     </div>
