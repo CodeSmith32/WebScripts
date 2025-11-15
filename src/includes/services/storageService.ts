@@ -49,7 +49,7 @@ export class StorageService {
   /** Load all user scripts. Async-wrapped to prevent simultaneous calls. */
   loadScripts = wrapAsyncMerge(async (): Promise<StoredScript[]> => {
     const scripts =
-      (await Chrome.storage?.local.get("scripts"))?.scripts.map(
+      (await Chrome.storage?.local.get("scripts"))?.scripts?.map(
         (script: Partial<StoredScript>): StoredScript =>
           mergeDefined(webScripts.getScriptDefaults(), script)
       ) ?? [];
