@@ -32,6 +32,7 @@ import { useRefresh } from "../../hooks/core/useRefresh";
 import { useFutureCallback } from "../../hooks/core/useFutureCallback";
 import { debounce } from "../../includes/core/debounce";
 import { dragDrop } from "../../includes/dragDrop";
+import { isValidURL } from "../../includes/core/isValidURL";
 
 const { min, max } = Math;
 
@@ -304,15 +305,21 @@ export const PopupScriptSettings = ({
 
   const [patterns, setPatterns] = useState<PatternWithId[]>(originalPatterns);
 
+  // test url
   const [testURL, setTestURL] = useState("");
-  const testURLMatches = testURL
+
+  const testURLIsValid = isValidURL(testURL);
+
+  const testURLMatches = testURLIsValid
     ? patternService.match(
         testURL,
         patterns.map(({ pattern }) => pattern)
       )
     : null;
-  const testURLColor =
-    testURLMatches === null
+
+  const testURLColor = !testURL
+    ? "bg-neutral-500/20"
+    : !testURLIsValid
       ? "bg-neutral-500/20"
       : testURLMatches
         ? "bg-success/50"
@@ -522,19 +529,23 @@ export const PopupScriptSettings = ({
         />
         <div
           title={
-            testURLMatches === null
+            !testURL === null
               ? "Enter URL to test..."
-              : testURLMatches
-                ? "URL matches patterns"
-                : "URL is excluded by patterns"
+              : !testURLIsValid
+                ? "Not a valid URL. Be sure URL starts with 'http://' or 'file:///'."
+                : testURLMatches
+                  ? "URL matches patterns"
+                  : "URL is excluded by patterns"
           }
           className={cn(
             "w-10 h-10 flex justify-center items-center ml-px rounded-r-md",
             testURLColor
           )}
         >
-          {testURLMatches === null ? (
+          {!testURL ? (
             <EllipsisIcon />
+          ) : !testURLIsValid ? (
+            <CircleXIcon />
           ) : testURLMatches ? (
             <CheckIcon />
           ) : (
