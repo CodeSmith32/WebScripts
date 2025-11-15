@@ -147,4 +147,4 @@ To build this repository,
 [![Preact](https://img.shields.io/badge/preact-673AB8.svg?style=for-the-badge&logo=preact&logoColor=white)](https://preactjs.com/)
 [![TailwindCSS](https://img.shields.io/badge/tailwind_css-030712.svg?style=for-the-badge&logo=tailwindcss&logoColor=00BCFF)](https://tailwindcss.com/)
 [![Vite](https://img.shields.io/badge/vite-646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![ESLint](https://img.shields.io/badge/eslint-101828.svg?style=for-the-badge&logo=eslint&logoColor=white)]()
+[![ESLint](https://img.shields.io/badge/eslint-101828.svg?style=for-the-badge&logo=eslint&logoColor=white)](https://eslint.org/)
